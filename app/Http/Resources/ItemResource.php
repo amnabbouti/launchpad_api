@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 
 class ItemResource extends BaseResource
 {
-
     public function toArray($request): array
     {
         return [

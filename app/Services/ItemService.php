@@ -6,7 +6,6 @@ use App\Models\Item;
 
 class ItemService extends BaseService
 {
-
     // create a new service instance
     public function __construct(Item $item)
     {

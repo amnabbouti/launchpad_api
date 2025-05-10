@@ -16,7 +16,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Stock extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
+    use SoftDeletes;
 
     protected $fillable = [
         'serial_number',

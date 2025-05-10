@@ -51,7 +51,7 @@ class ItemSupplier extends Model
             if ($itemSupplier->price !== null && $itemSupplier->price < 0) {
                 throw new \InvalidArgumentException('Price cannot be negative.');
             }
-            
+
             if ($itemSupplier->lead_time !== null && $itemSupplier->lead_time < 0) {
                 throw new \InvalidArgumentException('Lead time cannot be negative.');
             }
