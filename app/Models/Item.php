@@ -9,12 +9,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/**
- * Item represents a specific instance of a Stock.
- * While Stock represents a type or category of product (e.g., "Dell XPS 15 Laptop"),
- * Item represents a specific instance with a serial number (e.g., "Dell XPS 15 #123456").
- * Multiple Item records can belong to a single Stock.
- */
 class Item extends Model
 {
     use HasFactory, SoftDeletes;
