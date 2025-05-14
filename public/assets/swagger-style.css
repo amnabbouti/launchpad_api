@@ -1,0 +1,104 @@
+.swagger-ui {
+  font-family: 'Roboto Mono', monospace;
+  margin-bottom: 6px;
+  display: inline-block;
+  width: 100%;
+}
+
+.swagger-ui .opblock {
+  margin: 0 0 4px;
+  border-radius: 3px;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.15);
+  border: none;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.swagger-ui .opblock-get {
+  background: rgba(97, 175, 254, 0.1);
+  border-color: #61affe;
+}
+
+.swagger-ui .opblock-post {
+  background: rgba(73, 204, 144, 0.1);
+  border-color: #49cc90;
+}
+
+.swagger-ui .opblock-put {
+  background: rgba(252, 161, 48, 0.1);
+  border-color: #fca130;
+}
+
+.swagger-ui .opblock-delete {
+  background: rgba(249, 62, 62, 0.1);
+  border-color: #f93e3e;
+}
+
+.swagger-ui .opblock-patch {
+  background: rgba(80, 227, 194, 0.1);
+  border-color: #50e3c2;
+}
+
+.swagger-ui .opblock-head {
+  background: rgba(144, 18, 254, 0.1);
+  border-color: #9012fe;
+}
+
+.swagger-ui .opblock-options {
+  background: rgba(13, 90, 167, 0.1);
+  border-color: #0d5aa7;
+}
+
+.swagger-ui .opblock-summary-method {
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 60px;
+  padding: 4px 0;
+  text-align: center;
+  border-radius: 2px;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
+  font-family: 'Roboto Mono', monospace;
+  color: #fff;
+}
+
+.swagger-ui .opblock-summary-path {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  font-family: 'Roboto Mono', monospace;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.swagger-ui .opblock-summary-method.get {
+  background: #61affe;
+}
+
+.swagger-ui .opblock-summary-method.post {
+  background: #49cc90;
+}
+
+.swagger-ui .opblock-summary-method.put {
+  background: #fca130;
+}
+
+.swagger-ui .opblock-summary-method.delete {
+  background: #f93e3e;
+}
+
+.swagger-ui .opblock-summary-method.patch {
+  background: #50e3c2;
+}
+
+.swagger-ui .opblock-summary-method.head {
+  background: #9012fe;
+}
+
+.swagger-ui .opblock-summary-method.options {
+  background: #0d5aa7;
+}

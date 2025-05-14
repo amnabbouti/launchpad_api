@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>LaunchPad API</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link href="assets/swagger-style.css" rel="stylesheet" />
+    <link href="assets/style.css" rel="stylesheet" />
+    <link href="assets/chatbot-style.css" rel="stylesheet" />
+    <script src="assets/env.php"></script>
+  </head>
+  <body>
+    <header class="custom-header scalar-app">
+      <div class="logo">
+        🚀
+        <span>LaunchPad</span>
+        API
+      </div>
+      <div class="api-info">
+        <code>
+          base_url:
+          <strong>launchpad-app/api</strong>
+        </code>
+      </div>
+    </header>
+    <div class="test-banner">
+      <div class="test-content">
+        <div class="test-message" id="typing-text">
+          Welkom bij LaunchPad - Uw Inventaris Management Platform
+        </div>
+      </div>
+    </div>
+
+    <div id="app"></div>
+
+    <div class="custom-footer">
+      <div class="copyright">
+        © 2025 LaunchPad - Enterprise Inventory Management System
+      </div>
+      <div class="footer-links">
+        <a href="https://docs.inventory-api.com">Documentation</a>
+        <a href="#">API Status</a>
+        <a href="#">Terms of Service</a>
+        <a href="mailto:support@inventory-api.com">Support</a>
+      </div>
+    </div>
+
+    <div
+      class="ai-assistant"
+      role="dialog"
+      aria-label="API Assistant"
+      tabindex="-1"
+    >
+      <div class="ai-header">
+        <button
+          class="ai-clear-history"
+          onclick="clearChatHistory()"
+          aria-label="Clear Chat History"
+        >
+          <img
+            src="delete.svg"
+            alt="Clear History"
+            class="icon-svg"
+            onerror="this.outerHTML='[Clear]'"
+          />
+        </button>
+        <span class="ai-header-title">LaunchPad API Assistant</span>
+        <button
+          class="ai-close"
+          onclick="toggleAssistant()"
+          aria-label="Close Assistant"
+        >
+          <img
+            src="close.svg"
+            alt="Close Chat"
+            class="icon-svg"
+            onerror="this.outerHTML='[Close]'"
+          />
+        </button>
+      </div>
+      <div class="ai-chat" id="ai-chat" role="log" aria-live="polite"></div>
+      <div class="ai-input-container">
+        <input
+          class="ai-input"
+          id="ai-input"
+          placeholder="Ask about the API..."
+          aria-label="Chat Input"
+        />
+        <button
+          class="ai-action"
+          id="action-btn"
+          data-state="send"
+          aria-label="Send Message"
+          aria-disabled="false"
+        >
+          <img
+            src="send.svg"
+            alt="Send Message"
+            class="icon-svg"
+            onerror="this.outerHTML='[Send]'"
+          />
+        </button>
+      </div>
+    </div>
+    <div
+      class="ai-toggle"
+      onclick="toggleAssistant()"
+      aria-label="Toggle API Assistant"
+      tabindex="0"
+      role="button"
+    >
+      🚀
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+    <!-- Load utilities first -->
+    <script src="assets/utils/formatting.js"></script>
+    <!-- Load API responses before AI service -->
+    <script src="assets/api-responses.js"></script>
+    <!-- Load AI service -->
+    <script src="assets/ai-service.js"></script>
+    <!-- Load UI handling -->
+    <script src="assets/main-ai.js"></script>
+  </body>
+</html>
