@@ -1,0 +1,26 @@
+source ~/.bashrc
+
+PROJECT_ROOT="/var/www/html"
+DDEV_ROOT="/var/www/html/.ddev"
+ENV_FILE="${PROJECT_ROOT}/.env"
+ENV_DDEV="${DDEV_ROOT}/.env.ddev"
+ENV_PROD="${PROJECT_ROOT}/.env"
+
+case "$1" in
+    "prod")
+        cp "$ENV_PROD" "$ENV_FILE"
+        shift
+        php artisan "$@"
+        ;;
+    "local")
+        cp "$ENV_DDEV" "$ENV_FILE"
+        shift
+        php artisan "$@"
+        ;;
+    *)
+        echo "Usage: ddev art [local|prod] command"
+        echo "Example: ddev art local migrate:fresh"
+        echo "         ddev art prod migrate:fresh"
+        exit 1
+        ;;
+esac
