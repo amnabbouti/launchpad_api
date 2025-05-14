@@ -5,10 +5,12 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
-{    public function up(): void
+{
+    public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->id();            $table->string('first_name', 50)->nullable();
+            $table->id();
+            $table->string('first_name', 50)->nullable();
             $table->string('last_name', 50)->nullable();
             $table->string('email')->unique()->index();
             $table->timestamp('email_verified_at')->nullable();
@@ -41,5 +43,6 @@ return new class extends Migration
     {
         Schema::dropIfExists('sessions');
         Schema::dropIfExists('password_reset_tokens');
-        Schema::dropIfExists('users');    }
+        Schema::dropIfExists('users');
+    }
 };

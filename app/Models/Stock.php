@@ -4,9 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Stock represents a type or category of product.
@@ -28,14 +28,14 @@ class Stock extends Model
         'notes',
         'is_active',
         'location_id',
-        'status_id'
+        'status_id',
     ];
 
     protected $casts = [
         'purchase_price' => 'decimal:2',
         'purchase_date' => 'date',
         'warranty_end_date' => 'date',
-        'is_active' => 'boolean'
+        'is_active' => 'boolean',
     ];
 
     // Items relationship - Stock can have multiple Items

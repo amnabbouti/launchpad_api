@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         // Add stock_id to items table if it doesn't exist
-        if (!Schema::hasColumn('items', 'stock_id')) {
+        if (! Schema::hasColumn('items', 'stock_id')) {
             Schema::table('items', function (Blueprint $table) {
                 $table->unsignedBigInteger('stock_id')->nullable()->after('user_id');
                 $table->index('stock_id');

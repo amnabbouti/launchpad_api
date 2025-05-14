@@ -21,7 +21,7 @@ return new class extends Migration
             $table->boolean('is_preferred')->default(false);
             $table->timestamps();
             $table->softDeletes();
-            
+
             // Create a unique index on item_id and supplier_id
             $table->unique(['item_id', 'supplier_id']);
         });

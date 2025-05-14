@@ -11,39 +11,39 @@ return new class extends Migration
         Schema::table('check_ins_outs', function (Blueprint $table) {
             // Add foreign key constraints
             $table->foreign('user_id')
-                  ->references('id')
-                  ->on('users')
-                  ->onDelete('restrict');
+                ->references('id')
+                ->on('users')
+                ->onDelete('restrict');
 
             $table->foreign('stock_id')
-                  ->references('id')
-                  ->on('stocks')
-                  ->onDelete('restrict');
+                ->references('id')
+                ->on('stocks')
+                ->onDelete('restrict');
 
             $table->foreign('checkout_location_id')
-                  ->references('id')
-                  ->on('locations')
-                  ->onDelete('restrict');
+                ->references('id')
+                ->on('locations')
+                ->onDelete('restrict');
 
             $table->foreign('checkin_user_id')
-                  ->references('id')
-                  ->on('users')
-                  ->onDelete('restrict');
+                ->references('id')
+                ->on('users')
+                ->onDelete('restrict');
 
             $table->foreign('checkin_location_id')
-                  ->references('id')
-                  ->on('locations')
-                  ->onDelete('restrict');
+                ->references('id')
+                ->on('locations')
+                ->onDelete('restrict');
 
             $table->foreign('status_out_id')
-                  ->references('id')
-                  ->on('stock_statuses')
-                  ->onDelete('set null');
+                ->references('id')
+                ->on('stock_statuses')
+                ->onDelete('set null');
 
             $table->foreign('status_in_id')
-                  ->references('id')
-                  ->on('stock_statuses')
-                  ->onDelete('set null');
+                ->references('id')
+                ->on('stock_statuses')
+                ->onDelete('set null');
         });
     }
 

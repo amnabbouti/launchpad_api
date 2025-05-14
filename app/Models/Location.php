@@ -4,10 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Location extends Model
 {
@@ -19,7 +19,7 @@ class Location extends Model
         'name',
         'code',
         'parent_id',
-        'path'
+        'path',
     ];
 
     // Event messages
@@ -27,7 +27,7 @@ class Location extends Model
 
     // Type casting for attributes
     protected $casts = [
-        'is_active' => 'boolean'
+        'is_active' => 'boolean',
     ];
 
     // Parent location relationship
@@ -62,7 +62,7 @@ class Location extends Model
     {
         static::created(function ($location) {
             // Format: /parent_id/current_id/
-            $path = ($location->parent->path ?? '/') . $location->id . '/';
+            $path = ($location->parent->path ?? '/').$location->id.'/';
             $location->path = $path;
             $location->saveQuietly();
         });
@@ -76,7 +76,7 @@ class Location extends Model
                     'location_id' => $location->id,
                     'location_name' => $location->name,
                     'location_code' => $location->code,
-                    'children_count' => $childrenCount
+                    'children_count' => $childrenCount,
                 ]);
 
                 // dispatching an event here that controllers can listen for

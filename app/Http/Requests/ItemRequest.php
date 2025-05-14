@@ -9,7 +9,7 @@ class ItemRequest extends BaseRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50|unique:items,code,' . $this->item,
+            'code' => 'required|string|max:50|unique:items,code,'.$this->item,
             'description' => 'nullable|string',
             'quantity' => 'numeric|min:0',
             'price' => 'nullable|numeric|min:0',

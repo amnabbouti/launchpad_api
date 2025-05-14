@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Supplier extends Model
 {
@@ -26,7 +26,7 @@ class Supplier extends Model
         'website',
         'tax_id',
         'notes',
-        'is_active'
+        'is_active',
     ];
 
     protected $casts = [
@@ -45,7 +45,7 @@ class Supplier extends Model
 
     public function getActiveAttribute(): bool
     {
-        return (bool)$this->is_active;
+        return (bool) $this->is_active;
     }
 
     public function items(): BelongsToMany

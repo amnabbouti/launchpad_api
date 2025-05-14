@@ -6,7 +6,6 @@ use App\Http\Requests\CategoryRequest;
 use App\Http\Resources\CategoryResource;
 use App\Services\CategoryService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class CategoryController extends BaseController
 {
@@ -21,6 +20,7 @@ class CategoryController extends BaseController
     public function index(): JsonResponse
     {
         $categories = $this->categoryService->all();
+
         return $this->successResponse(CategoryResource::collection($categories));
     }
 
@@ -28,6 +28,7 @@ class CategoryController extends BaseController
     public function store(CategoryRequest $request): JsonResponse
     {
         $category = $this->categoryService->create($request->validated());
+
         return $this->successResponse(new CategoryResource($category), 'Category created successfully', 201);
     }
 
@@ -36,7 +37,7 @@ class CategoryController extends BaseController
     {
         $category = $this->categoryService->findById($id);
 
-        if (!$category) {
+        if (! $category) {
             return $this->errorResponse('Category not found', 404);
         }
 
@@ -48,11 +49,12 @@ class CategoryController extends BaseController
     {
         $category = $this->categoryService->findById($id);
 
-        if (!$category) {
+        if (! $category) {
             return $this->errorResponse('Category not found', 404);
         }
 
         $updatedCategory = $this->categoryService->update($id, $request->validated());
+
         return $this->successResponse(new CategoryResource($updatedCategory), 'Category updated successfully');
     }
 
@@ -61,11 +63,12 @@ class CategoryController extends BaseController
     {
         $category = $this->categoryService->findById($id);
 
-        if (!$category) {
+        if (! $category) {
             return $this->errorResponse('Category not found', 404);
         }
 
         $this->categoryService->delete($id);
+
         return $this->successResponse(null, 'Category deleted successfully');
     }
 
@@ -73,6 +76,7 @@ class CategoryController extends BaseController
     public function getWithItems(): JsonResponse
     {
         $categories = $this->categoryService->getWithItems();
+
         return $this->successResponse(CategoryResource::collection($categories));
     }
 
@@ -80,6 +84,7 @@ class CategoryController extends BaseController
     public function getByName(string $name): JsonResponse
     {
         $categories = $this->categoryService->getByName($name);
+
         return $this->successResponse(CategoryResource::collection($categories));
     }
 
@@ -87,6 +92,7 @@ class CategoryController extends BaseController
     public function getActive(): JsonResponse
     {
         $categories = $this->categoryService->getActive();
+
         return $this->successResponse(CategoryResource::collection($categories));
     }
 }

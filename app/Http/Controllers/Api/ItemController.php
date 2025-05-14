@@ -6,7 +6,6 @@ use App\Http\Requests\ItemRequest;
 use App\Http\Resources\ItemResource;
 use App\Services\ItemService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class ItemController extends BaseController
 {
@@ -20,12 +19,14 @@ class ItemController extends BaseController
     public function index(): JsonResponse
     {
         $items = $this->itemService->all();
+
         return $this->successResponse(ItemResource::collection($items));
     }
 
     public function store(ItemRequest $request): JsonResponse
     {
         $item = $this->itemService->create($request->validated());
+
         return $this->successResponse(new ItemResource($item), 'Item created successfully', 201);
     }
 
@@ -33,7 +34,7 @@ class ItemController extends BaseController
     {
         $item = $this->itemService->findById($id);
 
-        if (!$item) {
+        if (! $item) {
             return $this->errorResponse('Item not found', 404);
         }
 
@@ -44,11 +45,12 @@ class ItemController extends BaseController
     {
         $item = $this->itemService->findById($id);
 
-        if (!$item) {
+        if (! $item) {
             return $this->errorResponse('Item not found', 404);
         }
 
         $updatedItem = $this->itemService->update($id, $request->validated());
+
         return $this->successResponse(new ItemResource($updatedItem), 'Item updated successfully');
     }
 
@@ -56,11 +58,12 @@ class ItemController extends BaseController
     {
         $item = $this->itemService->findById($id);
 
-        if (!$item) {
+        if (! $item) {
             return $this->errorResponse('Item not found', 404);
         }
 
         $this->itemService->delete($id);
+
         return $this->successResponse(null, 'Item deleted successfully');
     }
 
@@ -68,6 +71,7 @@ class ItemController extends BaseController
     public function getByCategory(int $categoryId): JsonResponse
     {
         $items = $this->itemService->getByCategory($categoryId);
+
         return $this->successResponse(ItemResource::collection($items));
     }
 
@@ -75,6 +79,7 @@ class ItemController extends BaseController
     public function getByStock(int $stockId): JsonResponse
     {
         $items = $this->itemService->getByStock($stockId);
+
         return $this->successResponse(ItemResource::collection($items));
     }
 
@@ -82,6 +87,7 @@ class ItemController extends BaseController
     public function getActive(): JsonResponse
     {
         $items = $this->itemService->getActive();
+
         return $this->successResponse(ItemResource::collection($items));
     }
 
@@ -90,11 +96,12 @@ class ItemController extends BaseController
     {
         $item = $this->itemService->findById($id);
 
-        if (!$item) {
+        if (! $item) {
             return $this->errorResponse('Item not found', 404);
         }
 
         $locations = $this->itemService->getItemLocations($id);
+
         return $this->successResponse($locations);
     }
 }

@@ -1,8 +1,8 @@
 <?php
 
+use App\Models\User;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
-use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
 Artisan::command('inspire', function () {
@@ -14,7 +14,7 @@ Artisan::command('generate:token', function () {
     $user = User::where('email', 'test@example.com')->first();
 
     // Create user if it doesn't exist
-    if (!$user) {
+    if (! $user) {
         $user = User::create([
             'first_name' => 'Test',
             'last_name' => 'User',
@@ -35,5 +35,5 @@ Artisan::command('generate:token', function () {
     $this->info('API Token generated successfully:');
     $this->line($token);
     $this->info('Use this token in Postman by adding an Authorization header:');
-    $this->line('Authorization: Bearer ' . $token);
+    $this->line('Authorization: Bearer '.$token);
 })->purpose('Generate an API token for testing in Postman');

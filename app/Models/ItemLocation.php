@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 
 class ItemLocation extends Model
@@ -16,7 +16,7 @@ class ItemLocation extends Model
     protected $fillable = [
         'item_id',
         'location_id',
-        'quantity'
+        'quantity',
     ];
 
     protected $casts = [

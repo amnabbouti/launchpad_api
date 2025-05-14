@@ -2,13 +2,13 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use App\Models\Category;
 use App\Models\Item;
 use App\Models\Location;
 use App\Models\Stock;
 use App\Models\Supplier;
 use App\Models\UnitOfMeasure;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -21,7 +21,7 @@ class DatabaseSeeder extends Seeder
     {
         // Check if admin user exists, create if not
         $admin = User::where('email', 'admin@example.com')->first();
-        if (!$admin) {
+        if (! $admin) {
             $admin = User::factory()->create([
                 'first_name' => 'Admin',
                 'last_name' => 'User',
@@ -32,7 +32,7 @@ class DatabaseSeeder extends Seeder
 
         // Check if test user exists, create if not
         $testUser = User::where('email', 'test@example.com')->first();
-        if (!$testUser) {
+        if (! $testUser) {
             $testUser = User::factory()->create([
                 'first_name' => 'Test',
                 'last_name' => 'User',
@@ -315,9 +315,9 @@ class DatabaseSeeder extends Seeder
 
                 foreach ($randomLocations as $location) {
                     // Check if the relationship already exists
-                    if (!$item->locations()->where('location_id', $location->id)->exists()) {
+                    if (! $item->locations()->where('location_id', $location->id)->exists()) {
                         $item->locations()->attach($location->id, [
-                            'quantity' => rand(1, 10)
+                            'quantity' => rand(1, 10),
                         ]);
                     }
                 }
@@ -335,12 +335,12 @@ class DatabaseSeeder extends Seeder
 
                 foreach ($randomSuppliers as $supplier) {
                     // Check if the relationship already exists
-                    if (!$item->suppliers()->where('supplier_id', $supplier->id)->exists()) {
+                    if (! $item->suppliers()->where('supplier_id', $supplier->id)->exists()) {
                         $item->suppliers()->attach($supplier->id, [
-                            'supplier_part_number' => 'SP' . rand(1000, 9999),
+                            'supplier_part_number' => 'SP'.rand(1000, 9999),
                             'price' => $item->price * (rand(80, 95) / 100), // 80-95% of retail price
                             'lead_time' => rand(1, 30), // Lead time in days
-                            'is_preferred' => rand(0, 1)
+                            'is_preferred' => rand(0, 1),
                         ]);
                     }
                 }

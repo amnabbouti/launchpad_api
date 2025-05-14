@@ -4,9 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Category extends Model
 {
@@ -16,7 +16,7 @@ class Category extends Model
     // Fields that can be mass assigned
     protected $fillable = [
         'name',
-        'parent_id'
+        'parent_id',
     ];
 
     // Event messages
@@ -57,7 +57,7 @@ class Category extends Model
                 \Illuminate\Support\Facades\Log::warning(Category::DELETING_WITH_CHILDREN_MESSAGE, [
                     'category_id' => $category->id,
                     'category_name' => $category->name,
-                    'children_count' => $childrenCount
+                    'children_count' => $childrenCount,
                 ]);
 
                 event('category.deleting.with.children', $category);

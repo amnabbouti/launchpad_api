@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CheckInOut extends Model
 {
@@ -29,7 +29,7 @@ class CheckInOut extends Model
         'expected_return_date',
         'reference',
         'notes',
-        'is_active'
+        'is_active',
     ];
 
     protected $casts = [
@@ -38,7 +38,7 @@ class CheckInOut extends Model
         'expected_return_date' => 'datetime',
         'quantity' => 'decimal:2',
         'checkin_quantity' => 'decimal:2',
-        'is_active' => 'boolean'
+        'is_active' => 'boolean',
     ];
 
     // User who checked out the item

@@ -18,13 +18,11 @@ class CategoryService extends BaseService
         return $this->model->with('items')->get();
     }
 
-
     // Get categories by name
     public function getByName(string $name)
     {
         return $this->model->where('name', 'like', "%{$name}%")->get();
     }
-
 
     // Get active categories
     public function getActive()

@@ -34,6 +34,7 @@ class ItemService extends BaseService
     public function getItemLocations(int $itemId)
     {
         $item = $this->model->findOrFail($itemId);
+
         return $item->locations()->get();
     }
 }

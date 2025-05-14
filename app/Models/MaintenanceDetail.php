@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class MaintenanceDetail extends Model
 {
@@ -15,7 +15,7 @@ class MaintenanceDetail extends Model
     protected $fillable = [
         'value',
         'maintenance_condition_id',
-        'maintenance_id'
+        'maintenance_id',
     ];
 
     // Maintenance condition relationship

@@ -21,6 +21,7 @@ class AuthController extends Controller
             $user = Auth::user();
             // Generate API token
             $token = $user->createToken('api-token')->plainTextToken;
+
             return response()->json(['token' => $token], 200);
         }
 

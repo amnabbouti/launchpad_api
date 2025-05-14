@@ -2,8 +2,6 @@
 
 namespace App\Http\Resources;
 
-use Illuminate\Http\Request;
-
 class ItemResource extends BaseResource
 {
     public function toArray($request): array

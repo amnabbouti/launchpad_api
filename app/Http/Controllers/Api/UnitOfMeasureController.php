@@ -6,7 +6,6 @@ use App\Http\Requests\UnitOfMeasureRequest;
 use App\Http\Resources\UnitOfMeasureResource;
 use App\Services\UnitOfMeasureService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class UnitOfMeasureController extends BaseController
 {
@@ -22,6 +21,7 @@ class UnitOfMeasureController extends BaseController
     public function index(): JsonResponse
     {
         $units = $this->unitOfMeasureService->all();
+
         return $this->successResponse(UnitOfMeasureResource::collection($units));
     }
 
@@ -29,6 +29,7 @@ class UnitOfMeasureController extends BaseController
     public function store(UnitOfMeasureRequest $request): JsonResponse
     {
         $unit = $this->unitOfMeasureService->create($request->validated());
+
         return $this->successResponse(new UnitOfMeasureResource($unit), 'Unit of measure created successfully', 201);
     }
 
@@ -37,7 +38,7 @@ class UnitOfMeasureController extends BaseController
     {
         $unit = $this->unitOfMeasureService->findById($id);
 
-        if (!$unit) {
+        if (! $unit) {
             return $this->errorResponse('Unit of measure not found', 404);
         }
 
@@ -49,11 +50,12 @@ class UnitOfMeasureController extends BaseController
     {
         $unit = $this->unitOfMeasureService->findById($id);
 
-        if (!$unit) {
+        if (! $unit) {
             return $this->errorResponse('Unit of measure not found', 404);
         }
 
         $updatedUnit = $this->unitOfMeasureService->update($id, $request->validated());
+
         return $this->successResponse(new UnitOfMeasureResource($updatedUnit), 'Unit of measure updated successfully');
     }
 
@@ -62,11 +64,12 @@ class UnitOfMeasureController extends BaseController
     {
         $unit = $this->unitOfMeasureService->findById($id);
 
-        if (!$unit) {
+        if (! $unit) {
             return $this->errorResponse('Unit of measure not found', 404);
         }
 
         $this->unitOfMeasureService->delete($id);
+
         return $this->successResponse(null, 'Unit of measure deleted successfully');
     }
 
@@ -74,6 +77,7 @@ class UnitOfMeasureController extends BaseController
     public function getByName(string $name): JsonResponse
     {
         $units = $this->unitOfMeasureService->getByName($name);
+
         return $this->successResponse(UnitOfMeasureResource::collection($units));
     }
 
@@ -81,6 +85,7 @@ class UnitOfMeasureController extends BaseController
     public function getActive(): JsonResponse
     {
         $units = $this->unitOfMeasureService->getActive();
+
         return $this->successResponse(UnitOfMeasureResource::collection($units));
     }
 }

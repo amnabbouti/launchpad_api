@@ -6,7 +6,6 @@ use App\Http\Requests\SupplierRequest;
 use App\Http\Resources\SupplierResource;
 use App\Services\SupplierService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class SupplierController extends BaseController
 {
@@ -21,6 +20,7 @@ class SupplierController extends BaseController
     public function index(): JsonResponse
     {
         $suppliers = $this->supplierService->all();
+
         return $this->successResponse(SupplierResource::collection($suppliers));
     }
 
@@ -28,6 +28,7 @@ class SupplierController extends BaseController
     public function store(SupplierRequest $request): JsonResponse
     {
         $supplier = $this->supplierService->create($request->validated());
+
         return $this->successResponse(new SupplierResource($supplier), 'Supplier created successfully', 201);
     }
 
@@ -36,7 +37,7 @@ class SupplierController extends BaseController
     {
         $supplier = $this->supplierService->findById($id);
 
-        if (!$supplier) {
+        if (! $supplier) {
             return $this->errorResponse('Supplier not found', 404);
         }
 
@@ -48,11 +49,12 @@ class SupplierController extends BaseController
     {
         $supplier = $this->supplierService->findById($id);
 
-        if (!$supplier) {
+        if (! $supplier) {
             return $this->errorResponse('Supplier not found', 404);
         }
 
         $updatedSupplier = $this->supplierService->update($id, $request->validated());
+
         return $this->successResponse(new SupplierResource($updatedSupplier), 'Supplier updated successfully');
     }
 
@@ -61,11 +63,12 @@ class SupplierController extends BaseController
     {
         $supplier = $this->supplierService->findById($id);
 
-        if (!$supplier) {
+        if (! $supplier) {
             return $this->errorResponse('Supplier not found', 404);
         }
 
         $this->supplierService->delete($id);
+
         return $this->successResponse(null, 'Supplier deleted successfully');
     }
 
@@ -73,6 +76,7 @@ class SupplierController extends BaseController
     public function getWithItems(): JsonResponse
     {
         $suppliers = $this->supplierService->getWithItems();
+
         return $this->successResponse(SupplierResource::collection($suppliers));
     }
 
@@ -80,6 +84,7 @@ class SupplierController extends BaseController
     public function getByName(string $name): JsonResponse
     {
         $suppliers = $this->supplierService->getByName($name);
+
         return $this->successResponse(SupplierResource::collection($suppliers));
     }
 
@@ -87,6 +92,7 @@ class SupplierController extends BaseController
     public function getActive(): JsonResponse
     {
         $suppliers = $this->supplierService->getActive();
+
         return $this->successResponse(SupplierResource::collection($suppliers));
     }
 }

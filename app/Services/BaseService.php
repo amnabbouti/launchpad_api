@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class BaseService
@@ -32,7 +32,7 @@ class BaseService
     {
         $query = $this->model->with($relations);
 
-        if (!empty($appends)) {
+        if (! empty($appends)) {
             $query = $query->append($appends);
         }
 
@@ -50,6 +50,7 @@ class BaseService
     {
         $record = $this->findById($id);
         $record->update($data);
+
         return $record;
     }
 

@@ -11,11 +11,11 @@ abstract class BaseResource extends JsonResource
     {
         // common data or metadata
         // For example timestamps to all resources
-        if (property_exists($this->resource, 'created_at') && !in_array('created_at', $this->resource->getHidden())) {
+        if (property_exists($this->resource, 'created_at') && ! in_array('created_at', $this->resource->getHidden())) {
             $data['created_at'] = $this->created_at;
         }
 
-        if (property_exists($this->resource, 'updated_at') && !in_array('updated_at', $this->resource->getHidden())) {
+        if (property_exists($this->resource, 'updated_at') && ! in_array('updated_at', $this->resource->getHidden())) {
             $data['updated_at'] = $this->updated_at;
         }
 

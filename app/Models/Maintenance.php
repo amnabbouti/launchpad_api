@@ -4,9 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Maintenance extends Model
 {
@@ -28,7 +28,7 @@ class Maintenance extends Model
         'supplier_id',
         'stock_id',
         'status_out_id',
-        'status_in_id'
+        'status_in_id',
     ];
 
     protected $casts = [
@@ -37,7 +37,7 @@ class Maintenance extends Model
         'date_expected_back_from_maintenance' => 'datetime',
         'date_back_from_maintenance' => 'datetime',
         'date_in_maintenance' => 'datetime',
-        'is_repair' => 'boolean'
+        'is_repair' => 'boolean',
     ];
 
     // Employee relationship

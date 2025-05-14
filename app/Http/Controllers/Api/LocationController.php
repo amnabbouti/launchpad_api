@@ -6,7 +6,6 @@ use App\Http\Requests\LocationRequest;
 use App\Http\Resources\LocationResource;
 use App\Services\LocationService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class LocationController extends BaseController
 {
@@ -21,6 +20,7 @@ class LocationController extends BaseController
     public function index(): JsonResponse
     {
         $locations = $this->locationService->all();
+
         return $this->successResponse(LocationResource::collection($locations));
     }
 
@@ -28,6 +28,7 @@ class LocationController extends BaseController
     public function store(LocationRequest $request): JsonResponse
     {
         $location = $this->locationService->create($request->validated());
+
         return $this->successResponse(new LocationResource($location), 'Location created successfully', 201);
     }
 
@@ -36,7 +37,7 @@ class LocationController extends BaseController
     {
         $location = $this->locationService->findById($id);
 
-        if (!$location) {
+        if (! $location) {
             return $this->errorResponse('Location not found', 404);
         }
 
@@ -48,11 +49,12 @@ class LocationController extends BaseController
     {
         $location = $this->locationService->findById($id);
 
-        if (!$location) {
+        if (! $location) {
             return $this->errorResponse('Location not found', 404);
         }
 
         $updatedLocation = $this->locationService->update($id, $request->validated());
+
         return $this->successResponse(new LocationResource($updatedLocation), 'Location updated successfully');
     }
 
@@ -61,11 +63,12 @@ class LocationController extends BaseController
     {
         $location = $this->locationService->findById($id);
 
-        if (!$location) {
+        if (! $location) {
             return $this->errorResponse('Location not found', 404);
         }
 
         $this->locationService->delete($id);
+
         return $this->successResponse(null, 'Location deleted successfully');
     }
 
@@ -73,6 +76,7 @@ class LocationController extends BaseController
     public function getWithItems(): JsonResponse
     {
         $locations = $this->locationService->getWithItems();
+
         return $this->successResponse(LocationResource::collection($locations));
     }
 
@@ -80,6 +84,7 @@ class LocationController extends BaseController
     public function getActive(): JsonResponse
     {
         $locations = $this->locationService->getActive();
+
         return $this->successResponse(LocationResource::collection($locations));
     }
 }

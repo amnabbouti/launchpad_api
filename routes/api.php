@@ -1,15 +1,14 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ItemController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\StockController;
-use App\Http\Controllers\Api\UnitOfMeasureController;
-use App\Http\Controllers\Api\CategoryController;
-use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\SupplierController;
-use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\UnitOfMeasureController;
+use App\Http\Controllers\Api\UserController;
+use Illuminate\Support\Facades\Route;
 
 // Auth routes
 Route::post('/login', [AuthController::class, 'login']);

@@ -4,10 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Item extends Model
 {
@@ -26,7 +25,7 @@ class Item extends Model
         'user_id',
         'stock_id',
         'is_active',
-        'specifications'
+        'specifications',
     ];
 
     // Type casting for attributes
@@ -51,7 +50,7 @@ class Item extends Model
     // simpler 'active' attribute from is_active
     public function getActiveAttribute(): bool
     {
-        return (bool)$this->is_active;
+        return (bool) $this->is_active;
     }
 
     // Item belongs to a category

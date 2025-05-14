@@ -6,7 +6,6 @@ use App\Http\Requests\StockRequest;
 use App\Http\Resources\StockResource;
 use App\Services\StockService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class StockController extends BaseController
 {
@@ -21,6 +20,7 @@ class StockController extends BaseController
     public function index(): JsonResponse
     {
         $stocks = $this->stockService->all();
+
         return $this->successResponse(StockResource::collection($stocks));
     }
 
@@ -28,6 +28,7 @@ class StockController extends BaseController
     public function store(StockRequest $request): JsonResponse
     {
         $stock = $this->stockService->create($request->validated());
+
         return $this->successResponse(new StockResource($stock), 'Stock created successfully', 201);
     }
 
@@ -36,7 +37,7 @@ class StockController extends BaseController
     {
         $stock = $this->stockService->findById($id);
 
-        if (!$stock) {
+        if (! $stock) {
             return $this->errorResponse('Stock not found', 404);
         }
 
@@ -48,11 +49,12 @@ class StockController extends BaseController
     {
         $stock = $this->stockService->findById($id);
 
-        if (!$stock) {
+        if (! $stock) {
             return $this->errorResponse('Stock not found', 404);
         }
 
         $updatedStock = $this->stockService->update($id, $request->validated());
+
         return $this->successResponse(new StockResource($updatedStock), 'Stock updated successfully');
     }
 
@@ -61,11 +63,12 @@ class StockController extends BaseController
     {
         $stock = $this->stockService->findById($id);
 
-        if (!$stock) {
+        if (! $stock) {
             return $this->errorResponse('Stock not found', 404);
         }
 
         $this->stockService->delete($id);
+
         return $this->successResponse(null, 'Stock deleted successfully');
     }
 
@@ -73,6 +76,7 @@ class StockController extends BaseController
     public function getWithItems(): JsonResponse
     {
         $stocks = $this->stockService->getWithItems();
+
         return $this->successResponse(StockResource::collection($stocks));
     }
 
@@ -80,6 +84,7 @@ class StockController extends BaseController
     public function getActive(): JsonResponse
     {
         $stocks = $this->stockService->getActive();
+
         return $this->successResponse(StockResource::collection($stocks));
     }
 }

@@ -6,7 +6,6 @@ use App\Http\Requests\UserRequest;
 use App\Http\Resources\UserResource;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class UserController extends BaseController
 {
@@ -21,6 +20,7 @@ class UserController extends BaseController
     public function index(): JsonResponse
     {
         $users = $this->userService->all();
+
         return $this->successResponse(UserResource::collection($users));
     }
 
@@ -28,6 +28,7 @@ class UserController extends BaseController
     public function store(UserRequest $request): JsonResponse
     {
         $user = $this->userService->create($request->validated());
+
         return $this->successResponse(new UserResource($user), 'User created successfully', 201);
     }
 
@@ -36,7 +37,7 @@ class UserController extends BaseController
     {
         $user = $this->userService->findById($id);
 
-        if (!$user) {
+        if (! $user) {
             return $this->errorResponse('User not found', 404);
         }
 
@@ -48,11 +49,12 @@ class UserController extends BaseController
     {
         $user = $this->userService->findById($id);
 
-        if (!$user) {
+        if (! $user) {
             return $this->errorResponse('User not found', 404);
         }
 
         $updatedUser = $this->userService->update($id, $request->validated());
+
         return $this->successResponse(new UserResource($updatedUser), 'User updated successfully');
     }
 
@@ -61,11 +63,12 @@ class UserController extends BaseController
     {
         $user = $this->userService->findById($id);
 
-        if (!$user) {
+        if (! $user) {
             return $this->errorResponse('User not found', 404);
         }
 
         $this->userService->delete($id);
+
         return $this->successResponse(null, 'User deleted successfully');
     }
 
@@ -73,6 +76,7 @@ class UserController extends BaseController
     public function getByRole(string $role): JsonResponse
     {
         $users = $this->userService->getByRole($role);
+
         return $this->successResponse(UserResource::collection($users));
     }
 
@@ -80,6 +84,7 @@ class UserController extends BaseController
     public function getActive(): JsonResponse
     {
         $users = $this->userService->getActive();
+
         return $this->successResponse(UserResource::collection($users));
     }
 
@@ -87,6 +92,7 @@ class UserController extends BaseController
     public function getWithItems(): JsonResponse
     {
         $users = $this->userService->getWithItems();
+
         return $this->successResponse(UserResource::collection($users));
     }
 }
