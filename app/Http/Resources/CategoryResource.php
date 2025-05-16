@@ -13,7 +13,7 @@ class CategoryResource extends JsonResource
             'name' => $this->name,
             'parent_id' => $this->parent_id,
 
-            // relationships when they are loaded
+            // Relationships
             'parent' => $this->when($this->relationLoaded('parent'), function () {
                 return new CategoryResource($this->parent);
             }),

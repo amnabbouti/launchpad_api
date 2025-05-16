@@ -10,10 +10,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Item extends Model
 {
+    public function maintenances(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Maintenance::class);
+    }
+
     use HasFactory;
     use SoftDeletes;
 
-    // Fields that can be mass assigned
     protected $fillable = [
         'name',
         'code',
@@ -28,49 +32,59 @@ class Item extends Model
         'specifications',
     ];
 
-    // Type casting for attributes
     protected $casts = [
         'price' => 'decimal:2',
         'is_active' => 'boolean',
         'specifications' => 'json',
     ];
 
-    // Virtual attributes to add to the model
     protected $appends = [
         'active',
     ];
 
-    // to hide from API responses
     protected $hidden = [
         'created_at',
         'updated_at',
         'deleted_at',
     ];
 
-    // simpler 'active' attribute from is_active
     public function getActiveAttribute(): bool
     {
         return (bool) $this->is_active;
     }
 
-    // Item belongs to a category
+    // Category
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
     }
 
-    // Item belongs to a user
+    // User
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    // Item belongs to a stock
+    // Stock
     public function stock(): BelongsTo
     {
         return $this->belongsTo(Stock::class);
     }
 
+    // Check-ins/outs via stock
+    public function checkInOuts()
+    {
+        return $this->hasManyThrough(
+            \App\Models\CheckInOut::class,
+            \App\Models\Stock::class,
+            'item_id',
+            'stock_id',
+            'id',
+            'id'
+        );
+    }
+
+    // Locations
     public function locations(): BelongsToMany
     {
         return $this->belongsToMany(Location::class)
@@ -79,6 +93,7 @@ class Item extends Model
             ->withTrashed();
     }
 
+    // Suppliers
     public function suppliers(): BelongsToMany
     {
         return $this->belongsToMany(Supplier::class, 'item_supplier')
@@ -98,7 +113,6 @@ class Item extends Model
     // Boot method to register model events
     protected static function booted(): void
     {
-        // Validate before saving
         static::saving(function ($item) {
             if ($item->quantity < 0) {
                 throw new \InvalidArgumentException('Item quantity cannot be negative.');

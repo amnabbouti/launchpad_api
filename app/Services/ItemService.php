@@ -3,38 +3,56 @@
 namespace App\Services;
 
 use App\Models\Item;
+use Illuminate\Database\Eloquent\Collection;
+use InvalidArgumentException;
 
 class ItemService extends BaseService
 {
-    // create a new service instance
+    // Constructor
     public function __construct(Item $item)
     {
         parent::__construct($item);
     }
 
-    // get item by category
-    public function getByCategory(int $categoryId)
+    // By category
+    public function getByCategory(int $categoryId): Collection
     {
-        return $this->model->where('category_id', $categoryId)->get();
+        if ($categoryId <= 0) {
+            throw new InvalidArgumentException('Category ID must be a positive integer');
+        }
+        
+        return $this->model->where('category_id', $categoryId)
+            ->get();
     }
 
-    // get item by stock
-    public function getByStock(int $stockId)
+    // By stock
+    public function getByStock(int $stockId): Collection
     {
-        return $this->model->where('stock_id', $stockId)->get();
+        if ($stockId <= 0) {
+            throw new InvalidArgumentException('Stock ID must be a positive integer');
+        }
+        
+        return $this->model->where('stock_id', $stockId)
+            ->get();
     }
 
-    // get active items
-    public function getActive()
+    // Active items
+    public function getActive(): Collection
     {
-        return $this->model->where('is_active', true)->get();
+        return $this->model->where('is_active', true)
+            ->get();
     }
 
-    // get all locations of an item
-    public function getItemLocations(int $itemId)
+    // Item locations
+    public function getItemLocations(int $itemId): Collection
     {
+        if ($itemId <= 0) {
+            throw new InvalidArgumentException('Item ID must be a positive integer');
+        }
+        
         $item = $this->model->findOrFail($itemId);
 
-        return $item->locations()->get();
+        return $item->locations()
+            ->get();
     }
 }

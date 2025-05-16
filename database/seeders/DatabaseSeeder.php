@@ -5,6 +5,10 @@ namespace Database\Seeders;
 use App\Models\Category;
 use App\Models\Item;
 use App\Models\Location;
+use App\Models\Maintenance;
+use App\Models\MaintenanceCategory;
+use App\Models\MaintenanceCondition;
+use App\Models\MaintenanceDetail;
 use App\Models\Stock;
 use App\Models\Supplier;
 use App\Models\UnitOfMeasure;
@@ -19,84 +23,86 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Check if admin user exists, create if not
-        $admin = User::where('email', 'admin@example.com')->first();
-        if (! $admin) {
-            $admin = User::factory()->create([
-                'first_name' => 'Admin',
-                'last_name' => 'User',
-                'email' => 'admin@example.com',
-                'password' => Hash::make('password'),
-            ]);
-        }
+        $org = \App\Models\Organization::first() ?? \App\Models\Organization::factory()->create();
 
-        // Check if test user exists, create if not
-        $testUser = User::where('email', 'test@example.com')->first();
-        if (! $testUser) {
-            $testUser = User::factory()->create([
-                'first_name' => 'Test',
-                'last_name' => 'User',
-                'email' => 'test@example.com',
-                'password' => Hash::make('password'),
-            ]);
-        }
+        $admin = User::factory()->create([
+            'first_name' => 'Admin',
+            'last_name' => 'User',
+            'email' => 'admin@example.com',
+            'password' => Hash::make('password'),
+            'organization_id' => $org->id,
+        ]);
 
-        // Create regular users
-        $users = User::factory(8)->create();
+        $testUser = User::factory()->create([
+            'first_name' => 'Test',
+            'last_name' => 'User',
+            'email' => 'test@example.com',
+            'password' => Hash::make('password'),
+            'organization_id' => $org->id,
+        ]);
+
+        $users = User::factory(8)->create([
+            'organization_id' => $org->id,
+        ]);
         $allUsers = collect([$admin, $testUser])->merge($users);
 
-        // Create categories if they don't exist
-        $categoryData = [
-            ['name' => 'Electronics', 'parent_id' => null],
-            ['name' => 'Computers', 'parent_id' => 1],
-            ['name' => 'Smartphones', 'parent_id' => 1],
-            ['name' => 'Accessories', 'parent_id' => 1],
-            ['name' => 'Office Supplies', 'parent_id' => null],
-            ['name' => 'Furniture', 'parent_id' => null],
-            ['name' => 'Chairs', 'parent_id' => 6],
-            ['name' => 'Desks', 'parent_id' => 6],
-            ['name' => 'Kitchen', 'parent_id' => null],
-            ['name' => 'Appliances', 'parent_id' => 9],
-        ];
+        // Seed nested categories
+        $root = Category::firstOrCreate(['name' => 'Root', 'parent_id' => null]);
+        $electronics = Category::firstOrCreate(['name' => 'Electronics', 'parent_id' => $root->id]);
+        $computers = Category::firstOrCreate(['name' => 'Computers', 'parent_id' => $electronics->id]);
+        $laptops = Category::firstOrCreate(['name' => 'Laptops', 'parent_id' => $computers->id]);
+        $desktops = Category::firstOrCreate(['name' => 'Desktops', 'parent_id' => $computers->id]);
+        $phones = Category::firstOrCreate(['name' => 'Phones', 'parent_id' => $electronics->id]);
+        $office = Category::firstOrCreate(['name' => 'Office Supplies', 'parent_id' => $root->id]);
+        $furniture = Category::firstOrCreate(['name' => 'Furniture', 'parent_id' => $office->id]);
+        $chairs = Category::firstOrCreate(['name' => 'Chairs', 'parent_id' => $furniture->id]);
+        $desks = Category::firstOrCreate(['name' => 'Desks', 'parent_id' => $furniture->id]);
+        $kitchen = Category::firstOrCreate(['name' => 'Kitchen', 'parent_id' => $root->id]);
+        $appliances = Category::firstOrCreate(['name' => 'Appliances', 'parent_id' => $kitchen->id]);
 
-        // First create parent categories (null parent_id)
-        foreach ($categoryData as $data) {
-            if ($data['parent_id'] === null) {
-                Category::firstOrCreate(
-                    ['name' => $data['name'], 'parent_id' => null],
-                    $data
-                );
-            }
-        }
-
-        // Then create child categories
-        foreach ($categoryData as $data) {
-            if ($data['parent_id'] !== null) {
-                Category::firstOrCreate(
-                    ['name' => $data['name'], 'parent_id' => $data['parent_id']],
-                    $data
-                );
-            }
-        }
-
-        // Create locations if they don't exist
-        $locationData = [
-            ['name' => 'Main Warehouse', 'code' => 'MAIN-WH', 'is_active' => true],
-            ['name' => 'Secondary Warehouse', 'code' => 'SEC-WH', 'is_active' => true],
-            ['name' => 'Office Building', 'code' => 'OFFICE', 'is_active' => true],
-            ['name' => 'Retail Store', 'code' => 'RETAIL', 'is_active' => true],
-            ['name' => 'Old Warehouse', 'code' => 'OLD-WH', 'is_active' => false],
-        ];
-
+        // Seed deeply nested locations and collect them for later use
         $locationModels = [];
-        foreach ($locationData as $data) {
-            $locationModels[] = Location::firstOrCreate(
-                ['name' => $data['name']],
-                $data
-            );
-        }
+        $hq = Location::firstOrCreate(['name' => 'HQ', 'code' => 'HQ', 'is_active' => true, 'parent_id' => null]);
+        $locationModels[] = $hq;
+        $floor1 = Location::firstOrCreate(['name' => 'Floor 1', 'code' => 'F1', 'is_active' => true, 'parent_id' => $hq->id]);
+        $locationModels[] = $floor1;
+        $floor2 = Location::firstOrCreate(['name' => 'Floor 2', 'code' => 'F2', 'is_active' => true, 'parent_id' => $hq->id]);
+        $locationModels[] = $floor2;
+        $room101 = Location::firstOrCreate(['name' => 'Room 101', 'code' => 'R101', 'is_active' => true, 'parent_id' => $floor1->id]);
+        $locationModels[] = $room101;
+        $shelfA = Location::firstOrCreate(['name' => 'Shelf A', 'code' => 'S-A', 'is_active' => true, 'parent_id' => $room101->id]);
+        $locationModels[] = $shelfA;
+        $box1 = Location::firstOrCreate(['name' => 'Box 1', 'code' => 'B1', 'is_active' => true, 'parent_id' => $shelfA->id]);
+        $locationModels[] = $box1;
+        $compartmentA = Location::firstOrCreate(['name' => 'Compartment A', 'code' => 'C-A', 'is_active' => true, 'parent_id' => $box1->id]);
+        $locationModels[] = $compartmentA;
+        $compartmentB = Location::firstOrCreate(['name' => 'Compartment B', 'code' => 'C-B', 'is_active' => true, 'parent_id' => $box1->id]);
+        $locationModels[] = $compartmentB;
+        $shelfB = Location::firstOrCreate(['name' => 'Shelf B', 'code' => 'S-B', 'is_active' => true, 'parent_id' => $room101->id]);
+        $locationModels[] = $shelfB;
+        $room102 = Location::firstOrCreate(['name' => 'Room 102', 'code' => 'R102', 'is_active' => true, 'parent_id' => $floor1->id]);
+        $locationModels[] = $room102;
+        $lockerA = Location::firstOrCreate(['name' => 'Locker A', 'code' => 'L-A', 'is_active' => true, 'parent_id' => $room102->id]);
+        $locationModels[] = $lockerA;
+        $lockerB = Location::firstOrCreate(['name' => 'Locker B', 'code' => 'L-B', 'is_active' => true, 'parent_id' => $room102->id]);
+        $locationModels[] = $lockerB;
+        $room201 = Location::firstOrCreate(['name' => 'Room 201', 'code' => 'R201', 'is_active' => true, 'parent_id' => $floor2->id]);
+        $locationModels[] = $room201;
+        $cabinet1 = Location::firstOrCreate(['name' => 'Cabinet 1', 'code' => 'CAB1', 'is_active' => true, 'parent_id' => $room201->id]);
+        $locationModels[] = $cabinet1;
+        $drawerA = Location::firstOrCreate(['name' => 'Drawer A', 'code' => 'DRA', 'is_active' => true, 'parent_id' => $cabinet1->id]);
+        $locationModels[] = $drawerA;
+        $drawerB = Location::firstOrCreate(['name' => 'Drawer B', 'code' => 'DRB', 'is_active' => true, 'parent_id' => $cabinet1->id]);
+        $locationModels[] = $drawerB;
+        $retail = Location::firstOrCreate(['name' => 'Retail Store', 'code' => 'RETAIL', 'is_active' => true, 'parent_id' => null]);
+        $locationModels[] = $retail;
+        $retailBack = Location::firstOrCreate(['name' => 'Back Room', 'code' => 'RETAIL-BACK', 'is_active' => true, 'parent_id' => $retail->id]);
+        $locationModels[] = $retailBack;
+        $retailSafe = Location::firstOrCreate(['name' => 'Safe', 'code' => 'SAFE', 'is_active' => true, 'parent_id' => $retailBack->id]);
+        $locationModels[] = $retailSafe;
+        $retailSafeDrawer = Location::firstOrCreate(['name' => 'Safe Drawer', 'code' => 'SAFE-DR', 'is_active' => true, 'parent_id' => $retailSafe->id]);
+        $locationModels[] = $retailSafeDrawer;
 
-        // Create stocks if they don't exist
         $stockData = [
             ['serial_number' => 'REG-001', 'barcode' => 'STOCK-REG-001', 'notes' => 'Items in regular inventory', 'is_active' => true],
             ['serial_number' => 'RES-001', 'barcode' => 'STOCK-RES-001', 'notes' => 'Items held in reserve', 'is_active' => true],
@@ -113,7 +119,6 @@ class DatabaseSeeder extends Seeder
             );
         }
 
-        // Create units of measure if they don't exist
         $unitOfMeasureData = [
             ['name' => 'Each', 'code' => 'ea', 'symbol' => 'ea', 'type' => UnitOfMeasure::TYPE_QUANTITY, 'is_active' => true],
             ['name' => 'Kilogram', 'code' => 'kg', 'symbol' => 'kg', 'type' => UnitOfMeasure::TYPE_WEIGHT, 'is_active' => true],
@@ -304,17 +309,13 @@ class DatabaseSeeder extends Seeder
             );
         }
 
-        // Assign items to locations
         foreach ($itemModels as $index => $item) {
-            // Skip the last item (discontinued)
             if ($index < count($itemModels) - 1) {
-                // Assign to 1-3 random locations
                 $randomLocations = collect($locationModels)
                     ->where('is_active', true)
                     ->random(rand(1, 3));
 
                 foreach ($randomLocations as $location) {
-                    // Check if the relationship already exists
                     if (! $item->locations()->where('location_id', $location->id)->exists()) {
                         $item->locations()->attach($location->id, [
                             'quantity' => rand(1, 10),
@@ -324,25 +325,130 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        // Assign items to suppliers
         foreach ($itemModels as $index => $item) {
-            // Skip the last item (discontinued)
             if ($index < count($itemModels) - 1) {
-                // Assign to 1-2 random suppliers
                 $randomSuppliers = collect($supplierModels)
                     ->where('is_active', true)
                     ->random(rand(1, 2));
 
                 foreach ($randomSuppliers as $supplier) {
-                    // Check if the relationship already exists
                     if (! $item->suppliers()->where('supplier_id', $supplier->id)->exists()) {
                         $item->suppliers()->attach($supplier->id, [
                             'supplier_part_number' => 'SP'.rand(1000, 9999),
-                            'price' => $item->price * (rand(80, 95) / 100), // 80-95% of retail price
-                            'lead_time' => rand(1, 30), // Lead time in days
+                            'price' => $item->price * (rand(80, 95) / 100),
+                            'lead_time' => rand(1, 30),
                             'is_preferred' => rand(0, 1),
                         ]);
                     }
+                }
+            }
+        }
+
+        // Seed check-in/out records
+        $this->call(CheckInOutSeeder::class);
+
+        $maintenanceCategoryData = [
+            ['remarks' => 'Routine Maintenance - Regular scheduled maintenance'],
+            ['remarks' => 'Repair - Fixing broken or damaged items'],
+            ['remarks' => 'Inspection - Regular safety and operational inspections'],
+            ['remarks' => 'Calibration - Calibration of sensitive equipment'],
+            ['remarks' => 'Software Update - Updates to software or firmware'],
+        ];
+
+        $maintenanceCategoryModels = [];
+        foreach ($maintenanceCategoryData as $data) {
+            $maintenanceCategoryModels[] = MaintenanceCategory::create($data);
+        }
+
+        $maintenanceConditionData = [
+            [
+                'mail_on_warning' => true,
+                'mail_on_maintenance' => true,
+                'maintenance_recurrence_quantity' => 90,
+                'maintenance_warning_date' => now()->addDays(80),
+                'maintenance_date' => now()->addDays(90),
+                'quantity_for_warning' => 80.00,
+                'quantity_for_maintenance' => 90.00,
+                'recurrence_unit' => 'days',
+                'price_per_unit' => 50.00,
+                'is_active' => true,
+                'maintenance_category_id' => $maintenanceCategoryModels[0]->id,
+            ],
+            [
+                'mail_on_warning' => true,
+                'mail_on_maintenance' => true,
+                'maintenance_recurrence_quantity' => 180,
+                'maintenance_warning_date' => now()->addDays(170),
+                'maintenance_date' => now()->addDays(180),
+                'quantity_for_warning' => 170.00,
+                'quantity_for_maintenance' => 180.00,
+                'recurrence_unit' => 'days',
+                'price_per_unit' => 75.00,
+                'is_active' => true,
+                'maintenance_category_id' => $maintenanceCategoryModels[1]->id,
+            ],
+            [
+                'mail_on_warning' => true,
+                'mail_on_maintenance' => true,
+                'maintenance_recurrence_quantity' => 30,
+                'maintenance_warning_date' => now()->addDays(25),
+                'maintenance_date' => now()->addDays(30),
+                'quantity_for_warning' => 25.00,
+                'quantity_for_maintenance' => 30.00,
+                'recurrence_unit' => 'days',
+                'price_per_unit' => 30.00,
+                'is_active' => true,
+                'maintenance_category_id' => $maintenanceCategoryModels[2]->id,
+            ],
+        ];
+
+        $maintenanceConditionModels = [];
+        foreach ($maintenanceConditionData as $data) {
+            $maintenanceConditionModels[] = MaintenanceCondition::create($data);
+        }
+
+        // Create maintenance records
+        $dates = [
+            now()->subMonths(6),
+            now()->subMonths(3),
+            now()->subMonths(1),
+            now()->subDays(15),
+            now()->subDays(5),
+        ];
+
+        foreach ([0, 1, 2, 7, 8, 9] as $itemIndex) {
+            if (isset($itemModels[$itemIndex])) {
+                $item = $itemModels[$itemIndex];
+                $stock = $stockModels[array_rand($stockModels)];
+                $supplier = $supplierModels[array_rand($supplierModels)];
+                $employee = $allUsers->random();
+                // Create 1-2 maintenance records per item
+                $recordCount = rand(1, 2);
+                for ($i = 0; $i < $recordCount; $i++) {
+                    $maintenanceDate = $dates[array_rand($dates)];
+                    $expectedBackDate = $maintenanceDate->copy()->addDays(rand(3, 14));
+                    $actualBackDate = rand(0, 1) ? $expectedBackDate->copy()->addDays(rand(-2, 5)) : null;
+                    $isRepair = rand(0, 1);
+                    $maintenanceRecord = Maintenance::create([
+                        'is_repair' => $isRepair,
+                        'remarks' => $isRepair ? 'Repair needed for '.$item->name : 'Routine maintenance for '.$item->name,
+                        'invoice_nbr' => 'INV-'.rand(10000, 99999),
+                        'cost' => rand(50, 500),
+                        'date_expected_back_from_maintenance' => $expectedBackDate,
+                        'date_back_from_maintenance' => $actualBackDate,
+                        'date_in_maintenance' => $maintenanceDate,
+                        'supplier_id' => $supplier->id,
+                        'item_id' => $item->id,
+                        'employee_id' => $employee->id,
+                        'status_out_id' => null,
+                        'status_in_id' => null,
+                    ]);
+                    // Add maintenance details
+                    MaintenanceDetail::create([
+                        'value' => rand(1, 5) * 10.0,
+                        'maintenance_condition_id' => $maintenanceConditionModels[array_rand($maintenanceConditionModels)]->id,
+                        'maintenance_id' => $maintenanceRecord->id,
+                    ]);
                 }
             }
         }

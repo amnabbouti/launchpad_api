@@ -4,18 +4,17 @@ namespace App\Http\Requests;
 
 class LocationRequest extends BaseRequest
 {
-    // validation rules
+    // Rules
     public function rules(): array
     {
         return [
             'name' => 'required|string|max:255',
             'code' => 'nullable|string|max:50',
             'parent_id' => 'nullable|exists:locations,id',
-            // path is auto-generated
         ];
     }
 
-    // Custom messages for validation errors
+    // Messages
     public function messages(): array
     {
         return [

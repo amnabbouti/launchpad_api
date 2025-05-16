@@ -8,12 +8,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-/**
- * Stock represents a type or category of product.
- * While Item represents a specific physical instance of a Stock,
- * Stock represents the general product type (e.g., "Dell XPS 15 Laptop").
- * Multiple Item records can belong to a single Stock.
- */
 class Stock extends Model
 {
     use HasFactory;
@@ -30,6 +24,7 @@ class Stock extends Model
         'location_id',
         'status_id',
     ];
+
 
     protected $casts = [
         'purchase_price' => 'decimal:2',

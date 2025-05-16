@@ -64,8 +64,14 @@ class Supplier extends Model
         ];
     }
 
+    public function getContent($field)
+    {
+        return $this->$field;
+    }
+
+    // Boot
     protected static function booted(): void
     {
-        // For future model events
+        // Future events
     }
 }

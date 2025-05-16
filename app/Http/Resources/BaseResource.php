@@ -9,8 +9,7 @@ abstract class BaseResource extends JsonResource
 {
     protected function addCommonData(array $data, Request $request): array
     {
-        // common data or metadata
-        // For example timestamps to all resources
+        // Add common metadata
         if (property_exists($this->resource, 'created_at') && ! in_array('created_at', $this->resource->getHidden())) {
             $data['created_at'] = $this->created_at;
         }
@@ -24,8 +23,7 @@ abstract class BaseResource extends JsonResource
 
     public function toArray($request): array
     {
-        // should be implemented by child classes
-        // default implementation that returns all attributes
+        // Child class implementation
         $data = parent::toArray($request);
 
         return $this->addCommonData($data, $request);

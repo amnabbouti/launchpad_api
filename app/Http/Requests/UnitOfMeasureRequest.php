@@ -6,7 +6,7 @@ use App\Models\UnitOfMeasure;
 
 class UnitOfMeasureRequest extends BaseRequest
 {
-    // validation rules
+    // Rules
     public function rules(): array
     {
         return [
@@ -27,7 +27,7 @@ class UnitOfMeasureRequest extends BaseRequest
         ];
     }
 
-    // Custom messages for validation errors
+    // Messages
     public function messages(): array
     {
         return [

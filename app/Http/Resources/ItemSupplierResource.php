@@ -17,7 +17,7 @@ class ItemSupplierResource extends JsonResource
             'lead_time' => $this->lead_time,
             'is_preferred' => $this->is_preferred,
 
-            // relationships when they are loaded
+            // Relationships
             'item' => $this->when($this->relationLoaded('item'), function () {
                 return new ItemResource($this->item);
             }),

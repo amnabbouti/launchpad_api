@@ -17,9 +17,8 @@ class UnitOfMeasureResource extends JsonResource
             'type' => $this->type,
             'is_active' => $this->is_active,
 
-            // relationships when they are loaded
+            // Relationships
             'maintenance_conditions' => $this->when($this->relationLoaded('maintenanceConditions'), function () {
-                // there's a MaintenanceConditionResource
                 return $this->maintenanceConditions;
             }),
         ];

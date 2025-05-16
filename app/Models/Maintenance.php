@@ -14,7 +14,6 @@ class Maintenance extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'is_first_offset_value',
         'remarks',
         'invoice_nbr',
         'cost',
@@ -26,13 +25,10 @@ class Maintenance extends Model
         'import_source',
         'employee_id',
         'supplier_id',
-        'stock_id',
-        'status_out_id',
-        'status_in_id',
+        'item_id',
     ];
 
     protected $casts = [
-        'is_first_offset_value' => 'boolean',
         'cost' => 'decimal:2',
         'date_expected_back_from_maintenance' => 'datetime',
         'date_back_from_maintenance' => 'datetime',
@@ -46,16 +42,16 @@ class Maintenance extends Model
         return $this->belongsTo(User::class, 'employee_id');
     }
 
+    // Item relationship
+    public function item(): BelongsTo
+    {
+        return $this->belongsTo(Item::class);
+    }
+
     // Supplier relationship
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class);
-    }
-
-    // Stock relationship
-    public function stock(): BelongsTo
-    {
-        return $this->belongsTo(Stock::class);
     }
 
     // Status out relationship
@@ -75,4 +71,5 @@ class Maintenance extends Model
     {
         return $this->hasMany(MaintenanceDetail::class);
     }
+
 }

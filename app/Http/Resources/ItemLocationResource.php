@@ -14,7 +14,7 @@ class ItemLocationResource extends JsonResource
             'location_id' => $this->location_id,
             'quantity' => $this->quantity,
 
-            // relationships when they are loaded
+            // Relationships
             'item' => $this->when($this->relationLoaded('item'), function () {
                 return new ItemResource($this->item);
             }),

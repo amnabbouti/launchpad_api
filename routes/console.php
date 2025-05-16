@@ -10,7 +10,6 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Artisan::command('generate:token', function () {
-    // Check if test user exists
     $user = User::where('email', 'test@example.com')->first();
 
     // Create user if it doesn't exist

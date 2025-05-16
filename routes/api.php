@@ -3,27 +3,32 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ItemController;
+use App\Http\Controllers\Api\ItemLocationController;
 use App\Http\Controllers\Api\LocationController;
+use App\Http\Controllers\Api\MaintenanceController;
 use App\Http\Controllers\Api\StockController;
 use App\Http\Controllers\Api\SupplierController;
 use App\Http\Controllers\Api\UnitOfMeasureController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
-// Auth routes
-Route::post('/login', [AuthController::class, 'login']);
+// API key route
+Route::get('/get-env-key', function () {
+    return response()->json([
+        'apiKey' => env('OPENROUTER_API_KEY', '')
+    ]);
+});
 
-// Items routes
-Route::prefix('items')->group(function () {
-    Route::get('/', [ItemController::class, 'index']);
-    Route::post('/', [ItemController::class, 'store']);
-    Route::get('/category/{categoryId}', [ItemController::class, 'getByCategory']);
-    Route::get('/stock/{stockId}', [ItemController::class, 'getByStock']);
-    Route::get('/active', [ItemController::class, 'getActive']);
-    Route::get('/{id}/locations', [ItemController::class, 'itemLocations']);
-    Route::get('/{id}', [ItemController::class, 'show']);
-    Route::put('/{id}', [ItemController::class, 'update']);
-    Route::delete('/{id}', [ItemController::class, 'destroy']);
+// Users routes
+Route::prefix('users')->group(function () {
+    Route::get('/', [UserController::class, 'index']);
+    Route::post('/', [UserController::class, 'store']);
+    Route::get('/role/{role}', [UserController::class, 'getByRole']);
+    Route::get('/with-items', [UserController::class, 'getWithItems']);
+    Route::get('/active', [UserController::class, 'getActive']);
+    Route::get('/{id}', [UserController::class, 'show']);
+    Route::put('/{id}', [UserController::class, 'update']);
+    Route::delete('/{id}', [UserController::class, 'destroy']);
 });
 
 // Locations routes
@@ -35,6 +40,48 @@ Route::prefix('locations')->group(function () {
     Route::get('/{id}', [LocationController::class, 'show']);
     Route::put('/{id}', [LocationController::class, 'update']);
     Route::delete('/{id}', [LocationController::class, 'destroy']);
+});
+
+// ItemLocation routes
+// Maintenances routes
+Route::prefix('maintenances')->group(function () {
+    Route::get('/', [MaintenanceController::class, 'index']);
+    Route::post('/', [MaintenanceController::class, 'store']);
+    Route::get('/{id}', [MaintenanceController::class, 'show']);
+    Route::put('/{id}', [MaintenanceController::class, 'update']);
+    Route::delete('/{id}', [MaintenanceController::class, 'destroy']);
+});
+Route::prefix('item-locations')->group(function () {
+    Route::get('/', [ItemLocationController::class, 'index']);
+    Route::post('/', [ItemLocationController::class, 'store']);
+    Route::get('/{id}', [ItemLocationController::class, 'show']);
+    Route::put('/{id}', [ItemLocationController::class, 'update']);
+    Route::delete('/{id}', [ItemLocationController::class, 'destroy']);
+});
+
+// Auth routes
+Route::post('/login', [AuthController::class, 'login']);
+Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
+
+// Items routes
+Route::prefix('items')->group(function () {
+    Route::get('/', [ItemController::class, 'index']);
+    Route::post('/', [ItemController::class, 'store']);
+    Route::get('/category/{categoryId}', [ItemController::class, 'getByCategory']);
+    Route::get('/items/code/{code}', [ItemController::class, 'getByCode']);
+    Route::get('/stock/{stockId}', [ItemController::class, 'getByStock']);
+    Route::get('/active', [ItemController::class, 'getActive']);
+    Route::get('/{id}/locations', [ItemController::class, 'itemLocations']);
+    Route::get('/{id}', [ItemController::class, 'show']);
+    Route::put('/{id}', [ItemController::class, 'update']);
+    Route::delete('/{id}', [ItemController::class, 'destroy']);
+
+    // All check-in/out endpoints require authentication
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/{id}/checkout', [\App\Http\Controllers\Api\CheckInOutController::class, 'checkout']);
+        Route::post('/{id}/checkin', [\App\Http\Controllers\Api\CheckInOutController::class, 'checkin']);
+        Route::get('/{id}/checkouts', [\App\Http\Controllers\Api\CheckInOutController::class, 'history']);
+    });
 });
 
 // Stocks routes
@@ -69,18 +116,6 @@ Route::prefix('categories')->group(function () {
     Route::get('/{id}', [CategoryController::class, 'show']);
     Route::put('/{id}', [CategoryController::class, 'update']);
     Route::delete('/{id}', [CategoryController::class, 'destroy']);
-});
-
-// Users routes
-Route::prefix('users')->group(function () {
-    Route::get('/', [UserController::class, 'index']);
-    Route::post('/', [UserController::class, 'store']);
-    Route::get('/role/{role}', [UserController::class, 'getByRole']);
-    Route::get('/with-items', [UserController::class, 'getWithItems']);
-    Route::get('/active', [UserController::class, 'getActive']);
-    Route::get('/{id}', [UserController::class, 'show']);
-    Route::put('/{id}', [UserController::class, 'update']);
-    Route::delete('/{id}', [UserController::class, 'destroy']);
 });
 
 // Suppliers routes

@@ -6,7 +6,7 @@ use Illuminate\Validation\Rule;
 
 class UserRequest extends BaseRequest
 {
-    // validation rules
+    // Rules
     public function rules(): array
     {
         $rules = [
@@ -23,7 +23,7 @@ class UserRequest extends BaseRequest
             'phone_number' => 'nullable|string|max:20',
         ];
 
-        // Only require password for new users
+        // Password rules
         if ($this->isMethod('post')) {
             $rules['password'] = 'required|string|min:8|confirmed';
         } elseif ($this->filled('password')) {
@@ -33,7 +33,7 @@ class UserRequest extends BaseRequest
         return $rules;
     }
 
-    // Custom messages for validation errors
+    // Messages
     public function messages(): array
     {
         return [

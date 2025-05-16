@@ -16,12 +16,12 @@ class LocationResource extends JsonResource
             'path' => $this->path,
             'is_active' => $this->is_active,
 
-            // relationships when they are loaded
+            // Relationships
             'parent' => $this->when($this->relationLoaded('parent'), function () {
                 return new LocationResource($this->parent);
             }),
-            'children' => $this->when($this->relationLoaded('children'), function () {
-                return LocationResource::collection($this->children);
+            'childrens' => $this->when($this->relationLoaded('childrens'), function () {
+                return LocationResource::collection($this->childrens);
             }),
             'items' => $this->when($this->relationLoaded('items'), function () {
                 return ItemResource::collection($this->items);

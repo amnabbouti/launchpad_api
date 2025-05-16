@@ -26,7 +26,7 @@ class SupplierResource extends JsonResource
             'is_active' => $this->is_active,
             'active' => $this->active,
 
-            // relationships when they are loaded
+            // Relationships
             'items' => $this->when($this->relationLoaded('items'), function () {
                 return ItemResource::collection($this->items);
             }),

@@ -16,75 +16,63 @@ class LocationController extends BaseController
         $this->locationService = $locationService;
     }
 
-    // display a list of locations
+    // All
     public function index(): JsonResponse
     {
-        $locations = $this->locationService->all();
-
+        $locations = \App\Models\Location::with('childrens')->whereNull('parent_id')->get();
         return $this->successResponse(LocationResource::collection($locations));
     }
 
-    // create a location
+    // Create
     public function store(LocationRequest $request): JsonResponse
     {
         $location = $this->locationService->create($request->validated());
-
         return $this->successResponse(new LocationResource($location), 'Location created successfully', 201);
     }
 
-    // display specific locations
+    // Show
     public function show(int $id): JsonResponse
     {
-        $location = $this->locationService->findById($id);
-
+        $location = $this->locationService->findById($id, ['*'], ['childrens']);
         if (! $location) {
             return $this->errorResponse('Location not found', 404);
         }
-
         return $this->successResponse(new LocationResource($location));
     }
 
-    // update a specific location
+    // Update
     public function update(LocationRequest $request, int $id): JsonResponse
     {
         $location = $this->locationService->findById($id);
-
         if (! $location) {
             return $this->errorResponse('Location not found', 404);
         }
-
         $updatedLocation = $this->locationService->update($id, $request->validated());
-
         return $this->successResponse(new LocationResource($updatedLocation), 'Location updated successfully');
     }
 
-    // remove a specific location
+    // Delete
     public function destroy(int $id): JsonResponse
     {
         $location = $this->locationService->findById($id);
-
         if (! $location) {
             return $this->errorResponse('Location not found', 404);
         }
-
         $this->locationService->delete($id);
-
         return $this->successResponse(null, 'Location deleted successfully');
     }
 
-    // get locations with items
+    // With items
     public function getWithItems(): JsonResponse
     {
         $locations = $this->locationService->getWithItems();
-
         return $this->successResponse(LocationResource::collection($locations));
     }
 
-    // get active locations
+    // Active
     public function getActive(): JsonResponse
     {
         $locations = $this->locationService->getActive();
-
         return $this->successResponse(LocationResource::collection($locations));
     }
 }

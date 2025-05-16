@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 class CategoryRequest extends BaseRequest
 {
-    // validation rules
+    // Rules
     public function rules(): array
     {
         return [
@@ -13,7 +13,7 @@ class CategoryRequest extends BaseRequest
         ];
     }
 
-    // Custom messages for validation errors
+    // Messages
     public function messages(): array
     {
         return [

@@ -11,13 +11,10 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens;
-    use HasFactory;
-    use Notifiable;
-    use SoftDeletes;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
-        'first_name', 'last_name', 'email', 'password', 'date_of_birth', 'address', 'phone_number',
+        'first_name', 'last_name', 'email', 'password', 'date_of_birth', 'address', 'phone_number', 'organization_id', 'org_role',
     ];
 
     protected $hidden = ['password'];
@@ -37,6 +34,11 @@ class User extends Authenticatable
         }
 
         return $this->email ?? 'Unknown User';
+    }
+
+    public function organization()
+    {
+        return $this->belongsTo(Organization::class);
     }
 
     public function items(): HasMany

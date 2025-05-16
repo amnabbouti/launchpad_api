@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>LaunchPad API</title>
+    <title>API Documentation</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link
@@ -11,26 +11,26 @@
     <link href="assets/swagger-style.css" rel="stylesheet" />
     <link href="assets/style.css" rel="stylesheet" />
     <link href="assets/chatbot-style.css" rel="stylesheet" />
-    <script src="assets/env.php"></script>
+    <script src="assets/env-loader.js"></script>
   </head>
   <body>
     <header class="custom-header scalar-app">
       <div class="logo">
         🚀
-        <span>LaunchPad</span>
+        <span>Inventory</span>
         API
       </div>
       <div class="api-info">
         <code>
           base_url:
-          <strong>launchpad-app/api</strong>
+          <strong>/api</strong>
         </code>
       </div>
     </header>
     <div class="test-banner">
       <div class="test-content">
         <div class="test-message" id="typing-text">
-          Welkom bij LaunchPad - Uw Inventaris Management Platform
+          Welcome to the Inventory Management API
         </div>
       </div>
     </div>
@@ -39,13 +39,13 @@
 
     <div class="custom-footer">
       <div class="copyright">
-        © 2025 LaunchPad - Enterprise Inventory Management System
+        © 2025 Inventory Management System
       </div>
       <div class="footer-links">
-        <a href="https://docs.inventory-api.com">Documentation</a>
+        <a href="/docs">Documentation</a>
         <a href="#">API Status</a>
         <a href="#">Terms of Service</a>
-        <a href="mailto:support@inventory-api.com">Support</a>
+        <a href="mailto:support@example.com">Support</a>
       </div>
     </div>
 
@@ -68,7 +68,7 @@
             onerror="this.outerHTML='[Clear]'"
           />
         </button>
-        <span class="ai-header-title">LaunchPad API Assistant</span>
+        <span class="ai-header-title">API Assistant</span>
         <button
           class="ai-close"
           onclick="toggleAssistant()"
@@ -116,13 +116,7 @@
       🚀
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
-    <!-- Load utilities first -->
-    <script src="assets/utils/formatting.js"></script>
-    <!-- Load API responses before AI service -->
-    <script src="assets/api-responses.js"></script>
-    <!-- Load AI service -->
     <script src="assets/ai-service.js"></script>
-    <!-- Load UI handling -->
     <script src="assets/main-ai.js"></script>
   </body>
 </html>

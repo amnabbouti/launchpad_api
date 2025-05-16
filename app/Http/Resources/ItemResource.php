@@ -6,7 +6,7 @@ class ItemResource extends BaseResource
 {
     public function toArray($request): array
     {
-        return [
+        $data = [
             'id' => $this->id,
             'name' => $this->name,
             'code' => $this->code,
@@ -18,10 +18,12 @@ class ItemResource extends BaseResource
             'user_id' => $this->user_id,
             'stock_id' => $this->stock_id,
             'is_active' => $this->is_active,
-            'active' => $this->active,
             'specifications' => $this->specifications,
+            'in_maintenance' => (bool) ($this->relationLoaded('maintenances')
+                ? $this->maintenances->whereNull('date_back_from_maintenance')->count() > 0
+                : ($this->maintenances()->whereNull('date_back_from_maintenance')->count() > 0)),
 
-            // relationships when they are loaded
+            // Relationships
             'category' => $this->when($this->relationLoaded('category'), function () {
                 return new CategoryResource($this->category);
             }),
@@ -38,5 +40,7 @@ class ItemResource extends BaseResource
                 return SupplierResource::collection($this->suppliers);
             }),
         ];
+
+        return $data;
     }
 }

@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 class ItemRequest extends BaseRequest
 {
-    // validation rules
+    // Rules
     public function rules(): array
     {
         return [
@@ -22,7 +22,7 @@ class ItemRequest extends BaseRequest
         ];
     }
 
-    // Custom messages for validation errors
+    // Messages
     public function messages(): array
     {
         return [

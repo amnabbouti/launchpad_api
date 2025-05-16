@@ -22,6 +22,11 @@ class Location extends Model
         'path',
     ];
 
+    public function getContent($field)
+    {
+        return $this->$field;
+    }
+
     // Event messages
     public const DELETING_WITH_CHILDREN_MESSAGE = 'Warning: Deleting a location with child locations. Child locations will become top-level locations.';
 
@@ -43,9 +48,9 @@ class Location extends Model
     }
 
     // Loads all nested children recursively for hierarchy navigation
-    public function childrenRecursive()
+    public function childrens()
     {
-        return $this->children()->with('childrenRecursive');
+        return $this->children()->with('childrens');
     }
 
     // Items stored at this location with quantities
@@ -54,24 +59,20 @@ class Location extends Model
         return $this->belongsToMany(Item::class)
             ->withPivot('quantity')
             ->withTimestamps()
-            ->withTrashed(); // Include soft deleted pivot records
+            ->withTrashed();
     }
 
-    // Automatically build hierarchical path after creation
     protected static function booted(): void
     {
         static::created(function ($location) {
-            // Format: /parent_id/current_id/
             $path = ($location->parent->path ?? '/').$location->id.'/';
             $location->path = $path;
             $location->saveQuietly();
         });
 
-        // Check for children before deleting
         static::deleting(function ($location) {
             $childrenCount = $location->children()->count();
             if ($childrenCount > 0) {
-                // Log a warning message
                 \Illuminate\Support\Facades\Log::warning(Location::DELETING_WITH_CHILDREN_MESSAGE, [
                     'location_id' => $location->id,
                     'location_name' => $location->name,
@@ -79,8 +80,6 @@ class Location extends Model
                     'children_count' => $childrenCount,
                 ]);
 
-                // dispatching an event here that controllers can listen for
-                // to show a confirmation dialog to the user
                 event('location.deleting.with.children', $location);
             }
         });

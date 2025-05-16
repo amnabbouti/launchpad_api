@@ -26,7 +26,8 @@ return new class extends Migration
         Schema::table('maintenances', function (Blueprint $table) {
             $table->foreign('employee_id')->references('id')->on('users')->onDelete('set null');
             $table->foreign('supplier_id')->references('id')->on('suppliers')->onDelete('set null');
-            $table->foreign('stock_id')->references('id')->on('stocks')->onDelete('cascade');
+            // $table->foreign('stock_id')->references('id')->on('stocks')->onDelete('cascade'); // Removed: maintenance should not be linked to stock
+            $table->foreign('item_id')->references('id')->on('items')->onDelete('set null'); // direct item relation
             $table->foreign('status_out_id')->references('id')->on('stock_statuses')->onDelete('set null');
             $table->foreign('status_in_id')->references('id')->on('stock_statuses')->onDelete('set null');
         });

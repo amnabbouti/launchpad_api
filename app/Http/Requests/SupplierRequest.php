@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 class SupplierRequest extends BaseRequest
 {
-    // validation rules
+    // Rules
     public function rules(): array
     {
         return [
@@ -25,7 +25,7 @@ class SupplierRequest extends BaseRequest
         ];
     }
 
-    // Custom messages for validation errors
+    // Messages
     public function messages(): array
     {
         return [

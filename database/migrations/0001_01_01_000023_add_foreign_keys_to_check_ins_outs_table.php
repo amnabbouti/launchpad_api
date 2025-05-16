@@ -15,9 +15,9 @@ return new class extends Migration
                 ->on('users')
                 ->onDelete('restrict');
 
-            $table->foreign('stock_id')
+            $table->foreign('item_id')
                 ->references('id')
-                ->on('stocks')
+                ->on('items')
                 ->onDelete('restrict');
 
             $table->foreign('checkout_location_id')
@@ -52,7 +52,7 @@ return new class extends Migration
         Schema::table('check_ins_outs', function (Blueprint $table) {
             // Drop foreign key constraints
             $table->dropForeign(['user_id']);
-            $table->dropForeign(['stock_id']);
+            $table->dropForeign(['item_id']);
             $table->dropForeign(['checkout_location_id']);
             $table->dropForeign(['checkin_user_id']);
             $table->dropForeign(['checkin_location_id']);

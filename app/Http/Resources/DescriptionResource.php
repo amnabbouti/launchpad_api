@@ -15,9 +15,8 @@ class DescriptionResource extends JsonResource
             'is_active' => $this->is_active,
             'maintenance_category_id' => $this->maintenance_category_id,
 
-            // relationships when they are loaded
+            // Relationships
             'maintenance_category' => $this->when($this->relationLoaded('maintenanceCategory'), function () {
-                // there's a MaintenanceCategoryResource
                 return $this->maintenanceCategory;
             }),
         ];

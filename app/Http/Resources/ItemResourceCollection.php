@@ -8,7 +8,6 @@ class ItemResourceCollection extends BaseResourceCollection
 
     public function toArray($request): array
     {
-
         return parent::toArray($request);
     }
 }

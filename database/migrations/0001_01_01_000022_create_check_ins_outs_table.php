@@ -13,7 +13,7 @@ return new class extends Migration
 
             // Checkout information
             $table->unsignedBigInteger('user_id');
-            $table->unsignedBigInteger('stock_id');
+            $table->unsignedBigInteger('item_id');
             $table->unsignedBigInteger('checkout_location_id');
             $table->timestamp('checkout_date');
             $table->decimal('quantity', 10, 2)->default(1);
@@ -34,7 +34,7 @@ return new class extends Migration
 
             // Indexes for better performance
             $table->index('user_id');
-            $table->index('stock_id');
+            $table->index('item_id');
             $table->index('checkout_location_id');
             $table->index('checkin_user_id');
             $table->index('checkin_location_id');

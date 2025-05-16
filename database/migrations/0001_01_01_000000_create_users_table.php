@@ -10,19 +10,24 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('organization_id')->constrained('organizations')->onDelete('cascade');
             $table->string('first_name', 50)->nullable();
             $table->string('last_name', 50)->nullable();
+            $table->string('org_role', 32)->nullable();
             $table->string('email')->unique()->index();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->date('date_of_birth')->nullable();
             $table->text('address')->nullable();
             $table->string('phone_number', 20)->nullable();
+            $table->string('role')->default('user');
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();
+
         });
 
+        // No changes needed for org_role in password_reset_tokens
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
             $table->string('token');

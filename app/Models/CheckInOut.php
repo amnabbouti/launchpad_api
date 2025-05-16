@@ -16,7 +16,7 @@ class CheckInOut extends Model
 
     protected $fillable = [
         'user_id',
-        'stock_id',
+        'item_id',
         'checkout_location_id',
         'checkout_date',
         'quantity',
@@ -41,22 +41,22 @@ class CheckInOut extends Model
         'is_active' => 'boolean',
     ];
 
-    // User who checked out the item
+    // Checkout user
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    // User who checked in the item
+    // Checkin user
     public function checkinUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'checkin_user_id');
     }
 
-    // Stock item
-    public function stock(): BelongsTo
+    // Item
+    public function item(): BelongsTo
     {
-        return $this->belongsTo(Stock::class);
+        return $this->belongsTo(Item::class);
     }
 
     // Checkout location
@@ -71,19 +71,19 @@ class CheckInOut extends Model
         return $this->belongsTo(Location::class, 'checkin_location_id');
     }
 
-    // Status when checked out
+    // Status out
     public function statusOut(): BelongsTo
     {
         return $this->belongsTo(Status::class, 'status_out_id');
     }
 
-    // Status when checked in
+    // Status in
     public function statusIn(): BelongsTo
     {
         return $this->belongsTo(Status::class, 'status_in_id');
     }
 
-    // Check if item is currently checked out
+    // Check out status
     public function getIsCheckedOutAttribute(): bool
     {
         return $this->checkin_date === null;

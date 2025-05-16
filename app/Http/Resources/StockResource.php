@@ -21,7 +21,7 @@ class StockResource extends JsonResource
             'status_id' => $this->status_id,
             'is_checked_out' => $this->is_checked_out,
 
-            // relationships when they are loaded
+            // Relationships
             'items' => $this->when($this->relationLoaded('items'), function () {
                 return ItemResource::collection($this->items);
             }),

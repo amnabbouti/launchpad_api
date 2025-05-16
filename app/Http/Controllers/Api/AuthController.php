@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
+    // User login
     public function login(Request $request)
     {
         // Validate credentials
@@ -26,5 +27,21 @@ class AuthController extends Controller
         }
 
         return response()->json(['error' => 'Unauthorized'], 401);
+    }
+
+    // Logout
+    public function logout(Request $request)
+    {
+        // Revoke all tokens
+        if ($request->input('all_devices', false)) {
+            $request->user()->tokens()->delete();
+
+            return response()->json(['message' => 'Logged out from all devices'], 200);
+        }
+
+        // Revoke the token that was used to authenticate the current request
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json(['message' => 'Logged out successfully'], 200);
     }
 }

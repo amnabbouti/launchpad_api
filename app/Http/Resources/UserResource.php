@@ -18,7 +18,7 @@ class UserResource extends JsonResource
             'phone_number' => $this->phone_number,
             'name' => $this->getName(),
 
-            // Include relationships when they are loaded
+            // Relationships
             'items' => $this->when($this->relationLoaded('items'), function () {
                 return ItemResource::collection($this->items);
             }),

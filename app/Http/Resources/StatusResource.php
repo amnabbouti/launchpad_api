@@ -15,7 +15,7 @@ class StatusResource extends JsonResource
             'description' => $this->description,
             'is_active' => $this->is_active,
 
-            // relationships when they are loaded
+            // Relationships
             'stocks' => $this->when($this->relationLoaded('stocks'), function () {
                 return StockResource::collection($this->stocks);
             }),

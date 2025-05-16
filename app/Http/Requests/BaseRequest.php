@@ -6,24 +6,22 @@ use Illuminate\Foundation\Http\FormRequest;
 
 abstract class BaseRequest extends FormRequest
 {
-    // if the user is authorized to make request
+    // Authorization
     public function authorize(): bool
     {
-        // By default, authorize all
-        // Override in child classes
         return true;
     }
 
-    // validation rules
+    // Rules
     abstract public function rules(): array;
 
-    // custom messages for validator errors
+    // Messages
     public function messages(): array
     {
         return [];
     }
 
-    // custom attributes for validator errors
+    // Attributes
     public function attributes(): array
     {
         return [];
