@@ -1,3 +1,129 @@
+class FormattingUtils {
+  static standardizeApiEndpoints(text) {
+    if (!text) return '';
+    
+    return text.replace(
+      /\b(GET|POST|PUT|DELETE|PATCH)\s+\/(?!api)([\w\/-{}]+)/gi,
+      '$1 /api/$2'
+    ).replace(
+      /`(GET|POST|PUT|DELETE|PATCH)\s+\/(?!api)([\w\/-{}]+)`/gi,
+      '`$1 /api/$2`'
+    );
+  }
+  
+  static markdownToHtml(text) {
+    if (!text) return '';
+    
+    let formattedText = text.replace(/^\s*\d+\.\s+/gm, '- ');
+    formattedText = formattedText.replace(/(`GET|`POST|`PUT|`DELETE|`PATCH)[^`]+`\s*:/g, '$1`');
+
+    formattedText = formattedText.replace(
+      /(GET|POST|PUT|DELETE|PATCH)\s*\n(\/api\/[^\s]+)\s*\n\s*\n([^\n]+)/gi,
+      (match, verb, path, desc) => {
+        const verbLower = verb.toLowerCase();
+        return `<div class='endpoint-description'>${desc}</div><div class='swagger-ui'><div class='opblock opblock-${verbLower}'><div class='opblock-summary-method ${verbLower}'>${verb}</div><div class='opblock-summary-path'>${path}</div></div></div>`;
+      }
+    );
+
+    // Existing endpoint formatting 
+    formattedText = formattedText.replace(
+      /`(GET|POST|PUT|DELETE|PATCH)\s+([^`\n]+)`/gi,
+      (match, verb, path) => {
+        const verbLower = verb.toLowerCase();
+        if (!path.startsWith('/api/') && !path.startsWith('http')) {
+          path = `/api/${path.replace(/^\//, '')}`;
+        }
+        return `<div class='swagger-ui'><div class='opblock opblock-${verbLower}'><div class='opblock-summary-method ${verbLower}'>${verb}</div><div class='opblock-summary-path'>${path}</div></div></div>`;
+      }
+    );
+    
+    formattedText = formattedText.replace(/<\/div><\/div><\/div>/g, '</div></div></div><br>');
+    
+    formattedText = formattedText.replace(
+      /```(json|javascript|html|css|yaml|bash|xml)?\n([\s\S]*?)```/gm,
+      (match, language, code) => {
+        const lang = language || '';
+        let highlightedCode = code.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        
+        if (lang.toLowerCase() === 'json') {
+          highlightedCode = highlightedCode
+            .replace(/"([^"]+)"(\s*:)/g, '<span class="key">"$1"</span><span class="colon">$2</span>')
+            .replace(/:\s*"([^"]+)"/g, ': <span class="string">"$1"</span>')
+            .replace(/:\s*(-?\d+\.?\d*)/g, ': <span class="number">$1</span>')
+            .replace(/:\s*(true|false)/g, ': <span class="boolean">$1</span>')
+            .replace(/:\s*(null)/g, ': <span class="null">$1</span>')
+            .replace(/([{}\[\]])/g, '<span class="bracket">$1</span>')
+            .replace(/,/g, '<span class="comma">,</span>');
+        }
+        
+        return `<pre class="code-block ${lang}">${highlightedCode}</pre>`;
+      }
+    );
+    
+    // Format inline code
+    formattedText = formattedText.replace(
+      /`([^`]+)`/g,
+      (match, code) => `<code>${code}</code>`
+    );
+    
+    formattedText = formattedText
+      .replace(/\*\*([^*]+)\*\*/g, (match, text) => `<strong>${text}</strong>`)
+      .replace(/\*([^*]+)\*/g, (match, text) => `<em>${text}</em>`);
+    
+    // lists 
+    formattedText = formattedText.replace(
+      /^\s*[\-\*]\s+(.+)$/gm, 
+      '<li>$1</li>'
+    ).replace(
+      /(<li>.*<\/li>)\s+(<li>)/g, 
+      '$1$2'
+    );
+    
+    if (formattedText.includes('<li>')) {
+      formattedText = '<ul>' + formattedText + '</ul>';
+      formattedText = formattedText.replace(/<\/ul>\s*<ul>/g, '');
+    }
+    
+    return formattedText;
+  }
+  
+  // chat message element
+  static createMessageElement(content, sender, messageId = '') {
+    const icon = sender === 'assistant' ? '🤖' : '👤';
+    const idAttribute = messageId ? ` id="${messageId}"` : '';
+    
+    if (sender === 'user') {
+      const escapedContent = this.escapeHtml(content);
+      return `<div${idAttribute} class="chat-message ${sender}"><span class="icon" aria-hidden="true">${icon}</span>${escapedContent}</div>`;
+    }
+    
+    return `<div${idAttribute} class="chat-message ${sender}"><span class="icon" aria-hidden="true">${icon}</span>${content}</div>`;
+  }
+  
+  static escapeHtml(html) {
+    const escapeMap = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;',
+    };
+    return html.replace(/[&<>"']/g, match => escapeMap[match]);
+  }
+  
+  static formatQuickReplies(replies) {
+    if (!replies || !Array.isArray(replies) || replies.length === 0) return '';
+    
+    const quickRepliesHtml = replies
+      .map(reply => `<button class="quick-reply" onclick="sendMessage('${reply.replace(/'/g, "\\'")}')">${reply}</button>`)
+      .join('');
+      
+    return `<div class="quick-replies">${quickRepliesHtml}</div>`;
+  }
+}
+
+window.FormattingUtils = FormattingUtils;
+
 Scalar.createApiReference('#app', {
   url: '/swagger/openapi.yaml',
   theme: 'kepler',
@@ -11,162 +137,95 @@ Scalar.createApiReference('#app', {
 });
 
 document.addEventListener('DOMContentLoaded', function () {
+
+  // typing effect for header
   const typingElement = document.getElementById('typing-text');
-  const text = typingElement.textContent;
-  typingElement.textContent = '>';
-  let i = 0;
-  const typingSpeed = 15;
-
-  function getRandomDelay() {
-    return Math.random() < 0.1 ? 300 : Math.random() * 100 + typingSpeed;
-  }
-
-  function typeNextCharacter() {
-    if (i < text.length) {
-      if (['.', '-', ','].includes(text.charAt(i))) {
-        setTimeout(() => {
-          typingElement.textContent =
-            '> ' + typingElement.textContent.substring(2) + text.charAt(i);
-          i++;
-          setTimeout(typeNextCharacter, getRandomDelay());
-        }, 200);
-      } else {
-        typingElement.textContent =
-          '> ' + typingElement.textContent.substring(2) + text.charAt(i);
+  if (typingElement) {
+    const text = typingElement.textContent || '';
+    typingElement.textContent = '>';
+    let i = 0;
+    const typingSpeed = 30;
+    
+    function typeNextCharacter() {
+      if (i < text.length) {
+        typingElement.textContent = '> ' + text.substring(0, i+1);
         i++;
-        setTimeout(typeNextCharacter, getRandomDelay());
-      }
-    } else {
-      typingElement.classList.add('typing-complete');
-    }
-  }
-  setTimeout(typeNextCharacter, 500);
-
-  setTimeout(() => {
-    if (!document.getElementById('ai-chat').innerHTML.trim()) {
-      if (
-        window.AIService &&
-        typeof window.AIService.getResponse === 'function'
-      ) {
-        typeWelcomeMessage();
+        setTimeout(typeNextCharacter, typingSpeed);
       } else {
-        const chat = document.getElementById('ai-chat');
-        chat.innerHTML += `<div class="chat-message assistant"><span class="icon" aria-hidden="true">🤖</span>Welcome to the LaunchPad API Assistant. How can I help you today?</div>`;
+        typingElement.classList.add('typing-complete');
       }
     }
-  }, 1000);
+    setTimeout(typeNextCharacter, 500);
+  }
+
+  setupEventListeners();
+  
+  // load previous chat history
+  try {
+    loadChatHistory();
+  } catch (e) {
+    console.warn('Error loading chat history:', e);
+  }
+  
+  // Initialize chat if empty
+  setTimeout(() => {
+    const chat = document.getElementById('ai-chat');
+    if (chat && !chat.querySelector('.chat-message')) {
+      typeWelcomeMessage();
+    }
+  }, 500);
 });
 
+// Chat state
 let isProcessing = false;
 let chatHistory = [];
 
+async function waitForAIServiceReady(maxWaitMs = 3000) {
+  const start = Date.now();
+  while (!window.AIService && Date.now() - start < maxWaitMs) {
+    await new Promise(res => setTimeout(res, 100));
+  }
+}
+
 async function typeWelcomeMessage() {
   try {
-    if (
-      !window.AIService ||
-      typeof window.AIService.getResponse !== 'function'
-    ) {
-      throw new Error('AIService not properly initialized');
+    const chat = document.getElementById('ai-chat');
+    if (!chat) return;
+    document.querySelectorAll('.chat-message.assistant.welcome-message').forEach(msg => msg.remove());
+    
+    if (!window.AIService) {
+      await waitForAIServiceReady();
     }
-
-    const welcomeResponse = await window.AIService.getResponse(
-      'Provide a very short, friendly welcome greeting for a new user. Just a single sentence. Do not include any quick reply suggestions for this initial greeting.',
-      [],
-    );
-
-    await typeResponse(
-      welcomeResponse.response,
-      welcomeResponse.quickReplies || [],
-      'assistant',
-    );
-    chatHistory.push({ sender: 'assistant', text: welcomeResponse.response });
+    
+    const fallbackGreeting = 'Welcome to the API Assistant. How can I help you today?';
+    
+    if (window.AIService && typeof window.AIService.getResponse === 'function') {
+      try {
+        const welcomeResponse = await window.AIService.getResponse(
+          'Provide a very short, friendly welcome greeting for users.',
+          []
+        );
+        await addMessageToChat(
+          welcomeResponse.response, 
+          welcomeResponse.quickReplies || [], 
+          'assistant', 
+          true
+        );
+        chatHistory.push({ sender: 'assistant', text: welcomeResponse.response });
+        return;
+      } catch (error) {
+        console.error('Error getting AI welcome message:', error);
+      }
+    }
+    
+    await addMessageToChat(fallbackGreeting, [], 'assistant', true);
+    chatHistory.push({ sender: 'assistant', text: fallbackGreeting });
   } catch (error) {
-    const simpleGreeting =
-      'Welcome to the LaunchPad API Assistant. How can I help you today?';
-    await typeResponse(simpleGreeting, [], 'assistant');
-    chatHistory.push({ sender: 'assistant', text: simpleGreeting });
+    console.error('Error in welcome message:', error);
   }
 }
 
-function formatEndpoints(text) {
-  if (window.FormattingUtils) {
-    text = window.FormattingUtils.standardizeApiEndpoints(text);
-    if (typeof window.FormattingUtils.markdownToHtml === 'function') {
-      let formattedText = window.FormattingUtils.markdownToHtml(text);
-      if (
-        formattedText.includes('numbered-item') &&
-        !document.getElementById('numbered-list-style')
-      ) {
-        const styleEl = document.createElement('style');
-        styleEl.id = 'numbered-list-style';
-        document.head.appendChild(styleEl);
-      }
-      return formattedText;
-    }
-  }
-
-  console.warn('FormattingUtils not available, using legacy formatting');
-
-  let formattedText = text.replace(
-    /(\d+)\.\s+([^\n]+)/g,
-    (match, number, content) =>
-      `<div class="numbered-item"><span class="number">${number}.</span> ${content}</div>`,
-  );
-
-  formattedText = formattedText.replace(
-    /(?:`?(GET|POST|PUT|DELETE|PATCH)\s+([^`\n]+)`?|(\b(?:GET|POST|PUT|DELETE|PATCH)\b)\s+([^\n]+?)(?:\s|$))/gi,
-    (match, verb1, path1, verb2, path2) => {
-      const verb = verb1 || verb2;
-      const path = path1 || path2;
-      const verbLower = verb.toLowerCase();
-      let cleanPath = path;
-      if (!cleanPath.startsWith('/api/') && !cleanPath.startsWith('http')) {
-        cleanPath = `/api/${cleanPath.replace(/^\//, '')}`;
-      }
-      return `<div class='swagger-ui'><div class='opblock opblock-${verbLower}'><div class='opblock-summary-method ${verbLower}'>${verb}</div><div class='opblock-summary-path'>${cleanPath}</div></div></div>`;
-    },
-  );
-
-  formattedText = formattedText.replace(
-    /```(json|javascript|html|css|yaml|bash|xml)?\n([\s\S]*?)```/gm,
-    (match, language, code) => {
-      const lang = language || '';
-      return `<pre class="code-block ${lang}">${code
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')}</pre>`;
-    },
-  );
-
-  formattedText = formattedText.replace(
-    /`([^`]+)`/g,
-    (match, code) => `<code>${code}</code>`,
-  );
-  formattedText = formattedText
-    .replace(/\*\*([^*]+)\*\*/g, (match, text) => `<strong>${text}</strong>`)
-    .replace(/\*([^*]+)\*/g, (match, text) => `<em>${text}</em>`);
-  formattedText = formattedText
-    .replace(
-      /^\s*[\-\*]\s+(.+)$/gm,
-      (match, item) => `<ul><li>${item}</li></ul>`,
-    )
-    .replace(/<\/ul>\s*<ul>/g, '');
-  formattedText = formattedText.replace(
-    /https:\/\/api\.launchpadinventory\.com\/([\w-]+)/g,
-    (match, path) => `/api/${path}`,
-  );
-
-  if (
-    formattedText.includes('numbered-item') &&
-    !document.getElementById('numbered-list-style')
-  ) {
-    const styleEl = document.createElement('style');
-    styleEl.id = 'numbered-list-style';
-    document.head.appendChild(styleEl);
-  }
-
-  return formattedText;
-}
-
+// Process user input
 async function sendMessage(inputText) {
   const actionBtn = document.getElementById('action-btn');
   if (isProcessing || actionBtn.getAttribute('data-state') !== 'send') return;
@@ -176,68 +235,53 @@ async function sendMessage(inputText) {
   const question = inputText || input.value.trim();
   if (!question) return;
 
+  // Update UI state
   isProcessing = true;
   actionBtn.disabled = true;
   actionBtn.setAttribute('aria-disabled', 'true');
+  
   try {
-    if (
-      window.FormattingUtils &&
-      typeof window.FormattingUtils.createMessageElement === 'function'
-    ) {
-      chat.innerHTML += window.FormattingUtils.createMessageElement(
-        question,
-        'user',
-      );
+    if (window.FormattingUtils) {
+      chat.innerHTML += window.FormattingUtils.createMessageElement(question, 'user');
     } else {
       chat.innerHTML += `<div class="chat-message user"><span class="icon" aria-hidden="true">👤</span>${question}</div>`;
     }
-
     chat.scrollTop = chat.scrollHeight;
+    
     if (!inputText) input.value = '';
     chatHistory.push({ sender: 'user', text: question });
-
+    
+    // Show typing indicator
     const typingId = `typing-${Date.now()}`;
     chat.innerHTML += `<div id="${typingId}" class="chat-message typing">Assistant is typing...</div>`;
     chat.scrollTop = chat.scrollHeight;
 
-    if (
-      !window.AIService ||
-      typeof window.AIService.getResponse !== 'function'
-    ) {
+    // Get AI response
+    if (!window.AIService || typeof window.AIService.getResponse !== 'function') {
       throw new Error('AIService not properly initialized');
     }
 
-    const aiResponse = await window.AIService.getResponse(
-      question,
-      chatHistory.slice(0, -1),
-    );
+    const aiResponse = await window.AIService.getResponse(question, chatHistory.slice(0, -1));
+    
+    // Remove typing indicator
     const typingElement = document.getElementById(typingId);
     if (typingElement) typingElement.remove();
 
+    // Update chat history 
     chatHistory.push({ sender: 'assistant', text: aiResponse.response });
-    if (chatHistory.length > 10)
-      chatHistory = chatHistory.slice(chatHistory.length - 10);
+    if (chatHistory.length > 10) chatHistory = chatHistory.slice(chatHistory.length - 10);
 
-    await typeResponse(
-      aiResponse.response,
-      aiResponse.quickReplies,
-      'assistant',
-    );
+    await addMessageToChat(aiResponse.response, aiResponse.quickReplies || [], 'assistant');
     saveChatHistory();
   } catch (error) {
-    console.error('Error in sendMessage:', error);
+    console.error('Error sending message:', error);
+    
     const typingElement = document.getElementById(typingId);
     if (typingElement) typingElement.remove();
 
-    const errorMessage = 'Oops, something went wrong. Please try again!';
-    if (
-      window.FormattingUtils &&
-      typeof window.FormattingUtils.createMessageElement === 'function'
-    ) {
-      chat.innerHTML += window.FormattingUtils.createMessageElement(
-        errorMessage,
-        'assistant',
-      );
+    const errorMessage = "I'm sorry, but I've reached my query limit. Please try again later or check our documentation for information about the API.";
+    if (window.FormattingUtils) {
+      chat.innerHTML += window.FormattingUtils.createMessageElement(errorMessage, 'assistant');
     } else {
       chat.innerHTML += `<div class="chat-message assistant"><span class="icon" aria-hidden="true">🤖</span>${errorMessage}</div>`;
     }
@@ -250,100 +294,86 @@ async function sendMessage(inputText) {
   }
 }
 
-async function typeResponse(response, quickReplies, sender) {
+// Add a message to the chat with formatting
+async function addMessageToChat(message, quickReplies = [], sender = 'assistant', isWelcomeMessage = false) {
   const chat = document.getElementById('ai-chat');
+  if (!chat) return;
   const messageId = `message-${Date.now()}`;
-  const icon =
-    sender === 'assistant'
-      ? '<span class="icon" aria-hidden="true">🤖</span>'
-      : '<span class="icon" aria-hidden="true">👤</span>';
-
-  chat.innerHTML += `<div id="${messageId}" class="chat-message ${sender}">${icon}</div>`;
-  const messageElement = document.getElementById(messageId);
-
   try {
-    const formattedResponse = formatEndpoints(response);
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(
-      `<div>${formattedResponse}</div>`,
-      'text/html',
-    );
-    const nodes = Array.from(doc.body.firstChild.childNodes);
-    let currentText = '';
-    let i = 0;
-    const baseTypingSpeed = 30;
-
-    async function typeNode() {
-      if (i < nodes.length) {
-        const node = nodes[i];
-        if (node.nodeType === Node.TEXT_NODE) {
-          const text = node.textContent;
-          for (let j = 0; j < text.length; j++) {
-            currentText += text[j];
-            messageElement.innerHTML = `${icon}${currentText}`;
-            chat.scrollTop = chat.scrollHeight;
-            const typingSpeed = baseTypingSpeed - 10 + Math.random() * 20;
-            await new Promise((resolve) => setTimeout(resolve, typingSpeed));
-          }
-        } else if (node.nodeType === Node.ELEMENT_NODE) {
-          currentText += node.outerHTML;
-          messageElement.innerHTML = `${icon}${currentText}`;
-          chat.scrollTop = chat.scrollHeight;
-          await new Promise((resolve) => setTimeout(resolve, baseTypingSpeed));
-        }
-        i++;
-        await typeNode();
-      } else {
-        if (quickReplies && quickReplies.length > 0) {
-          if (
-            window.FormattingUtils &&
-            typeof window.FormattingUtils.formatQuickReplies === 'function'
-          ) {
-            currentText +=
-              window.FormattingUtils.formatQuickReplies(quickReplies);
+    let formattedContent = message;
+    if (window.FormattingUtils) {
+      formattedContent = window.FormattingUtils.standardizeApiEndpoints(formattedContent);
+      formattedContent = window.FormattingUtils.markdownToHtml(formattedContent);
+      const classList = sender + (isWelcomeMessage ? ' welcome-message' : '');
+      const messageHtml = `<div id="${messageId}" class="chat-message ${classList}"><span class="icon" aria-hidden="true">${sender === 'assistant' ? '🤖' : '👤'}</span>&nbsp;</div>`;
+      chat.insertAdjacentHTML('beforeend', messageHtml);
+      const messageElement = document.getElementById(messageId);
+      if (messageElement && sender === 'assistant') {
+        let i = 0;
+        const speed = 2;
+        function typeChar() {
+          if (i <= formattedContent.length) {
+            messageElement.innerHTML = `<span class="icon" aria-hidden="true">🤖</span>` + formattedContent.slice(0, i);
+            i++;
+            setTimeout(typeChar, speed);
           } else {
-            const quickRepliesHtml = quickReplies
-              .map(
-                (reply) =>
-                  `<button class="quick-reply" onclick="sendMessage('${reply.replace(
-                    /'/g,
-                    "\\'",
-                  )}')">${reply}</button>`,
-              )
-              .join('');
-            currentText += `<div class="quick-replies">${quickRepliesHtml}</div>`;
+            if (quickReplies && quickReplies.length > 0 && window.FormattingUtils) {
+              messageElement.innerHTML += window.FormattingUtils.formatQuickReplies(quickReplies);
+            }
           }
-          messageElement.innerHTML = `${icon}${currentText}`;
         }
-        chat.scrollTop = chat.scrollHeight;
+        typeChar();
+      } else if (messageElement) {
+        messageElement.innerHTML = `<span class="icon" aria-hidden="true">👤</span>` + formattedContent;
+        // For user messages, no quick replies
       }
+    } else {
+      const icon = sender === 'assistant' ? '🤖' : '👤';
+      const classList = sender + (isWelcomeMessage ? ' welcome-message' : '');
+      chat.insertAdjacentHTML('beforeend', 
+        `<div id="${messageId}" class="chat-message ${classList}"><span class="icon" aria-hidden="true">${icon}</span>${formattedContent}</div>`
+      );
     }
-    await typeNode();
+    chat.scrollTop = chat.scrollHeight;
   } catch (error) {
-    console.error('Error in typeResponse:', error);
-    messageElement.innerHTML = `${icon}<span class="endpoint-error">Error displaying response. Please try again.</span>`;
+    console.error('Error adding message to chat:', error);
+    if (chat) {
+      const icon = sender === 'assistant' ? '🤖' : '👤';
+      chat.insertAdjacentHTML('beforeend', 
+        `<div class="chat-message ${sender}"><span class="icon" aria-hidden="true">${icon}</span><span class="error">Error displaying message.</span></div>`
+      );
+      chat.scrollTop = chat.scrollHeight;
+    }
   }
 }
 
+// Toggle chat visibility
 function toggleAssistant() {
   const assistant = document.querySelector('.ai-assistant');
   const toggle = document.querySelector('.ai-toggle');
   const input = document.getElementById('ai-input');
+  
+  if (!assistant || !toggle) return;
+  
   const isActive = !assistant.classList.contains('active');
 
   assistant.setAttribute('aria-hidden', !isActive);
   assistant.classList.toggle('active', isActive);
   toggle.classList.toggle('hidden', isActive);
+  
   if (isActive) {
-    input.focus();
-    trapFocus(assistant);
-    if (!document.getElementById('ai-chat').innerHTML.trim())
+    if (input) input.focus();
+    
+    const chat = document.getElementById('ai-chat');
+    if (chat && !chat.querySelector('.chat-message')) {
       typeWelcomeMessage();
+    }
   } else {
     toggle.focus();
   }
 }
 
+// Clear chat history
 function clearChatHistory() {
   const chat = document.getElementById('ai-chat');
   chat.innerHTML = '';
@@ -356,26 +386,7 @@ function clearChatHistory() {
   typeWelcomeMessage();
 }
 
-function trapFocus(element) {
-  const focusable = element.querySelectorAll(
-    'button:not(:disabled), input:not(:disabled), [tabindex]:not([tabindex="-1"])',
-  );
-  const first = focusable[0];
-  const last = focusable[focusable.length - 1];
-
-  element.addEventListener('keydown', (e) => {
-    if (e.key === 'Tab') {
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    } else if (e.key === 'Escape') toggleAssistant();
-  });
-}
-
+// Save chat to localStorage
 function saveChatHistory() {
   try {
     const chat = document.getElementById('ai-chat').innerHTML;
@@ -385,6 +396,7 @@ function saveChatHistory() {
   }
 }
 
+// Load chat from localStorage
 function loadChatHistory() {
   try {
     const chat = document.getElementById('ai-chat');
@@ -398,31 +410,30 @@ function loadChatHistory() {
   }
 }
 
+// Setup event listeners
 function setupEventListeners() {
-  document.querySelector('.ai-toggle').addEventListener('keydown', (e) => {
+  document.querySelector('.ai-toggle')?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       toggleAssistant();
     }
   });
 
-  document.getElementById('ai-input').addEventListener('keydown', (e) => {
-    const actionBtn = document.getElementById('action-btn');
-    if (
-      e.key === 'Enter' &&
-      actionBtn.getAttribute('data-state') === 'send' &&
-      !isProcessing
-    ) {
+  // Send message with Enter key
+  document.getElementById('ai-input')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !isProcessing) {
       e.preventDefault();
       sendMessage();
     }
   });
 
-  document.getElementById('action-btn').addEventListener('click', () => {
-    const actionBtn = document.getElementById('action-btn');
-    if (actionBtn.getAttribute('data-state') === 'send' && !isProcessing)
-      sendMessage();
+  // Send message with button click
+  document.getElementById('action-btn')?.addEventListener('click', () => {
+    if (!isProcessing) sendMessage();
+  });
+  
+  // Handle Escape key to close chat
+  document.querySelector('.ai-assistant')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') toggleAssistant();
   });
 }
-
-setupEventListeners();

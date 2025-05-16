@@ -45,6 +45,10 @@ tags:
     description: Operations for managing stock levels, including creation, retrieval, updating, and deletion.
   - name: Units of Measure
     description: Operations for managing units of measurement, including creation, retrieval, updating, and deletion.
+  - name: CheckInOut
+    description: Operations related to checking in and out items
+  - name: Maintenances
+    description: Operations for managing maintenance records
 paths:
   /login:
     post:
@@ -1159,397 +1163,128 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UnitsOfMeasureResponse'
-components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-  schemas:
-    Item:
-      type: object
-      properties:
-        id:
-          type: integer
-          example: 1
-        name:
-          type: string
-          example: Laptop XPS 15
-        code:
-          type: string
-          example: COMP-001
-        description:
-          type: string
-          example: High performance laptop
-        quantity:
-          type: integer
-          example: 10
-        unit:
-          type: string
-          example: pcs
-        price:
-          type: number
-          format: float
-          example: 1299.99
-        is_active:
-          type: boolean
-          example: true
-        active:
-          type: boolean
-          example: true
-        specifications:
-          type: object
-          example:
-            { 'processor': 'Intel i7', 'ram': '16GB', 'storage': '512GB SSD' }
-        category_id:
-          type: integer
-          example: 2
-        user_id:
-          type: integer
-          nullable: true
-          example: 1
-        category:
-          $ref: '#/components/schemas/Category'
-    Category:
-      type: object
-      properties:
-        id:
-          type: integer
-          example: 1
-        name:
-          type: string
-          example: Electronics
-        parent_id:
-          type: integer
-          nullable: true
-          example: null
-        items_count:
-          type: integer
-          example: 5
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-        children:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: integer
-              name:
-                type: string
-              parent_id:
-                type: integer
-              items_count:
-                type: integer
-              children:
-                type: array
-                items:
-                  type: object
-    Location:
-      type: object
-      properties:
-        id:
-          type: integer
-          example: 1
-        name:
-          type: string
-          example: Main Warehouse
-        code:
-          type: string
-          example: WH-MAIN
-        parent_id:
-          type: integer
-          nullable: true
-          example: null
-        path:
-          type: string
-          example: '/1/'
-          description: String for ancestry tracking (e.g. /1/3/5/)
-        is_active:
-          type: boolean
-          example: true
-        active:
-          type: boolean
-          example: true
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-        children:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: integer
-              name:
-                type: string
-              code:
-                type: string
-              parent_id:
-                type: integer
-              path:
-                type: string
-              is_active:
-                type: boolean
-              active:
-                type: boolean
-              children:
-                type: array
-                items:
-                  type: object
-    InventoryRecord:
-      type: object
-      properties:
-        id:
-          type: integer
-          example: 1
-        item_id:
-          type: integer
-          example: 1
-        location_id:
-          type: integer
-          example: 2
-        quantity:
-          type: integer
-          example: 5
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-        item_name:
-          type: string
-          example: Laptop XPS 15
-        item_code:
-          type: string
-          example: COMP-001
-        location_name:
-          type: string
-          example: Section A
-        location_code:
-          type: string
-          example: WH-SEC-A
-    ItemRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          example: Laptop XPS 15
-        code:
-          type: string
-          example: COMP-001
-        description:
-          type: string
-          example: High performance laptop
-        quantity:
-          type: integer
-          example: 10
-        unit:
-          type: string
-          example: pcs
-        price:
-          type: number
-          format: float
-          example: 1299.99
-        category_id:
-          type: integer
-          example: 2
-        user_id:
-          type: integer
-          nullable: true
-          example: 1
-        is_active:
-          type: boolean
-          example: true
-        specifications:
-          type: object
-          example:
-            { 'processor': 'Intel i7', 'ram': '16GB', 'storage': '512GB SSD' }
-      required:
-        - name
-        - code
-        - quantity
-    CategoryRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          example: Electronics
-        parent_id:
-          type: integer
-          nullable: true
-          example: null
-      required:
-        - name
-    LocationRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          example: Main Warehouse
-        code:
-          type: string
-          example: WH-MAIN
-        parent_id:
-          type: integer
-          nullable: true
-          example: null
-        is_active:
-          type: boolean
-          example: true
-      required:
-        - name
-        - code
-    Supplier:
-      type: object
-      properties:
-        id:
-          type: integer
-          example: 1
-        name:
-          type: string
-          example: Tech Supplies Inc.
-        code:
-          type: string
-          example: SUP-001
-        contact_name:
-          type: string
-          example: John Smith
-        email:
-          type: string
-          example: contact@techsupplies.com
-        phone:
-          type: string
-          example: +1-555-123-4567
-        address:
-          type: string
-          example: 123 Main Street
-        city:
-          type: string
-          example: San Francisco
-        state:
-          type: string
-          example: CA
-        postal_code:
-          type: string
-          example: 94105
-        country:
-          type: string
-          example: USA
-        website:
-          type: string
-          example: https://techsupplies.com
-        tax_id:
-          type: string
-          example: TX-12345678
-        notes:
-          type: string
-          example: Preferred supplier for electronics
-        is_active:
-          type: boolean
-          example: true
-        active:
-          type: boolean
-          example: true
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/ItemSupplierRelation'
-    ItemSupplierRelation:
-      type: object
-      properties:
-        id:
-          type: integer
-          example: 1
-        item_id:
-          type: integer
-          example: 5
-        supplier_id:
-          type: integer
-          example: 1
-        supplier_part_number:
-          type: string
-          example: SUP-PART-001
-        price:
-          type: number
-          format: float
-          example: 99.99
-        lead_time:
-          type: integer
-          example: 3
-          description: Lead time in days
-        is_preferred:
-          type: boolean
-          example: true
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-        item:
-          $ref: '#/components/schemas/Item'
-    SupplierRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          example: Tech Supplies Inc.
-        code:
-          type: string
-          example: SUP-001
-        contact_name:
-          type: string
-          example: John Smith
-        email:
-          type: string
-          example: contact@techsupplies.com
-        phone:
-          type: string
-          example: +1-555-123-4567
-        address:
-          type: string
-          example: 123 Main Street
-        city:
-          type: string
-          example: San Francisco
-        state:
-          type: string
-          example: CA
-        postal_code:
-          type: string
-          example: 94105
-        country:
-          type: string
-          example: USA
-        website:
-          type: string
-          example: https://techsupplies.com
-        tax_id:
-          type: string
-          example: TX-12345678
-        notes:
-          type: string
-          example: Preferred supplier for electronics
-        is_active:
-          type: boolean
-          example: true
-      required:
-        - name
+  /items/{itemId}/checkout:
+    post:
+      tags:
+        - CheckInOut
+      summary: Checkout an item
+      description: Checkout an item by ID
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          description: ID of the item to checkout
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quantity:
+                  type: integer
+                  example: 1
+                checkout_location_id:
+                  type: integer
+                  example: 2
+                expected_return_date:
+                  type: string
+                  format: date
+                  example: '2024-07-01'
+                status_out_id:
+                  type: integer
+                  example: 1
+                notes:
+                  type: string
+                  example: 'For project X'
+              required:
+                - quantity
+                - checkout_location_id
+      responses:
+        '200':
+          description: Item checked out successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckInOutResponse'
+        '409':
+          description: Item is already checked out or in maintenance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+  /items/{itemId}/checkin:
+    post:
+      tags:
+        - CheckInOut
+      summary: Checkin an item
+      description: Checkin an item by ID
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          description: ID of the item to checkin
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                checkin_location_id:
+                  type: integer
+                  example: 2
+                checkin_quantity:
+                  type: integer
+                  example: 1
+                status_in_id:
+                  type: integer
+                  example: 1
+                notes:
+                  type: string
+                  example: 'Returned in good condition'
+              required:
+                - checkin_location_id
+      responses:
+        '200':
+          description: Item checked in successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckInOutResponse'
+        '403':
+          description: Not authorized to check in this item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Item is not checked out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+  /items/{itemId}/history:
+    get:
+      tags:
+        - CheckInOut
+      summary: Get item check-in/out history
     ItemSupplierRequest:
       type: object
       properties:
@@ -1934,3 +1669,846 @@ components:
             message:
               type: string
               example: Units of measure retrieved successfully
+  /items/code/{code}:
+    get:
+      tags:
+        - Items
+      summary: Get items by code
+      description: Retrieve all items with a specific code
+      parameters:
+        - name: code
+          in: path
+          required: true
+          description: Code to filter items by
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemsResponse'
+        '404':
+          description: No items found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /item-locations:
+    get:
+      tags:
+        - Locations
+      summary: Get all item-location assignments
+      description: Retrieve a list of all item-location assignments
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemLocationsResponse'
+    post:
+      tags:
+        - Locations
+      summary: Assign an item to a location
+      description: Assign an item to a location
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemLocationRequest'
+      responses:
+        '201':
+          description: Assignment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemLocationResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+  /item-locations/{id}:
+    get:
+      tags:
+        - Locations
+      summary: Get a specific item-location assignment
+      description: Retrieve details of a specific item-location assignment by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the item-location assignment
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemLocationResponse'
+        '404':
+          description: Assignment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      tags:
+        - Locations
+      summary: Update an item-location assignment
+      description: Update an existing item-location assignment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the item-location assignment
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemLocationRequest'
+      responses:
+        '200':
+          description: Assignment updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemLocationResponse'
+        '404':
+          description: Assignment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+    delete:
+      tags:
+        - Locations
+      summary: Remove an item from a location
+      description: Remove an item from a location
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the item-location assignment
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Assignment deleted successfully
+        '404':
+          description: Assignment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /maintenances:
+    get:
+      tags:
+        - Maintenances
+      summary: Get all maintenances
+      description: Retrieve a list of all maintenance records
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenancesResponse'
+    post:
+      tags:
+        - Maintenances
+      summary: Create a new maintenance record
+      description: Add a new maintenance record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaintenanceRequest'
+      responses:
+        '201':
+          description: Maintenance created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+  /maintenances/{id}:
+    get:
+      tags:
+        - Maintenances
+      summary: Get a specific maintenance record
+      description: Retrieve details of a specific maintenance record by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the maintenance record
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceResponse'
+        '404':
+          description: Maintenance not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      tags:
+        - Maintenances
+      summary: Update a maintenance record
+      description: Update an existing maintenance record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the maintenance record
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaintenanceRequest'
+      responses:
+        '200':
+          description: Maintenance updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceResponse'
+        '404':
+          description: Maintenance not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+    delete:
+      tags:
+        - Maintenances
+      summary: Delete a maintenance record
+      description: Remove a maintenance record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the maintenance record
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Maintenance deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Maintenance not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Item:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Laptop XPS 15
+        code:
+          type: string
+          example: COMP-001
+        description:
+          type: string
+          example: High performance laptop
+        quantity:
+          type: integer
+          example: 10
+        unit:
+          type: string
+          example: pcs
+        price:
+          type: number
+          format: float
+          example: 1299.99
+        is_active:
+          type: boolean
+          example: true
+        active:
+          type: boolean
+          example: true
+        specifications:
+          type: object
+          example:
+            { 'processor': 'Intel i7', 'ram': '16GB', 'storage': '512GB SSD' }
+        category_id:
+          type: integer
+          example: 2
+        user_id:
+          type: integer
+          nullable: true
+          example: 1
+        category:
+          $ref: '#/components/schemas/Category'
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Electronics
+        parent_id:
+          type: integer
+          nullable: true
+          example: null
+        items_count:
+          type: integer
+          example: 5
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        children:
+          type: array
+          items:
+            type: object 
+    Location:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Main Warehouse
+        code:
+          type: string
+          example: WH-MAIN
+        parent_id:
+          type: integer
+          nullable: true
+          example: null
+        path:
+          type: string
+          example: '/1/'
+          description: String for ancestry tracking (e.g. /1/3/5/)
+        is_active:
+          type: boolean
+          example: true
+        active:
+          type: boolean
+          example: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        children:
+          type: array
+          items:
+            type: object 
+    Maintenance:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        item_id:
+          type: integer
+          example: 1
+        user_id:
+          type: integer
+          example: 1
+        status:
+          type: string
+          example: 'active'
+        description:
+          type: string
+          example: 'Routine checkup'
+        started_at:
+          type: string
+          format: date-time
+        ended_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ItemLocation:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        item_id:
+          type: integer
+          example: 1
+        location_id:
+          type: integer
+          example: 2
+        quantity:
+          type: integer
+          example: 5
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CheckInOut:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        user_id:
+          type: integer
+        item_id:
+          type: integer
+        checkout_location_id:
+          type: integer
+        checkout_date:
+          type: string
+          format: date-time
+        quantity:
+          type: integer
+        status_out_id:
+          type: integer
+          nullable: true
+        checkin_user_id:
+          type: integer
+          nullable: true
+        checkin_location_id:
+          type: integer
+          nullable: true
+        checkin_date:
+          type: string
+          format: date-time
+          nullable: true
+        checkin_quantity:
+          type: integer
+          nullable: true
+        status_in_id:
+          type: integer
+          nullable: true
+        expected_return_date:
+          type: string
+          format: date
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        is_active:
+          type: boolean
+    ItemRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Laptop XPS 15
+        code:
+          type: string
+          example: COMP-001
+        description:
+          type: string
+          example: High performance laptop
+        quantity:
+          type: integer
+          example: 10
+        unit:
+          type: string
+          example: pcs
+        price:
+          type: number
+          format: float
+          example: 1299.99
+        category_id:
+          type: integer
+          example: 2
+        user_id:
+          type: integer
+          nullable: true
+          example: 1
+        is_active:
+          type: boolean
+          example: true
+        specifications:
+          type: object
+          example:
+            { 'processor': 'Intel i7', 'ram': '16GB', 'storage': '512GB SSD' }
+      required:
+        - name
+        - code
+        - quantity
+        - category_id
+    CategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Electronics
+        parent_id:
+          type: integer
+          nullable: true
+          example: null
+      required:
+        - name
+    LocationRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Main Warehouse
+        code:
+          type: string
+          example: WH-MAIN
+        parent_id:
+          type: integer
+          nullable: true
+          example: null
+        is_active:
+          type: boolean
+          example: true
+      required:
+        - name
+    SupplierRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Tech Supplies Inc.
+        code:
+          type: string
+          example: SUP-001
+        is_active:
+          type: boolean
+          example: true
+      required:
+        - name
+    ItemSupplierRequest:
+      type: object
+      properties:
+        item_id:
+          type: integer
+        supplier_id:
+          type: integer
+        supplier_part_number:
+          type: string
+          example: SUP-PART-001
+        price:
+          type: number
+          format: float
+          example: 99.99
+        lead_time:
+          type: integer
+          example: 3
+          description: Lead time in days
+        is_preferred:
+          type: boolean
+          example: true
+      required:
+        - item_id
+        - supplier_id
+    MaintenanceRequest:
+      type: object
+      properties:
+        item_id:
+          type: integer
+        user_id:
+          type: integer
+        status:
+          type: string
+          example: 'active'
+        description:
+          type: string
+          nullable: true
+        started_at:
+          type: string
+          format: date
+        ended_at:
+          type: string
+          format: date
+          nullable: true
+      required:
+        - item_id
+        - user_id
+        - status
+        - started_at
+    ItemLocationRequest:
+      type: object
+      properties:
+        item_id:
+          type: integer
+        location_id:
+          type: integer
+        quantity:
+          type: integer
+      required:
+        - item_id
+        - location_id
+        - quantity
+    ItemResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Item'
+    ItemsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Item'
+    CategoryResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Category'
+    CategoriesResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+    LocationResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Location'
+    LocationsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Location'
+    SupplierResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Supplier'
+    SuppliersResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Supplier'
+    CheckInOutResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/CheckInOut'
+    CheckInOutHistoryResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CheckInOut'
+    MaintenanceResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Maintenance'
+    MaintenancesResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Maintenance'
+    ItemLocationResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ItemLocation'
+    ItemLocationsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemLocation'
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: John Doe
+        email:
+          type: string
+          format: email
+          example: john.doe@example.com
+    UserRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        role:
+          type: string
+        is_active:
+          type: boolean
+      required:
+        - name
+        - email
+        - password
+    UserResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/User'
+    UsersResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+    Stock:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+    StockRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+      required:
+        - name
+        - code
+    StockResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Stock'
+    StocksResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Stock'
+    UnitOfMeasure:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        abbreviation:
+          type: string
+    UnitOfMeasureRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        abbreviation:
+          type: string
+      required:
+        - name
+        - abbreviation
+    UnitOfMeasureResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/UnitOfMeasure'
+    UnitsOfMeasureResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/UnitOfMeasure'
+    SuccessResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Operation completed successfully
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Resource not found
+    ValidationError:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Validation failed
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            name: ['The name field is required.']
+            code: ['The code field must be unique.']

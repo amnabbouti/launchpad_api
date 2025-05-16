@@ -24,4 +24,9 @@ yarn-error.log
 /.zed
 /.phpunit.result.cache
 /.out
+.env.prod
+.env.testing
+.env.local
 
+
+.vemto_settings
