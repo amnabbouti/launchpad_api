@@ -2,20 +2,21 @@
 
 namespace App\Models;
 
+use App\Traits\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Supplier extends Model
 {
     use HasFactory;
-    use SoftDeletes;
+    use HasOrganizationScope;
 
     protected $fillable = [
+        'org_id',
         'name',
         'code',
-        'contact_name',
         'email',
         'phone',
         'address',
@@ -31,6 +32,8 @@ class Supplier extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     protected $appends = [
@@ -40,20 +43,7 @@ class Supplier extends Model
     protected $hidden = [
         'created_at',
         'updated_at',
-        'deleted_at',
     ];
-
-    public function getActiveAttribute(): bool
-    {
-        return (bool) $this->is_active;
-    }
-
-    public function items(): BelongsToMany
-    {
-        return $this->belongsToMany(Item::class, 'item_supplier')
-            ->withPivot('supplier_part_number', 'price', 'lead_time', 'is_preferred')
-            ->withTimestamps();
-    }
 
     public static function rules(): array
     {
@@ -64,14 +54,25 @@ class Supplier extends Model
         ];
     }
 
-    public function getContent($field)
+    public function getActiveAttribute(): bool
     {
-        return $this->$field;
+        return (bool) $this->is_active;
     }
 
-    // Boot
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class, 'org_id');
+    }
+
+    public function items(): BelongsToMany
+    {
+        return $this->belongsToMany(Item::class, 'item_supplier', 'supplier_id', 'item_id')
+            ->withPivot('supplier_part_number', 'price', 'lead_time', 'is_preferred')
+            ->withTimestamps();
+    }
+
     protected static function booted(): void
     {
-        // Future events
+        // Future events can be added here
     }
 }

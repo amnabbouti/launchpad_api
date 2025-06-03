@@ -2,66 +2,65 @@
 
 namespace App\Models;
 
+use App\Traits\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Status extends Model
 {
     use HasFactory;
-    use SoftDeletes;
-
-    protected $table = 'stock_statuses';
+    use HasOrganizationScope;
 
     protected $fillable = [
+        'org_id',
         'name',
-        'code',
         'description',
         'is_active',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
-    // Stocks with this status
-    public function stocks(): HasMany
+    public function organization(): BelongsTo
     {
-        return $this->hasMany(Stock::class);
+        return $this->belongsTo(Organization::class, 'org_id');
     }
 
-    // Maintenances where this is the status out
+    public function items(): HasMany
+    {
+        return $this->hasMany(Item::class, 'status_id');
+    }
+
     public function maintenancesOut(): HasMany
     {
         return $this->hasMany(Maintenance::class, 'status_out_id');
     }
 
-    // Maintenances where this is the status in
     public function maintenancesIn(): HasMany
     {
         return $this->hasMany(Maintenance::class, 'status_in_id');
     }
 
-    // Check-ins/outs where this is the status out
     public function checkInOutsOut(): HasMany
     {
         return $this->hasMany(CheckInOut::class, 'status_out_id');
     }
 
-    // Check-ins/outs where this is the status in
     public function checkInOutsIn(): HasMany
     {
         return $this->hasMany(CheckInOut::class, 'status_in_id');
     }
 
-    // Maintenance conditions where this is the status when returned
     public function maintenanceConditionsReturned(): HasMany
     {
         return $this->hasMany(MaintenanceCondition::class, 'status_when_returned_id');
     }
 
-    // Maintenance conditions where this is the status when exceeded
     public function maintenanceConditionsExceeded(): HasMany
     {
         return $this->hasMany(MaintenanceCondition::class, 'status_when_exceeded_id');

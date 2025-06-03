@@ -2,25 +2,31 @@
 
 namespace App\Http\Resources;
 
-use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Http\Request;
 
-class UnitOfMeasureResource extends JsonResource
+class UnitOfMeasureResource extends BaseResource
 {
-    public function toArray($request): array
+    public function toArray(Request $request): array
     {
-        return [
+        $data = [
             'id' => $this->id,
+            'org_id' => $this->org_id,
             'name' => $this->name,
             'code' => $this->code,
             'symbol' => $this->symbol,
             'description' => $this->description,
             'type' => $this->type,
             'is_active' => $this->is_active,
+            'created_at' => $this->created_at?->toISOString(),
+            'updated_at' => $this->updated_at?->toISOString(),
 
-            // Relationships
-            'maintenance_conditions' => $this->when($this->relationLoaded('maintenanceConditions'), function () {
-                return $this->maintenanceConditions;
-            }),
+            'organization' => $this->whenLoaded('organization', fn () => new OrganizationResource($this->organization)),
+
+            'items' => $this->whenLoaded('items', fn () => ItemResource::collection($this->items)),
+
+            'maintenance_conditions' => $this->whenLoaded('maintenanceConditions', fn () => MaintenanceConditionResource::collection($this->maintenanceConditions)),
         ];
+
+        return $this->addCommonData($data, $request);
     }
 }

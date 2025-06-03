@@ -2,28 +2,16 @@
 
 namespace App\Models;
 
+use App\Traits\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class UnitOfMeasure extends Model
 {
     use HasFactory;
-    use SoftDeletes;
-
-    protected $fillable = [
-        'name',
-        'code',
-        'symbol',
-        'description',
-        'type',
-        'is_active',
-    ];
-
-    protected $casts = [
-        'is_active' => 'boolean',
-    ];
+    use HasOrganizationScope;
 
     // Constants for unit types
     public const TYPE_DATE = 'DATE';
@@ -40,9 +28,34 @@ class UnitOfMeasure extends Model
 
     public const TYPE_VOLUME = 'VOLUME';
 
-    // Maintenance conditions using this unit
+    protected $fillable = [
+        'org_id',
+        'name',
+        'code',
+        'symbol',
+        'description',
+        'type',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class, 'org_id');
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(Item::class, 'unit_id');
+    }
+
     public function maintenanceConditions(): HasMany
     {
-        return $this->hasMany(MaintenanceCondition::class);
+        return $this->hasMany(MaintenanceCondition::class, 'unit_of_measure_id');
     }
 }
