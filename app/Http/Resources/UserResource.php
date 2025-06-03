@@ -10,18 +10,20 @@ class UserResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'first_name' => $this->first_name,
-            'last_name' => $this->last_name,
+            'name' => $this->name,
             'email' => $this->email,
-            'date_of_birth' => $this->date_of_birth,
-            'address' => $this->address,
-            'phone_number' => $this->phone_number,
-            'name' => $this->getName(),
-
-            // Relationships
-            'items' => $this->when($this->relationLoaded('items'), function () {
-                return ItemResource::collection($this->items);
-            }),
+            'role_id' => $this->role_id,
+            'role' => new RoleResource($this->whenLoaded('role')),
+            'org_id' => $this->org_id,
+            'is_active' => $this->is_active,
+            'is_super_admin' => $this->isSuperAdmin(),
+            'is_manager' => $this->isManager(),
+            'is_employee' => $this->isEmployee(),
+            'created_at' => optional($this->created_at)?->toIso8601String(),
+            'updated_at' => optional($this->updated_at)?->toIso8601String(),
+            'organization' => new OrganizationResource($this->whenLoaded('organization')),
+            'items' => ItemResource::collection($this->whenLoaded('items')),
+            'attachments' => AttachmentResource::collection($this->whenLoaded('attachments')),
         ];
     }
 }
