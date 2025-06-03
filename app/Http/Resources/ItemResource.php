@@ -2,45 +2,43 @@
 
 namespace App\Http\Resources;
 
+use Illuminate\Http\Request;
+
 class ItemResource extends BaseResource
 {
-    public function toArray($request): array
+    public function toArray(Request $request): array
     {
         $data = [
             'id' => $this->id,
+            'org_id' => $this->org_id,
             'name' => $this->name,
             'code' => $this->code,
+            'barcode' => $this->barcode,
             'description' => $this->description,
             'quantity' => $this->quantity,
             'price' => $this->price,
-            'unit' => $this->unit,
-            'category_id' => $this->category_id,
-            'user_id' => $this->user_id,
-            'stock_id' => $this->stock_id,
-            'is_active' => $this->is_active,
+            'active' => $this->active,
             'specifications' => $this->specifications,
+            'category_id' => $this->category_id,
+            'unit_id' => $this->unit_id,
+            'user_id' => $this->user_id,
+            'status_id' => $this->status_id,
             'in_maintenance' => (bool) ($this->relationLoaded('maintenances')
                 ? $this->maintenances->whereNull('date_back_from_maintenance')->count() > 0
                 : ($this->maintenances()->whereNull('date_back_from_maintenance')->count() > 0)),
 
-            // Relationships
-            'category' => $this->when($this->relationLoaded('category'), function () {
-                return new CategoryResource($this->category);
-            }),
-            'user' => $this->when($this->relationLoaded('user'), function () {
-                return new UserResource($this->user);
-            }),
-            'stock' => $this->when($this->relationLoaded('stock'), function () {
-                return new StockResource($this->stock);
-            }),
-            'locations' => $this->when($this->relationLoaded('locations'), function () {
-                return LocationResource::collection($this->locations);
-            }),
-            'suppliers' => $this->when($this->relationLoaded('suppliers'), function () {
-                return SupplierResource::collection($this->suppliers);
-            }),
+            'organization' => $this->whenLoaded('organization', fn () => new OrganizationResource($this->organization)),
+            'category' => $this->whenLoaded('category', fn () => new CategoryResource($this->category)),
+            'unitOfMeasure' => $this->whenLoaded('unitOfMeasure', fn () => new UnitOfMeasureResource($this->unitOfMeasure)),
+            'user' => $this->whenLoaded('user', fn () => new UserResource($this->user)),
+            'status' => $this->whenLoaded('status', fn () => new StatusResource($this->status)),
+            'stockItems' => $this->whenLoaded('stockItems', fn () => StockItemResource::collection($this->stockItems)),
+            'maintenances' => $this->whenLoaded('maintenances', fn () => MaintenanceResource::collection($this->maintenances)),
+            'maintenanceConditions' => $this->whenLoaded('maintenanceConditions', fn () => MaintenanceConditionResource::collection($this->maintenanceConditions)),
+            'suppliers' => $this->whenLoaded('suppliers', fn () => SupplierResource::collection($this->suppliers)),
+            'attachments' => $this->whenLoaded('attachments', fn () => AttachmentResource::collection($this->attachments)),
         ];
 
-        return $data;
+        return $this->addCommonData($data, $request);
     }
 }

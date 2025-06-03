@@ -2,81 +2,69 @@
 
 namespace App\Models;
 
+use App\Traits\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Stock extends Model
 {
     use HasFactory;
-    use SoftDeletes;
+    use HasOrganizationScope;
 
     protected $fillable = [
-        'serial_number',
-        'barcode',
-        'purchase_price',
-        'purchase_date',
-        'warranty_end_date',
+        'org_id',
+        'batch_number',
+        'received_date',
+        'expiry_date',
+        'supplier_id',
+        'unit_cost',
         'notes',
         'is_active',
-        'location_id',
-        'status_id',
     ];
-
 
     protected $casts = [
-        'purchase_price' => 'decimal:2',
-        'purchase_date' => 'date',
-        'warranty_end_date' => 'date',
+        'unit_cost' => 'decimal:2',
+        'received_date' => 'date',
+        'expiry_date' => 'date',
         'is_active' => 'boolean',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
-    // Items relationship - Stock can have multiple Items
-    public function items(): HasMany
+    public function organization(): BelongsTo
     {
-        return $this->hasMany(Item::class);
+        return $this->belongsTo(Organization::class, 'org_id');
     }
 
-    // Location relationship
-    public function location(): BelongsTo
+    public function supplier(): BelongsTo
     {
-        return $this->belongsTo(Location::class);
+        return $this->belongsTo(Supplier::class, 'supplier_id');
     }
 
-    // Status relationship
-    public function status(): BelongsTo
+    public function stockItems(): HasMany
     {
-        return $this->belongsTo(Status::class);
+        return $this->hasMany(StockItem::class, 'stock_id');
     }
 
-    // Check-ins/outs relationship
     public function checkInOuts(): HasMany
     {
-        return $this->hasMany(CheckInOut::class);
+        return $this->hasMany(CheckInOut::class, 'stock_id');
     }
 
-    // Maintenances relationship
     public function maintenances(): HasMany
     {
-        return $this->hasMany(Maintenance::class);
+        return $this->hasMany(Maintenance::class, 'stock_id');
     }
 
-    // Check if item is currently checked out
-    public function getIsCheckedOutAttribute(): bool
+    public function getIsExpiredAttribute(): bool
     {
-        return $this->checkInOuts()
-            ->whereNull('checkin_date')
-            ->exists();
+        return $this->expiry_date && $this->expiry_date->isPast();
     }
 
-    // Get current check-out record if any
-    public function getCurrentCheckOutAttribute()
+    public function getIsActiveAndNotExpiredAttribute(): bool
     {
-        return $this->checkInOuts()
-            ->whereNull('checkin_date')
-            ->latest('checkout_date')
-            ->first();
+        return $this->is_active && ! $this->getIsExpiredAttribute();
     }
 }

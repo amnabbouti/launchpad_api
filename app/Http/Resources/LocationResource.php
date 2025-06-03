@@ -2,30 +2,29 @@
 
 namespace App\Http\Resources;
 
-use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Http\Request;
 
-class LocationResource extends JsonResource
+class LocationResource extends BaseResource
 {
-    public function toArray($request): array
+    public function toArray(Request $request): array
     {
-        return [
+        $data = [
             'id' => $this->id,
+            'org_id' => $this->org_id,
             'name' => $this->name,
             'code' => $this->code,
             'parent_id' => $this->parent_id,
             'path' => $this->path,
+            'description' => $this->description,
             'is_active' => $this->is_active,
 
-            // Relationships
-            'parent' => $this->when($this->relationLoaded('parent'), function () {
-                return new LocationResource($this->parent);
-            }),
-            'childrens' => $this->when($this->relationLoaded('childrens'), function () {
-                return LocationResource::collection($this->childrens);
-            }),
-            'items' => $this->when($this->relationLoaded('items'), function () {
-                return ItemResource::collection($this->items);
-            }),
+            'organization' => $this->whenLoaded('organization', fn () => new OrganizationResource($this->organization)),
+            'parent' => $this->whenLoaded('parent', fn () => new LocationResource($this->parent)),
+            'children' => $this->whenLoaded('children', fn () => LocationResource::collection($this->children)),
+            'childrenRecursive' => $this->whenLoaded('childrenRecursive', fn () => LocationResource::collection($this->childrenRecursive)),
+            'items' => $this->whenLoaded('items', fn () => ItemResource::collection($this->items)),
         ];
+
+        return $this->addCommonData($data, $request);
     }
 }

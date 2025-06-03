@@ -2,38 +2,38 @@
 
 namespace App\Http\Resources;
 
-use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Http\Request;
 
-class StockResource extends JsonResource
+class StockResource extends BaseResource
 {
-    public function toArray($request): array
+    public function toArray(Request $request): array
     {
-        return [
+        $data = [
             'id' => $this->id,
-            'serial_number' => $this->serial_number,
-            'barcode' => $this->barcode,
-            'purchase_price' => $this->purchase_price,
-            'purchase_date' => $this->purchase_date,
-            'warranty_end_date' => $this->warranty_end_date,
+            'org_id' => $this->org_id,
+            'batch_number' => $this->batch_number,
+            'received_date' => $this->received_date?->toISOString(),
+            'expiry_date' => $this->expiry_date?->toISOString(),
+            'supplier_id' => $this->supplier_id,
+            'unit_cost' => $this->unit_cost,
             'notes' => $this->notes,
             'is_active' => $this->is_active,
-            'location_id' => $this->location_id,
-            'status_id' => $this->status_id,
-            'is_checked_out' => $this->is_checked_out,
+            'expired' => $this->getIsExpiredAttribute(),
+            'active_and_not_expired' => $this->getIsActiveAndNotExpiredAttribute(),
+            'created_at' => $this->created_at?->toISOString(),
+            'updated_at' => $this->updated_at?->toISOString(),
 
-            // Relationships
-            'items' => $this->when($this->relationLoaded('items'), function () {
-                return ItemResource::collection($this->items);
-            }),
-            'location' => $this->when($this->relationLoaded('location'), function () {
-                return new LocationResource($this->location);
-            }),
-            'status' => $this->when($this->relationLoaded('status'), function () {
-                return new StatusResource($this->status);
-            }),
-            'current_check_out' => $this->when($this->current_check_out, function () {
-                return $this->current_check_out;
-            }),
+            'organization' => $this->whenLoaded('organization', fn () => new OrganizationResource($this->organization)),
+
+            'supplier' => $this->whenLoaded('supplier', fn () => new SupplierResource($this->supplier)),
+
+            'stock_items' => $this->whenLoaded('stockItems', fn () => StockItemResource::collection($this->stockItems)),
+
+            'check_in_outs' => $this->whenLoaded('checkInOuts', fn () => CheckInOutResource::collection($this->checkInOuts)),
+
+            'maintenances' => $this->whenLoaded('maintenances', fn () => MaintenanceResource::collection($this->maintenances)),
         ];
+
+        return $this->addCommonData($data, $request);
     }
 }

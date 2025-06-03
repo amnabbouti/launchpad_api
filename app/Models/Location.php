@@ -2,38 +2,40 @@
 
 namespace App\Models;
 
+use App\Traits\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Location extends Model
 {
     use HasFactory;
-    use SoftDeletes;
+    use HasOrganizationScope;
 
-    // Fields that can be mass assigned
+    public const DELETING_WITH_CHILDREN_MESSAGE = 'Warning: Deleting a location with child locations. Child locations will become top-level locations.';
+
     protected $fillable = [
+        'org_id',
         'name',
         'code',
         'parent_id',
         'path',
+        'description',
+        'is_active',
     ];
 
-    public function getContent($field)
-    {
-        return $this->$field;
-    }
-
-    // Event messages
-    public const DELETING_WITH_CHILDREN_MESSAGE = 'Warning: Deleting a location with child locations. Child locations will become top-level locations.';
-
-    // Type casting for attributes
     protected $casts = [
         'is_active' => 'boolean',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
+
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class, 'org_id');
+    }
 
     // Parent location relationship
     public function parent(): BelongsTo
@@ -48,18 +50,17 @@ class Location extends Model
     }
 
     // Loads all nested children recursively for hierarchy navigation
-    public function childrens()
+    public function childrenRecursive()
     {
-        return $this->children()->with('childrens');
+        return $this->children()->with('childrenRecursive');
     }
 
     // Items stored at this location with quantities
     public function items(): BelongsToMany
     {
-        return $this->belongsToMany(Item::class)
+        return $this->belongsToMany(Item::class, 'item_location', 'location_id', 'item_id')
             ->withPivot('quantity')
-            ->withTimestamps()
-            ->withTrashed();
+            ->withTimestamps();
     }
 
     protected static function booted(): void
@@ -72,6 +73,7 @@ class Location extends Model
 
         static::deleting(function ($location) {
             $childrenCount = $location->children()->count();
+
             if ($childrenCount > 0) {
                 \Illuminate\Support\Facades\Log::warning(Location::DELETING_WITH_CHILDREN_MESSAGE, [
                     'location_id' => $location->id,
