@@ -6,10 +6,14 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         Schema::create('maintenance_conditions', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('org_id')->constrained('organizations')->onDelete('cascade');
             $table->boolean('mail_on_warning')->default(false);
             $table->boolean('mail_on_maintenance')->default(false);
             $table->integer('maintenance_recurrence_quantity')->default(0);
@@ -20,26 +24,26 @@ return new class extends Migration
             $table->string('recurrence_unit')->nullable();
             $table->decimal('price_per_unit', 10, 2)->default(0);
             $table->boolean('is_active')->default(true);
+            $table->foreignId('item_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignId('status_when_returned_id')->nullable()->constrained('item_statuses')->onDelete('set null');
+            $table->foreignId('status_when_exceeded_id')->nullable()->constrained('item_statuses')->onDelete('set null');
+            $table->foreignId('maintenance_category_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignId('unit_of_measure_id')->nullable()->constrained()->onDelete('set null');
+            $table->timestamps();
 
-            // Foreign keys
-            $table->unsignedBigInteger('item_id')->nullable();
-            $table->unsignedBigInteger('status_when_returned_id')->nullable();
-            $table->unsignedBigInteger('status_when_exceeded_id')->nullable();
-            $table->unsignedBigInteger('maintenance_category_id')->nullable();
-            $table->unsignedBigInteger('unit_of_measure_id')->nullable();
-
-            // Indexes
-            $table->index('item_id');
+            $table->index('org_id');
+            $table->index(['org_id', 'id']);
+            $table->index(['org_id', 'item_id']);
+            $table->index(['org_id', 'maintenance_category_id']);
             $table->index('status_when_returned_id');
             $table->index('status_when_exceeded_id');
-            $table->index('maintenance_category_id');
             $table->index('unit_of_measure_id');
-
-            $table->timestamps();
-            $table->softDeletes();
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::dropIfExists('maintenance_conditions');

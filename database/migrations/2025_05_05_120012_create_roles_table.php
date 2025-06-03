@@ -8,17 +8,17 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('maintenance_categories', function (Blueprint $table) {
+        Schema::create('roles', function (Blueprint $table): void {
             $table->id();
-            $table->string('remarks')->nullable();
-            $table->boolean('is_active')->default(true);
+            $table->string('slug')->unique();
+            $table->string('title');
+            $table->json('forbidden')->nullable();
             $table->timestamps();
-            $table->softDeletes();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('maintenance_categories');
+        Schema::dropIfExists('roles');
     }
 };

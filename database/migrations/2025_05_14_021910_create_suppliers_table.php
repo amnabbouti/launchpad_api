@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('suppliers', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('org_id')->constrained('organizations')->onDelete('cascade');
             $table->string('name');
-            $table->string('code')->nullable()->unique();
-            $table->string('contact_name')->nullable();
+            $table->string('code')->nullable();
             $table->string('email')->nullable();
             $table->string('phone')->nullable();
             $table->text('address')->nullable();
@@ -28,7 +28,10 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-            $table->softDeletes();
+
+            $table->unique(['org_id', 'code']);
+            $table->index('org_id');
+            $table->index(['org_id', 'id']);
         });
     }
 
