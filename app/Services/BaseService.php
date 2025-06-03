@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Constants\ErrorMessages;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -16,85 +17,161 @@ class BaseService
         $this->model = $model;
     }
 
-    // All records
+    /**
+     * Get all records.
+     */
     public function all(array $columns = ['*'], array $relations = []): Collection
     {
-        return $this->model->with($relations)
-            ->get($columns);
+        return $this->getQuery()->with($relations)->get($columns);
     }
 
-    // Paginate
+    /**
+     * Paginate records.
+     */
     public function paginate(int $perPage = 10, array $columns = ['*'], array $relations = []): LengthAwarePaginator
     {
         if ($perPage <= 0) {
-            throw new InvalidArgumentException('Per page must be a positive integer');
+            throw new InvalidArgumentException(ErrorMessages::INVALID_QUERY_PARAMETER.': perPage must be a positive integer');
         }
-        
-        return $this->model->with($relations)
-            ->paginate($perPage, $columns);
+
+        return $this->getQuery()->with($relations)->paginate($perPage, $columns);
     }
 
-    // Find by ID
-    public function findById(int $id, array $columns = ['*'], array $relations = [], array $appends = []): ?Model
+    /**
+     * Find record by ID.
+     */
+    public function findById($id, array $columns = ['*'], array $relations = [], array $appends = []): Model
     {
-        if ($id <= 0) {
-            throw new InvalidArgumentException('ID must be a positive integer');
+        // Validate that ID is numeric and positive
+        if (! is_numeric($id) || (int) $id <= 0) {
+            throw new InvalidArgumentException(ErrorMessages::INVALID_ID);
         }
-        
-        $query = $this->model->with($relations);
+
+        $id = (int) $id;
+
+        $query = $this->getQuery()->with($relations);
 
         if (! empty($appends)) {
             $query = $query->append($appends);
         }
 
-        return $query->find($id, $columns);
+        $model = $query->find($id, $columns);
+
+        if (! $model) {
+            $modelName = class_basename($this->model);
+            throw new InvalidArgumentException(ErrorMessages::NOT_FOUND);
+        }
+
+        return $model;
     }
 
-    // Create
+    /**
+     * Create a new record.
+     */
     public function create(array $data): Model
     {
         if (empty($data)) {
-            throw new InvalidArgumentException('Data cannot be empty');
+            throw new InvalidArgumentException(ErrorMessages::EMPTY_DATA);
         }
-        
+
         return $this->model->create($data);
     }
 
-    // Update
-    public function update(int $id, array $data): Model
+    /**
+     * Update a record by ID.
+     */
+    public function update($id, array $data): Model
     {
-        if ($id <= 0) {
-            throw new InvalidArgumentException('ID must be a positive integer');
+        // Validate that ID is numeric and positive
+        if (! is_numeric($id) || (int) $id <= 0) {
+            throw new InvalidArgumentException(ErrorMessages::INVALID_ID);
         }
-        
+
+        $id = (int) $id;
+
         if (empty($data)) {
-            throw new InvalidArgumentException('Update data cannot be empty');
+            throw new InvalidArgumentException(ErrorMessages::EMPTY_DATA);
         }
-        
+
         $record = $this->findById($id);
-        
-        if (!$record) {
-            throw new InvalidArgumentException("Record with ID {$id} not found");
-        }
-        
+
         $record->update($data);
 
         return $record;
     }
 
-    // Delete
-    public function delete(int $id): bool
+    /**
+     * Delete a record by ID.
+     */
+    public function delete($id): bool
     {
-        if ($id <= 0) {
-            throw new InvalidArgumentException('ID must be a positive integer');
+        // Validate that ID is numeric and positive
+        if (! is_numeric($id) || (int) $id <= 0) {
+            throw new InvalidArgumentException(ErrorMessages::INVALID_ID);
         }
-        
+
+        $id = (int) $id;
+
         $record = $this->findById($id);
-        
-        if (!$record) {
-            throw new InvalidArgumentException("Record with ID {$id} not found");
-        }
-        
+
         return $record->delete();
+    }
+
+    /**
+     * Get a query builder instance.
+     */
+    protected function getQuery()
+    {
+        return $this->model->newQuery();
+    }
+
+    /**
+     * Get allowed query parameters for this service.
+     */
+    protected function getAllowedParams(): array
+    {
+        return ['with'];
+    }
+
+    /**
+     * Get valid relations for the model.
+     */
+    protected function getValidRelations(): array
+    {
+        return [];
+    }
+
+    /**
+     * Process and validate request parameters for query building.
+     */
+    public function processRequestParams(array $params): array
+    {
+        // Validate parameters
+        $allowedParams = $this->getAllowedParams();
+        $unknownParams = array_diff(array_keys($params), $allowedParams);
+
+        if (! empty($unknownParams)) {
+            throw new InvalidArgumentException(ErrorMessages::INVALID_QUERY_PARAMETER.': '.implode(', ', $unknownParams));
+        }
+
+        // Process and validate 'with' parameter
+        $processedParams = [
+            'with' => ! empty($params['with'])
+                ? (is_string($params['with']) ? array_filter(explode(',', $params['with'])) : $params['with'])
+                : null,
+        ];
+
+        if (! empty($processedParams['with'])) {
+            $validRelations = $this->getValidRelations();
+            $invalidRelations = array_diff(
+                is_array($processedParams['with']) ? $processedParams['with'] : [$processedParams['with']],
+                $validRelations
+            );
+            if (! empty($invalidRelations)) {
+                throw new InvalidArgumentException(ErrorMessages::INVALID_RELATION.': '.implode(', ', $invalidRelations));
+            }
+        }
+
+        return $processedParams;
     }
 }
