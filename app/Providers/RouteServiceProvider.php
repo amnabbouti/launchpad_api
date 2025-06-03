@@ -11,13 +11,11 @@ use Illuminate\Support\Facades\Route;
 class RouteServiceProvider extends ServiceProvider
 {
     // Home route path
-    public const HOME = '/home';
+    public const HOME = '/dashboard';
 
     public function boot(): void
     {
-        RateLimiter::for('api', function (Request $request) {
-            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
-        });
+        RateLimiter::for('api', fn (Request $request) => Limit::perMinute(60)->by($request->user()?->id ?: $request->ip()));
 
         $this->routes(function () {
             Route::middleware('api')
@@ -26,10 +24,6 @@ class RouteServiceProvider extends ServiceProvider
 
             Route::middleware('web')
                 ->group(base_path('routes/web.php'));
-
-            // Platform routes
-            Route::middleware('web')
-                ->group(base_path('routes/platform.php'));
         });
     }
 }

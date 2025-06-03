@@ -2,21 +2,24 @@
 
 namespace App\Models;
 
+use App\Traits\HasAttachments;
+use App\Traits\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CheckInOut extends Model
 {
+    use HasAttachments;
     use HasFactory;
-    use SoftDeletes;
+    use HasOrganizationScope;
 
     protected $table = 'check_ins_outs';
 
     protected $fillable = [
+        'org_id',
         'user_id',
-        'item_id',
+        'stock_item_id',
         'checkout_location_id',
         'checkout_date',
         'quantity',
@@ -39,51 +42,62 @@ class CheckInOut extends Model
         'quantity' => 'decimal:2',
         'checkin_quantity' => 'decimal:2',
         'is_active' => 'boolean',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
-    // Checkout user
-    public function user(): BelongsTo
+    public function organization(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Organization::class, 'org_id');
     }
 
-    // Checkin user
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
     public function checkinUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'checkin_user_id');
     }
 
-    // Item
-    public function item(): BelongsTo
+    public function stockItem(): BelongsTo
     {
-        return $this->belongsTo(Item::class);
+        return $this->belongsTo(StockItem::class, 'stock_item_id');
     }
 
-    // Checkout location
     public function checkoutLocation(): BelongsTo
     {
         return $this->belongsTo(Location::class, 'checkout_location_id');
     }
 
-    // Checkin location
     public function checkinLocation(): BelongsTo
     {
         return $this->belongsTo(Location::class, 'checkin_location_id');
     }
 
-    // Status out
     public function statusOut(): BelongsTo
     {
-        return $this->belongsTo(Status::class, 'status_out_id');
+        return $this->belongsTo(ItemStatus::class, 'status_out_id');
     }
 
-    // Status in
     public function statusIn(): BelongsTo
     {
-        return $this->belongsTo(Status::class, 'status_in_id');
+        return $this->belongsTo(ItemStatus::class, 'status_in_id');
     }
 
-    // Check out status
+    public function getIsCheckedInAttribute(): bool
+    {
+        return ! is_null($this->checkin_date);
+    }
+
+    public function getIsOverdueAttribute(): bool
+    {
+        return $this->expected_return_date
+               && $this->expected_return_date->isPast()
+               && is_null($this->checkin_date);
+    }
+
     public function getIsCheckedOutAttribute(): bool
     {
         return $this->checkin_date === null;

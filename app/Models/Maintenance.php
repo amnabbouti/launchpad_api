@@ -2,18 +2,21 @@
 
 namespace App\Models;
 
+use App\Traits\HasAttachments;
+use App\Traits\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Maintenance extends Model
 {
+    use HasAttachments;
     use HasFactory;
-    use SoftDeletes;
+    use HasOrganizationScope;
 
     protected $fillable = [
+        'org_id',
         'remarks',
         'invoice_nbr',
         'cost',
@@ -23,9 +26,11 @@ class Maintenance extends Model
         'is_repair',
         'import_id',
         'import_source',
-        'employee_id',
+        'user_id',
         'supplier_id',
-        'item_id',
+        'stock_item_id',
+        'status_out_id',
+        'status_in_id',
     ];
 
     protected $casts = [
@@ -34,42 +39,42 @@ class Maintenance extends Model
         'date_back_from_maintenance' => 'datetime',
         'date_in_maintenance' => 'datetime',
         'is_repair' => 'boolean',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
-    // Employee relationship
-    public function employee(): BelongsTo
+    public function organization(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'employee_id');
+        return $this->belongsTo(Organization::class, 'org_id');
     }
 
-    // Item relationship
-    public function item(): BelongsTo
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(Item::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
-    // Supplier relationship
+    public function stockItem(): BelongsTo
+    {
+        return $this->belongsTo(StockItem::class, 'stock_item_id');
+    }
+
     public function supplier(): BelongsTo
     {
-        return $this->belongsTo(Supplier::class);
+        return $this->belongsTo(Supplier::class, 'supplier_id');
     }
 
-    // Status out relationship
     public function statusOut(): BelongsTo
     {
-        return $this->belongsTo(Status::class, 'status_out_id');
+        return $this->belongsTo(ItemStatus::class, 'status_out_id');
     }
 
-    // Status in relationship
     public function statusIn(): BelongsTo
     {
-        return $this->belongsTo(Status::class, 'status_in_id');
+        return $this->belongsTo(ItemStatus::class, 'status_in_id');
     }
 
-    // Maintenance details relationship
     public function maintenanceDetails(): HasMany
     {
-        return $this->hasMany(MaintenanceDetail::class);
+        return $this->hasMany(MaintenanceDetail::class, 'maintenance_id');
     }
-
 }
