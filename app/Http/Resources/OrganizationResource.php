@@ -9,7 +9,7 @@ class OrganizationResource extends BaseResource
     public function toArray(Request $request): array
     {
         $data = [
-            'id' => $this->id,
+            'id' => $this->public_id,
             'name' => $this->name,
             'email' => $this->email,
             'telephone' => $this->telephone,

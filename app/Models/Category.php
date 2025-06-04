@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\HasOrganizationScope;
+use App\Traits\HasPublicId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,6 +13,7 @@ class Category extends Model
 {
     use HasFactory;
     use HasOrganizationScope;
+    use HasPublicId;
 
     public const DELETING_WITH_CHILDREN_MESSAGE = 'Warning: Deleting a category with subcategories. Child categories will become top-level categories.';
 
@@ -26,6 +28,11 @@ class Category extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+
+    protected static function getEntityType(): string
+    {
+        return 'category';
+    }
 
     public function organization(): BelongsTo
     {

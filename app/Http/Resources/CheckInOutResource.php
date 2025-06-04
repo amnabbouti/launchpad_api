@@ -9,7 +9,7 @@ class CheckInOutResource extends BaseResource
     public function toArray(Request $request): array
     {
         $data = [
-            'id' => $this->id,
+            'id' => $this->public_id,
             'org_id' => $this->org_id,
             'user_id' => $this->user_id,
             'stock_item_id' => $this->stock_item_id,

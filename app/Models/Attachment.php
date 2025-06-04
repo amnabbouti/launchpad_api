@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\HasOrganizationScope;
+use App\Traits\HasPublicId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\Storage;
 
 class Attachment extends Model
 {
+    use HasPublicId; 
     use HasFactory;
     use HasOrganizationScope;
     use SoftDeletes;
@@ -35,6 +37,14 @@ class Attachment extends Model
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
     ];
+
+    /**
+     * Get the entity type for public_id generation
+     */
+    protected static function getEntityType(): string
+    {
+        return 'attachment';
+    }
 
     public function organization(): BelongsTo
     {

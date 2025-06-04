@@ -9,7 +9,7 @@ class AttachmentResource extends BaseResource
     public function toArray(Request $request): array
     {
         $data = [
-            'id' => $this->id,
+            'id' => $this->public_id,
             'org_id' => $this->org_id,
             'filename' => $this->filename,
             'original_filename' => $this->original_filename,

@@ -9,10 +9,9 @@ class CategoryResource extends BaseResource
     public function toArray(Request $request): array
     {
         $data = [
-            'id' => $this->id,
-            'org_id' => $this->org_id,
+            'id' => $this->public_id,
             'name' => $this->name,
-            'parent_id' => $this->parent_id,
+            'parent_id' => $this->parent?->public_id,
             'path' => $this->path,
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),

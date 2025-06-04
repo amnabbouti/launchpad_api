@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Traits\HasAttachments;
 use App\Traits\HasOrganizationScope;
+use App\Traits\HasPublicId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,8 +14,14 @@ class CheckInOut extends Model
     use HasAttachments;
     use HasFactory;
     use HasOrganizationScope;
+    use HasPublicId;
 
     protected $table = 'check_ins_outs';
+
+    protected static function getEntityType(): string
+    {
+        return 'check_in_out';
+    }
 
     protected $fillable = [
         'org_id',

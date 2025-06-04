@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Traits\HasPublicId;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Organization extends Model
 {
+    use HasPublicId; // Add public_id support
     use HasFactory;
 
     protected $fillable = [
@@ -18,6 +21,11 @@ class Organization extends Model
         'remarks',
         'website',
     ];
+
+    protected static function getEntityType(): string
+    {
+        return 'organization';
+    }
 
     protected $casts = [
         'created_at' => 'datetime',
