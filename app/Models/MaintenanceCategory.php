@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\HasPublicId;
+
 use App\Traits\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -10,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MaintenanceCategory extends Model
 {
+    use HasPublicId; // Add public_id support
     use HasFactory;
     use HasOrganizationScope;
 
@@ -19,6 +22,11 @@ class MaintenanceCategory extends Model
         'remarks',
         'is_active',
     ];
+
+    protected static function getEntityType(): string
+    {
+        return 'maintenance_category';
+    }
 
     protected $casts = [
         'is_active' => 'boolean',

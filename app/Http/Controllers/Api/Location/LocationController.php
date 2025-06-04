@@ -45,7 +45,7 @@ class LocationController extends BaseController
     /**
      * Get a specific location by ID with optional relationships.
      */
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         // Let service handle relationship processing
         $processed = $this->locationService->processRequestParams($request->query());
@@ -62,7 +62,7 @@ class LocationController extends BaseController
     /**
      * Update a specific location.
      */
-    public function update(LocationRequest $request, int $id): JsonResponse
+    public function update(LocationRequest $request, string $id): JsonResponse
     {
         $updatedLocation = $this->locationService->update($id, $request->validated());
 
@@ -75,7 +75,7 @@ class LocationController extends BaseController
     /**
      * Remove a specific location by ID.
      */
-    public function destroy(int $id): JsonResponse
+    public function destroy(string $id): JsonResponse
     {
         $this->locationService->delete($id);
 

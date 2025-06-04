@@ -9,11 +9,10 @@ class LocationResource extends BaseResource
     public function toArray(Request $request): array
     {
         $data = [
-            'id' => $this->id,
-            'org_id' => $this->org_id,
+            'id' => $this->public_id,
             'name' => $this->name,
             'code' => $this->code,
-            'parent_id' => $this->parent_id,
+            'parent_id' => $this->parent?->public_id,
             'path' => $this->path,
             'description' => $this->description,
             'is_active' => $this->is_active,

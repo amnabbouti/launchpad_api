@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\HasPublicId;
+
 use App\Traits\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class MaintenanceDetail extends Model
 {
+    use HasPublicId; // Add public_id support
     use HasFactory;
     use HasOrganizationScope;
 
@@ -18,6 +21,11 @@ class MaintenanceDetail extends Model
         'maintenance_condition_id',
         'maintenance_id',
     ];
+
+    protected static function getEntityType(): string
+    {
+        return 'maintenance_detail';
+    }
 
     protected $casts = [
         'value' => 'decimal:2',

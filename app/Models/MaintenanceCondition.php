@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\HasPublicId;
+
 use App\Traits\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -10,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MaintenanceCondition extends Model
 {
+    use HasPublicId; // Add public_id support
     use HasFactory;
     use HasOrganizationScope;
 
@@ -31,6 +34,11 @@ class MaintenanceCondition extends Model
         'maintenance_category_id',
         'unit_of_measure_id',
     ];
+
+    protected static function getEntityType(): string
+    {
+        return 'maintenance_condition';
+    }
 
     protected $casts = [
         'mail_on_warning' => 'boolean',

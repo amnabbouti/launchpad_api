@@ -19,8 +19,7 @@ class MaintenanceResource extends BaseResource
         }
 
         $data = [
-            'id' => $this->id,
-            'org_id' => $this->org_id,
+            'id' => $this->public_id,
             'remarks' => $this->remarks,
             'invoice_nbr' => $this->invoice_nbr,
             'cost' => $this->cost,
@@ -33,8 +32,8 @@ class MaintenanceResource extends BaseResource
             'import_id' => $this->import_id,
             'import_source' => $this->import_source,
             'user_id' => $this->user_id,
-            'supplier_id' => $this->supplier_id,
-            'stock_item_id' => $this->stock_item_id,
+            'supplier_id' => $this->supplier?->public_id,
+            'stock_item_id' => $this->stockItem?->public_id,
             'status_out_id' => $this->status_out_id,
             'status_in_id' => $this->status_in_id,
 

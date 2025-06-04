@@ -9,7 +9,7 @@ class MaintenanceConditionResource extends BaseResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
+            'id' => $this->public_id,
             'org_id' => $this->org_id,
             'mail_on_warning' => $this->mail_on_warning,
             'mail_on_maintenance' => $this->mail_on_maintenance,

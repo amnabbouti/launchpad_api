@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\HasOrganizationScope;
+use App\Traits\HasPublicId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,6 +14,7 @@ class Location extends Model
 {
     use HasFactory;
     use HasOrganizationScope;
+    use HasPublicId;
 
     public const DELETING_WITH_CHILDREN_MESSAGE = 'Warning: Deleting a location with child locations. Child locations will become top-level locations.';
 
@@ -31,6 +33,11 @@ class Location extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+
+    protected static function getEntityType(): string
+    {
+        return 'location';
+    }
 
     public function organization(): BelongsTo
     {

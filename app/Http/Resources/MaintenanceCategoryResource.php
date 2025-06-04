@@ -9,8 +9,9 @@ class MaintenanceCategoryResource extends BaseResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'org_id' => $this->org_id,            'name' => $this->name,
+            'id' => $this->public_id,
+            'org_id' => $this->org_id,            
+            'name' => $this->name,
             'remarks' => $this->remarks,
             'is_active' => $this->is_active,
             'created_at' => $this->created_at?->toISOString(),
