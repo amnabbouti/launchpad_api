@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\HasPublicId;
+
 use App\Traits\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,6 +14,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
+    use HasPublicId; // Add public_id support
     use HasApiTokens;
     use HasFactory;
     use HasOrganizationScope;
@@ -38,6 +41,11 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+
+    protected static function getEntityType(): string
+    {
+        return 'user';
+    }
 
     protected $casts = [
         'email_verified_at' => 'datetime',

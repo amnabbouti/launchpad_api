@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\HasPublicId;
+
 use App\Traits\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -10,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class UnitOfMeasure extends Model
 {
+    use HasPublicId; // Add public_id support
     use HasFactory;
     use HasOrganizationScope;
 
@@ -37,6 +40,11 @@ class UnitOfMeasure extends Model
         'type',
         'is_active',
     ];
+
+    protected static function getEntityType(): string
+    {
+        return 'unit_of_measure';
+    }
 
     protected $casts = [
         'is_active' => 'boolean',

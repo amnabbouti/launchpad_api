@@ -9,7 +9,7 @@ class UnitOfMeasureResource extends BaseResource
     public function toArray(Request $request): array
     {
         $data = [
-            'id' => $this->id,
+            'id' => $this->public_id,
             'org_id' => $this->org_id,
             'name' => $this->name,
             'code' => $this->code,
