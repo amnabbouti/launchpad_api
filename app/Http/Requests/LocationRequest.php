@@ -22,11 +22,7 @@ class LocationRequest extends BaseRequest
                 'max:50',
                 Rule::unique('locations')->where(fn ($query) => $query->where('org_id', $orgId))->ignore($locationId),
             ],
-            'parent_id' => [
-                'nullable',
-                'integer',
-                Rule::exists('locations', 'id')->where(fn ($query) => $query->where('org_id', $orgId)),
-            ],
+            'parent_id' => 'nullable|exists:locations,id',
             'path' => 'nullable|string|max:500',
             'description' => 'nullable|string',
             'is_active' => 'boolean',

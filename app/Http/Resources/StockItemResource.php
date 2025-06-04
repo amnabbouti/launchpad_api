@@ -24,7 +24,7 @@ class StockItemResource extends BaseResource
             'organization' => new OrganizationResource($this->whenLoaded('organization')),
             'stock' => new StockResource($this->whenLoaded('stock')),
             'item' => new ItemResource($this->whenLoaded('item')),
-            'status' => new ItemStatusResource($this->whenLoaded('status')),
+            'status' => new StatusResource($this->whenLoaded('status')),
             'maintenances' => MaintenanceResource::collection($this->whenLoaded('maintenances')),            'check_in_outs' => CheckInOutResource::collection($this->whenLoaded('checkInOuts')),
             'stock_item_locations' => StockItemLocationResource::collection($this->whenLoaded('stockItemLocations')),
             'current_check_out' => $this->current_check_out ? new CheckInOutResource($this->current_check_out) : null,

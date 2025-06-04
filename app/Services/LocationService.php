@@ -45,10 +45,13 @@ class LocationService extends BaseService
      */
     public function createLocation(array $data): Model
     {
-        // path for hierarchical locations
+        // Handle path for hierarchical locations
         if (! empty($data['parent_id'])) {
             $parent = $this->findById($data['parent_id']);
             $data['path'] = $parent->path ? $parent->path.$parent->id.'/' : $parent->id.'/';
+            
+            // Convert public ID to internal ID for storage
+            $data['parent_id'] = $parent->id;
         }
 
         return $this->create($data);

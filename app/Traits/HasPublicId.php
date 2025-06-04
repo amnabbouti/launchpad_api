@@ -1,0 +1,119 @@
+<?php
+
+namespace App\Traits;
+
+use App\Services\EntityIdService;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+
+trait HasPublicId
+{
+    /**
+     * auto-generate public IDs
+     */
+    protected static function bootHasPublicId(): void
+    {
+        static::created(function ($model) {
+            static::generatePublicIdForModel($model);
+        });
+
+        static::deleted(function ($model) {
+            // Clean up the public ID when model is deleted
+            $model->entityId()?->delete();
+        });
+    }
+    
+    /**
+     * Generate public ID
+     */
+    protected static function generatePublicIdForModel($model): void
+    {
+        try {
+            $entityType = static::getEntityType();
+            $entityIdService = app(EntityIdService::class);
+
+            // Special case for Organization model - use its own ID as org_id
+            $orgId = $entityType === 'organization' ? $model->id : $model->org_id;
+
+            $entityIdService->generatePublicId($orgId, $entityType, $model->id);
+        } catch (\Exception $e) {
+
+            \Log::warning('Failed to generate public ID', [
+                'model' => get_class($model),
+                'model_id' => $model->id,
+                'org_id' => $orgId ?? $model->org_id ?? 'unknown',
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Get the entity type for this model.
+     */
+    protected static function getEntityType(): string
+    {
+        // can be overridden in each model
+        $className = class_basename(static::class);
+        return strtolower($className);
+    }
+
+    /**
+     * Relationship to EntityId
+     */
+    public function entityId(): HasOne
+    {
+        return $this->hasOne(\App\Models\EntityId::class, 'entity_internal_id')
+            ->where('entity_type', static::getEntityType());
+    }
+
+    /**
+     * Get the public ID for this model
+     */
+    public function getPublicIdAttribute(): ?string
+    {
+        return $this->entityId?->public_id;
+    }
+
+    /**
+     * Backfill public IDs for existing models that don't have them
+     * for models created in DB directly as well
+     */
+    public static function backfillMissingPublicIds(): void
+    {
+        $models = static::whereDoesntHave('entityId')->get();
+
+        foreach ($models as $model) {
+            static::generatePublicIdForModel($model);
+        }
+    }
+
+    /**
+     * Find model by public ID within the current organization
+     */
+    public static function findByPublicId(string $publicId, int $orgId): ?static
+    {
+        $entityId = \App\Models\EntityId::findByPublicId($publicId, $orgId);
+
+        if (!$entityId || $entityId->entity_type !== static::getEntityType()) {
+            return null;
+        }
+
+        return static::where('org_id', $orgId)
+            ->where('id', $entityId->entity_internal_id)
+            ->first();
+    }
+
+    /**
+     * Scope to find by public ID
+     */
+    public function scopeByPublicId($query, string $publicId, int $orgId)
+    {
+        $entityId = \App\Models\EntityId::findByPublicId($publicId, $orgId);
+
+        if (!$entityId || $entityId->entity_type !== static::getEntityType()) {
+            return $query->whereRaw('1 = 0'); // Return empty result
+        }
+
+        return $query->where('org_id', $orgId)
+            ->where('id', $entityId->entity_internal_id);
+    }
+}

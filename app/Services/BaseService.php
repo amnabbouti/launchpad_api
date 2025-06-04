@@ -85,7 +85,46 @@ class BaseService
             throw new InvalidArgumentException(ErrorMessages::EMPTY_DATA);
         }
 
+        // Resolve public IDs to internal IDs for foreign key fields
+        $data = $this->resolvePublicIds($data);
+
         return $this->model->create($data);
+    }
+
+    /**
+     * Resolve public IDs to internal IDs for foreign key fields.
+     */
+    protected function resolvePublicIds(array $data): array
+    {
+        $user = auth()->user();
+        if (!$user || !$user->org_id) {
+            return $data;
+        }
+
+        // Define common foreign key fields that might use public IDs
+        $foreignKeyMappings = [
+            'item_id' => \App\Models\Item::class,
+            'supplier_id' => \App\Models\Supplier::class,
+            'parent_id' => \App\Models\Location::class,
+            'location_id' => \App\Models\Location::class,
+            'stock_id' => \App\Models\Stock::class,
+            'stock_item_id' => \App\Models\StockItem::class,
+            'status_id' => \App\Models\ItemStatus::class,
+        ];
+
+        foreach ($foreignKeyMappings as $field => $modelClass) {
+            if (isset($data[$field]) && is_string($data[$field]) && !is_numeric($data[$field])) {
+                // Try to resolve public ID to internal ID
+                if (method_exists($modelClass, 'findByPublicId')) {
+                    $model = $modelClass::findByPublicId($data[$field], $user->org_id);
+                    if ($model) {
+                        $data[$field] = $model->id;
+                    }
+                }
+            }
+        }
+
+        return $data;
     }
 
     /**
@@ -96,6 +135,9 @@ class BaseService
         if (empty($data)) {
             throw new InvalidArgumentException(ErrorMessages::EMPTY_DATA);
         }
+
+        // Resolve public IDs to internal IDs for foreign key fields
+        $data = $this->resolvePublicIds($data);
 
         $record = $this->findById($id);
         $record->update($data);

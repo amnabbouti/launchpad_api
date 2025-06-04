@@ -9,8 +9,6 @@ class StockItemRequest extends BaseRequest
      */
     public function rules(): array
     {
-        $stockItemId = $this->route('stock_item') ?? null;
-
         return [
             'org_id' => 'required|exists:organizations,id',
             'stock_id' => 'required|exists:stocks,id',
@@ -18,7 +16,7 @@ class StockItemRequest extends BaseRequest
             'serial_number' => 'nullable|string|max:255',
             'barcode' => 'nullable|string|max:255',
             'quantity' => 'required|numeric|min:0',
-            'status_id' => 'nullable|exists:item_statuses,id',
+            'status_id' => 'required|exists:item_statuses,id',
             'notes' => 'nullable|string',
         ];
     }
