@@ -45,7 +45,7 @@ class EntityId extends Model
      */
     public function getPublicIdAttribute(): string
     {
-        return $this->entity_prefix.'-'.str_pad($this->sequence_number, 8, '0', STR_PAD_LEFT);
+        return $this->entity_prefix.'-'.str_pad($this->sequence_number, 4, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -69,7 +69,16 @@ class EntityId extends Model
      */
     public function scopeByPublicId($query, string $publicId, ?int $orgId = null)
     {
-        $query = $query->where('public_id', $publicId);
+        // Parse the public ID (e.g., "LOC-0001" -> prefix="LOC", sequence=1)
+        if (!preg_match('/^([A-Z]+)-(\d+)$/', $publicId, $matches)) {
+            return $query->whereRaw('1 = 0'); // Invalid format, return empty
+        }
+
+        $prefix = $matches[1];
+        $sequenceNumber = (int) $matches[2];
+
+        $query = $query->where('entity_prefix', $prefix)
+                      ->where('sequence_number', $sequenceNumber);
 
         if ($orgId) {
             $query->where('org_id', $orgId);

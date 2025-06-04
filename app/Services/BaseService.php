@@ -38,31 +38,42 @@ class BaseService
     }
 
     /**
-     * Find record by ID.
+     * Find record by ID (supports both internal numeric IDs and public IDs).
      */
     public function findById($id, array $columns = ['*'], array $relations = [], array $appends = []): Model
     {
-        // Validate that ID is numeric and positive
-        if (! is_numeric($id) || (int) $id <= 0) {
-            throw new InvalidArgumentException(ErrorMessages::INVALID_ID);
+        // Try to find by internal ID first (if numeric)
+        if (is_numeric($id) && (int) $id > 0) {
+            $query = $this->getQuery()->with($relations);
+            
+            if (! empty($appends)) {
+                $query = $query->append($appends);
+            }
+            
+            $model = $query->find((int) $id, $columns);
+            if ($model) {
+                return $model;
+            }
         }
 
-        $id = (int) $id;
-
-        $query = $this->getQuery()->with($relations);
-
-        if (! empty($appends)) {
-            $query = $query->append($appends);
+        // Try to find by public ID
+        if (method_exists($this->model, 'findByPublicId') && is_string($id)) {
+            $user = auth()->user();
+            if (!$user || !$user->org_id) {
+                throw new InvalidArgumentException(ErrorMessages::UNAUTHORIZED);
+            }
+            
+            $model = $this->model->findByPublicId($id, $user->org_id);
+            if ($model) {
+                // Load relationships if requested
+                if (!empty($relations)) {
+                    $model->load($relations);
+                }
+                return $model;
+            }
         }
 
-        $model = $query->find($id, $columns);
-
-        if (! $model) {
-            $modelName = class_basename($this->model);
-            throw new InvalidArgumentException(ErrorMessages::NOT_FOUND);
-        }
-
-        return $model;
+        throw new InvalidArgumentException(ErrorMessages::NOT_FOUND);
     }
 
     /**
@@ -78,42 +89,26 @@ class BaseService
     }
 
     /**
-     * Update a record by ID.
+     * Update a record by ID (supports both internal numeric IDs and public IDs).
      */
     public function update($id, array $data): Model
     {
-        // Validate that ID is numeric and positive
-        if (! is_numeric($id) || (int) $id <= 0) {
-            throw new InvalidArgumentException(ErrorMessages::INVALID_ID);
-        }
-
-        $id = (int) $id;
-
         if (empty($data)) {
             throw new InvalidArgumentException(ErrorMessages::EMPTY_DATA);
         }
 
         $record = $this->findById($id);
-
         $record->update($data);
 
         return $record;
     }
 
     /**
-     * Delete a record by ID.
+     * Delete a record by ID (supports both internal numeric IDs and public IDs).
      */
     public function delete($id): bool
     {
-        // Validate that ID is numeric and positive
-        if (! is_numeric($id) || (int) $id <= 0) {
-            throw new InvalidArgumentException(ErrorMessages::INVALID_ID);
-        }
-
-        $id = (int) $id;
-
         $record = $this->findById($id);
-
         return $record->delete();
     }
 
