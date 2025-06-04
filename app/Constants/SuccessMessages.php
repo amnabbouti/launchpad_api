@@ -23,7 +23,7 @@ class SuccessMessages
 
     public const RESOURCES_RETRIEVED = 'Resources retrieved successfully';
 
-    public const NO_RESOURCES_FOUND = 'No resources found matching your search criteria';
+    public const NO_RESOURCES_FOUND = 'No resources found';
 
     public const NO_RESOURCES_AVAILABLE = 'No resources available';
 

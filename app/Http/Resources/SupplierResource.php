@@ -14,7 +14,7 @@ class SupplierResource extends BaseResource
         if ($isItemSupplier) {
             // ItemSupplier relationship
             $data = [
-                'id' => $this->id,
+                'id' => $this->public_id,
                 'org_id' => $this->org_id,
                 'item_id' => $this->item_id,
                 'supplier_id' => $this->supplier_id,
@@ -33,8 +33,7 @@ class SupplierResource extends BaseResource
         } else {
             // Supplier data
             $data = [
-                'id' => $this->id,
-                'org_id' => $this->org_id,
+                'id' => $this->public_id,
                 'name' => $this->name,
                 'code' => $this->code,
                 'contact_name' => $this->contact_name,

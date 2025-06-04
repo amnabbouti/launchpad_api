@@ -10,7 +10,7 @@ class StatusResource extends BaseResource
     {
         // Base data common to both Status and ItemStatus models
         $data = [
-            'id' => $this->id,
+            'id' => $this->public_id,
             'org_id' => $this->org_id,
             'name' => $this->name,
             'description' => $this->description,

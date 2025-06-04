@@ -174,14 +174,10 @@ class StatusService extends BaseService
     }
 
     /**
-     * Find item status by ID.
+     * Find item status by ID (supports both public and internal IDs).
      */
     public function findItemStatusById($id, array $columns = ['*'], array $with = []): Model
     {
-        if (! is_numeric($id)) {
-            throw new \InvalidArgumentException('Item status ID must be a valid number');
-        }
-
         $query = $this->itemStatusModel->query();
 
         if (method_exists($this->itemStatusModel, 'scopeForOrganization') && auth()->check()) {
@@ -192,7 +188,12 @@ class StatusService extends BaseService
             $query->with($with);
         }
 
-        $model = $query->find($id, $columns);
+        // Try to find by public ID first, then fall back to internal ID
+        if (is_numeric($id)) {
+            $model = $query->find($id, $columns);
+        } else {
+            $model = $query->where('public_id', $id)->first($columns);
+        }
 
         if (! $model) {
             throw new \InvalidArgumentException('Item status not found');

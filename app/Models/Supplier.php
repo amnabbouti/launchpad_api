@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\HasOrganizationScope;
+use App\Traits\HasPublicId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,6 +13,7 @@ class Supplier extends Model
 {
     use HasFactory;
     use HasOrganizationScope;
+    use HasPublicId;
 
     protected $fillable = [
         'org_id',
@@ -35,6 +37,11 @@ class Supplier extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+
+    protected static function getEntityType(): string
+    {
+        return 'supplier';
+    }
 
     protected $appends = [
         'active',

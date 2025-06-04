@@ -73,7 +73,7 @@ class SupplierController extends BaseController
     /**
      * Specified supplier or relationship.
      */
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         try {
             if ($request->get('type') === 'relationship') {
@@ -109,7 +109,7 @@ class SupplierController extends BaseController
     /**
      * Update the specified supplier or relationship.
      */
-    public function update(SupplierRequest $request, int $id): JsonResponse
+    public function update(SupplierRequest $request, string $id): JsonResponse
     {
         try {
             if ($request->get('type') === 'relationship') {
@@ -135,7 +135,7 @@ class SupplierController extends BaseController
     /**
      * Delete item supplier relationship / supplier.
      */
-    public function destroy(Request $request, int $id): JsonResponse
+    public function destroy(Request $request, string $id): JsonResponse
     {
         try {
             if ($request->get('type') === 'relationship') {

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\HasOrganizationScope;
+use App\Traits\HasPublicId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Status extends Model
 {
+    use HasPublicId; // Add public_id support
     use HasFactory;
     use HasOrganizationScope;
 
@@ -19,6 +21,11 @@ class Status extends Model
         'description',
         'is_active',
     ];
+
+    protected static function getEntityType(): string
+    {
+        return 'status';
+    }
 
     protected $casts = [
         'is_active' => 'boolean',
