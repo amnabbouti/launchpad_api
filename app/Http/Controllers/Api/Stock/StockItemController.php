@@ -52,7 +52,7 @@ class StockItemController extends BaseController
     /**
      * Get a specific stock item.
      */
-    public function show(int $stock_item): JsonResponse
+    public function show(string $stock_item): JsonResponse
     {
         $with = array_filter(explode(',', request()->query('with', '')));
         $stockItem = $this->stockItemService->findById($stock_item, $with);
@@ -63,7 +63,7 @@ class StockItemController extends BaseController
     /**
      * Update a stock item.
      */
-    public function update(StockItemRequest $request, int $stock_item): JsonResponse
+    public function update(StockItemRequest $request, string $stock_item): JsonResponse
     {
         $updatedStockItem = $this->stockItemService->updateStockItem($stock_item, $request->validated());
 
@@ -76,7 +76,7 @@ class StockItemController extends BaseController
     /**
      * Delete a stock item.
      */
-    public function destroy(int $stock_item): JsonResponse
+    public function destroy(string $stock_item): JsonResponse
     {
         $this->stockItemService->delete($stock_item);
 

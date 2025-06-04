@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\HasPublicId;
+
 use App\Traits\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class StockItemLocation extends Model
 {
+    use HasPublicId; // Add public_id support
     use HasFactory;
     use HasOrganizationScope;
 
@@ -20,6 +23,11 @@ class StockItemLocation extends Model
         'moved_date',
         'notes',
     ];
+
+    protected static function getEntityType(): string
+    {
+        return 'stock_item_location';
+    }
 
     protected $casts = [
         'quantity' => 'decimal:2',

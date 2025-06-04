@@ -9,10 +9,9 @@ class StockItemResource extends BaseResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'org_id' => $this->org_id,
+            'id' => $this->public_id,
             'stock_id' => $this->stock_id,
-            'item_id' => $this->item_id,
+            'item_id' => $this->item?->public_id,
             'serial_number' => $this->serial_number,
             'barcode' => $this->barcode,
             'quantity' => $this->quantity,

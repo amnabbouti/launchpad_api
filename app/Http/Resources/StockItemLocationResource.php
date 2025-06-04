@@ -9,7 +9,7 @@ class StockItemLocationResource extends BaseResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
+            'id' => $this->public_id,
             'org_id' => $this->org_id,
             'stock_item_id' => $this->stock_item_id,
             'location_id' => $this->location_id,

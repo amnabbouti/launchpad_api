@@ -9,7 +9,7 @@ class StockResource extends BaseResource
     public function toArray(Request $request): array
     {
         $data = [
-            'id' => $this->id,
+            'id' => $this->public_id,
             'org_id' => $this->org_id,
             'batch_number' => $this->batch_number,
             'received_date' => $this->received_date?->toISOString(),
