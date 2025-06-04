@@ -4,18 +4,31 @@ namespace App\Models;
 
 use App\Traits\HasAttachments;
 use App\Traits\HasOrganizationScope;
+use App\Traits\HasPublicId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Item extends Model
 {
     use HasAttachments;
     use HasFactory;
     use HasOrganizationScope;
+    use HasPublicId;
+
+    /**
+     * Custom public ID prefix for Items
+     */
+    protected string $publicIdPrefix = 'ITM';
+
+    protected static function getEntityType(): string
+    {
+        return 'item';
+    }
 
     protected $fillable = [
         'org_id',
@@ -43,6 +56,8 @@ class Item extends Model
     ];
 
     protected $hidden = [];
+
+    protected $appends = ['public_id'];
 
     public static function rules(): array
     {

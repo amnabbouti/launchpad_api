@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\HasPublicId;
+
 use App\Traits\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ItemSupplier extends Model
 {
+    use HasPublicId; // Add public_id support
     use HasFactory;
     use HasOrganizationScope;
 
@@ -24,6 +27,11 @@ class ItemSupplier extends Model
         'lead_time_days',
         'is_preferred',
     ];
+
+    protected static function getEntityType(): string
+    {
+        return 'item_supplier';
+    }
 
     protected $casts = [
         'price' => 'decimal:2',
