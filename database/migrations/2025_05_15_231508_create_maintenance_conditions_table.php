@@ -25,8 +25,8 @@ return new class extends Migration
             $table->decimal('price_per_unit', 10, 2)->default(0);
             $table->boolean('is_active')->default(true);
             $table->foreignId('item_id')->nullable()->constrained()->onDelete('set null');
-            $table->foreignId('status_when_returned_id')->nullable()->constrained('item_statuses')->onDelete('set null');
-            $table->foreignId('status_when_exceeded_id')->nullable()->constrained('item_statuses')->onDelete('set null');
+            $table->foreignId('status_when_returned_id')->nullable()->constrained('statuses')->onDelete('set null');
+            $table->foreignId('status_when_exceeded_id')->nullable()->constrained('statuses')->onDelete('set null');
             $table->foreignId('maintenance_category_id')->nullable()->constrained()->onDelete('set null');
             $table->foreignId('unit_of_measure_id')->nullable()->constrained()->onDelete('set null');
             $table->timestamps();

@@ -21,7 +21,6 @@ return new class extends Migration
             $table->string('type')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-
             $table->unique(['org_id', 'code']);
             $table->index('org_id');
             $table->index(['org_id', 'id']);

@@ -8,10 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('stock_item_movements', function (Blueprint $table) {
+        Schema::create('item_movements', function (Blueprint $table) {
             $table->id();
             $table->foreignId('org_id')->constrained('organizations')->onDelete('cascade');
-            $table->foreignId('stock_item_id')->constrained()->onDelete('cascade');
+            $table->foreignId('item_id')->constrained()->onDelete('cascade');
             $table->foreignId('from_location_id')->nullable()->constrained('locations')->onDelete('set null');
             $table->foreignId('to_location_id')->nullable()->constrained('locations')->onDelete('set null');
             $table->decimal('quantity', 10, 2);
@@ -20,7 +20,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->timestamps();
 
-            $table->index(['org_id', 'stock_item_id']);
+            $table->index(['org_id', 'item_id']);
             $table->index('from_location_id');
             $table->index('to_location_id');
         });
@@ -28,6 +28,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('stock_item_movements');
+        Schema::dropIfExists('item_movements');
     }
 };

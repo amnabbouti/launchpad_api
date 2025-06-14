@@ -22,7 +22,6 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-
             $table->unique(['org_id', 'batch_number']);
             $table->index('org_id');
             $table->index(['org_id', 'id']);

@@ -25,17 +25,19 @@ return new class extends Migration
             $table->string('import_source')->nullable();
             $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
             $table->foreignId('supplier_id')->nullable()->constrained()->onDelete('set null');
-            $table->foreignId('stock_item_id')->nullable()->constrained()->onDelete('set null');
-            $table->foreignId('status_out_id')->nullable()->constrained('item_statuses')->onDelete('set null');
-            $table->foreignId('status_in_id')->nullable()->constrained('item_statuses')->onDelete('set null');
+            $table->unsignedBigInteger('maintainable_id')->nullable();
+            $table->string('maintainable_type')->nullable();
+            $table->foreignId('status_out_id')->nullable()->constrained('statuses')->onDelete('set null');
+            $table->foreignId('status_in_id')->nullable()->constrained('statuses')->onDelete('set null');
             $table->timestamps();
-
             $table->unique(['org_id', 'invoice_nbr']);
             $table->index('org_id');
             $table->index(['org_id', 'id']);
             $table->index(['org_id', 'user_id']);
             $table->index(['org_id', 'supplier_id']);
-            $table->index(['org_id', 'stock_item_id']);
+            $table->index(['org_id', 'maintainable_id']);
+            $table->index(['org_id', 'maintainable_type']);
+            $table->index(['maintainable_id', 'maintainable_type']);
             $table->index('status_out_id');
             $table->index('status_in_id');
         });

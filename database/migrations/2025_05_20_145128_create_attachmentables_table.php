@@ -16,7 +16,6 @@ return new class extends Migration
             $table->string('attachmentable_type');
             $table->unsignedBigInteger('attachmentable_id');
             $table->foreignId('attachment_id')->constrained('attachments')->onUpdate('cascade')->onDelete('cascade');
-
             $table->unique(['attachmentable_type', 'attachmentable_id', 'attachment_id'], 'attachmentables_unique');
             $table->index(['attachmentable_type', 'attachmentable_id']);
         });

@@ -18,7 +18,6 @@ return new class extends Migration
             $table->string('remarks')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-
             $table->unique(['org_id', 'name']);
             $table->index('org_id');
             $table->index(['org_id', 'id']);

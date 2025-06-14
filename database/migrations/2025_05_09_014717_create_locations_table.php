@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('statuses', function (Blueprint $table) {
+        Schema::create('locations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('org_id')->constrained('organizations')->onDelete('cascade');
-            $table->string('name');
+            $table->string('name', 255);
+            $table->string('code', 50);
+            $table->foreignId('parent_id')->nullable()->constrained('locations')->onDelete('set null');
+            $table->string('path', 500)->nullable();
             $table->text('description')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-
-            $table->unique(['org_id', 'name']);
+            $table->unique(['org_id', 'code']);
             $table->index('org_id');
-            $table->index(['org_id', 'id']);
+            $table->index('parent_id');
         });
     }
 
@@ -30,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('statuses');
+        Schema::dropIfExists('locations');
     }
 };

@@ -18,7 +18,6 @@ return new class extends Migration
             $table->foreignId('parent_id')->nullable()->constrained('categories')->onDelete('set null');
             $table->string('path', 500)->nullable()->index();
             $table->timestamps();
-
             $table->index('org_id');
             $table->index('parent_id');
             $table->unique(['org_id', 'name', 'parent_id']);

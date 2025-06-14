@@ -20,7 +20,6 @@ return new class extends Migration
             $table->boolean('is_preferred')->default(false);
             $table->timestamps();
             $table->softDeletes();
-
             $table->unique(['org_id', 'item_id', 'supplier_id']);
             $table->index('org_id');
             $table->index(['org_id', 'id']);

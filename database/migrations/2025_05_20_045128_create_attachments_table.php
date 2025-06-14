@@ -25,7 +25,6 @@ return new class extends Migration
             $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
             $table->timestamps();
             $table->softDeletes();
-
             $table->index('org_id');
             $table->index(['org_id', 'id']);
             $table->index(['org_id', 'user_id']);
