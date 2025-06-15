@@ -34,9 +34,9 @@ class UserController extends BaseController
         if ($users->isEmpty()) {
             $hasFilters = ! empty(array_filter($filters, fn ($value) => $value !== null && $value !== ''));
             if ($hasFilters) {
-                $message = str_replace('resources', $resourceType, SuccessMessages::NO_RESOURCES_FOUND);
+                $message = str_replace('resources', $resourceType, ErrorMessages::NO_RESOURCES_FOUND);
             } else {
-                $message = str_replace('resources', $resourceType, SuccessMessages::NO_RESOURCES_AVAILABLE);
+                $message = str_replace('resources', $resourceType, ErrorMessages::NO_RESOURCES_AVAILABLE);
             }
         } else {
             $message = str_replace('Resources', ucfirst($resourceType), SuccessMessages::RESOURCES_RETRIEVED);
@@ -61,7 +61,7 @@ class UserController extends BaseController
         } catch (UnauthorizedAccessException $e) {
             return $this->errorResponse($e->getMessage(), HttpStatus::HTTP_FORBIDDEN);
         } catch (\Exception $e) {
-            return $this->errorResponse(ErrorMessages::GENERIC_ERROR, HttpStatus::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->errorResponse(ErrorMessages::SERVER_ERROR, HttpStatus::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -90,13 +90,6 @@ class UserController extends BaseController
             return $this->errorResponse(ErrorMessages::NOT_FOUND, HttpStatus::HTTP_NOT_FOUND);
         }
 
-        // Prevent self-role modification for non-super admins
-        $currentUser = auth()->user();
-
-        if ($currentUser->id === $user->id && ! $currentUser->isSuperAdmin() && $request->has('role_id')) {
-            return $this->errorResponse(ErrorMessages::SELF_DELETION_FORBIDDEN, HttpStatus::HTTP_FORBIDDEN);
-        }
-
         $updatedUser = $this->userService->updateUser($user->id, $request->validatedForUser());
 
         return $this->successResponse(
@@ -111,26 +104,13 @@ class UserController extends BaseController
     public function destroy(int $id): JsonResponse
     {
         try {
-            $user = $this->userService->findById($id);
-
-            if (! $user) {
-                return $this->errorResponse(ErrorMessages::NOT_FOUND, HttpStatus::HTTP_NOT_FOUND);
-            }
-
-            // Note: The self-deletion check is also in UserService::deleteUser
-            // but we keep it here for an early return
-            $currentUser = auth()->user();
-            if ($currentUser->id === $user->id) {
-                return $this->errorResponse(ErrorMessages::SELF_DELETION_FORBIDDEN, HttpStatus::HTTP_FORBIDDEN);
-            }
-
             $this->userService->deleteUser($id);
 
             return $this->successResponse(null, SuccessMessages::RESOURCE_DELETED, HttpStatus::HTTP_NO_CONTENT);
         } catch (UnauthorizedAccessException $e) {
             return $this->errorResponse($e->getMessage(), HttpStatus::HTTP_FORBIDDEN);
         } catch (\Exception $e) {
-            return $this->errorResponse(ErrorMessages::GENERIC_ERROR, HttpStatus::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->errorResponse(ErrorMessages::SERVER_ERROR, HttpStatus::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 }
