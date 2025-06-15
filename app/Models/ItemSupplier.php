@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Constants\ErrorMessages;
 use App\Traits\HasPublicId;
 
 use App\Traits\HasOrganizationScope;
@@ -68,11 +69,11 @@ class ItemSupplier extends Model
     {
         static::saving(function ($itemSupplier) {
             if ($itemSupplier->price !== null && $itemSupplier->price < 0) {
-                throw new \InvalidArgumentException('Price cannot be negative.');
+                throw new \InvalidArgumentException(ErrorMessages::NEGATIVE_PRICE);
             }
 
             if ($itemSupplier->lead_time_days !== null && $itemSupplier->lead_time_days < 0) {
-                throw new \InvalidArgumentException('Lead time cannot be negative.');
+                throw new \InvalidArgumentException(ErrorMessages::NEGATIVE_LEAD_TIME);
             }
         });
     }

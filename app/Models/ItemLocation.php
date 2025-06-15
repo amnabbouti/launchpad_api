@@ -2,22 +2,23 @@
 
 namespace App\Models;
 
+use App\Traits\HasAttachments;
 use App\Traits\HasPublicId;
-
 use App\Traits\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class StockItemLocation extends Model
+class ItemLocation extends Model
 {
-    use HasPublicId; // Add public_id support
+    use HasAttachments;
+    use HasPublicId; 
     use HasFactory;
     use HasOrganizationScope;
 
     protected $fillable = [
         'org_id',
-        'stock_item_id',
+        'item_id',
         'location_id',
         'quantity',
         'moved_date',
@@ -26,7 +27,7 @@ class StockItemLocation extends Model
 
     protected static function getEntityType(): string
     {
-        return 'stock_item_location';
+        return 'item_location';
     }
 
     protected $casts = [
@@ -41,9 +42,9 @@ class StockItemLocation extends Model
         return $this->belongsTo(Organization::class, 'org_id');
     }
 
-    public function stockItem(): BelongsTo
+    public function item(): BelongsTo
     {
-        return $this->belongsTo(StockItem::class, 'stock_item_id');
+        return $this->belongsTo(Item::class, 'item_id');
     }
 
     public function location(): BelongsTo
