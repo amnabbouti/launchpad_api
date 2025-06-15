@@ -16,7 +16,6 @@ class MaintenanceDetailResource extends BaseResource
             'maintenance_id' => $this->maintenance_id,
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
-
             'organization' => new OrganizationResource($this->whenLoaded('organization')),
             'maintenance_condition' => new MaintenanceConditionResource($this->whenLoaded('maintenanceCondition')),
             'maintenance' => new MaintenanceResource($this->whenLoaded('maintenance')),

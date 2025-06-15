@@ -2,6 +2,9 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Item;
+use App\Models\ItemLocation;
+use App\Models\StockItem;
 use Illuminate\Http\Request;
 
 class CheckInOutResource extends BaseResource
@@ -12,7 +15,6 @@ class CheckInOutResource extends BaseResource
             'id' => $this->public_id,
             'org_id' => $this->org_id,
             'user_id' => $this->user_id,
-            'stock_item_id' => $this->stock_item_id,
             'checkout_location_id' => $this->checkout_location_id,
             'checkout_date' => $this->checkout_date?->toISOString(),
             'quantity' => $this->quantity,
@@ -32,7 +34,16 @@ class CheckInOutResource extends BaseResource
             'organization' => $this->whenLoaded('organization', fn () => new OrganizationResource($this->organization)),
             'user' => $this->whenLoaded('user', fn () => new UserResource($this->user)),
             'checkinUser' => $this->whenLoaded('checkinUser', fn () => new UserResource($this->checkinUser)),
-            'stockItem' => $this->whenLoaded('stockItem', fn () => new StockItemResource($this->stockItem)),
+            'trackable' => $this->whenLoaded('trackable', function () {
+                if ($this->trackable instanceof ItemLocation) {
+                    return new ItemLocationResource($this->trackable);
+                } elseif ($this->trackable instanceof Item) {
+                    return new ItemResource($this->trackable);
+                } elseif ($this->trackable instanceof StockItem) {
+                    return new StockItemResource($this->trackable);
+                }
+                return null;
+            }),
             'checkoutLocation' => $this->whenLoaded('checkoutLocation', fn () => new LocationResource($this->checkoutLocation)),
             'checkinLocation' => $this->whenLoaded('checkinLocation', fn () => new LocationResource($this->checkinLocation)),
             'statusOut' => $this->whenLoaded('statusOut', fn () => new ItemStatusResource($this->statusOut)),

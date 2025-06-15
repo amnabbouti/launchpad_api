@@ -10,20 +10,47 @@ class UserResource extends JsonResource
     {
         return [
             'id' => $this->public_id,
-            'name' => $this->name,
+            'first_name' => $this->first_name,
+            'last_name' => $this->last_name,
+            'full_name' => $this->getName(),
             'email' => $this->email,
-            'role_id' => $this->role_id,
-            'role' => new RoleResource($this->whenLoaded('role')),
-            'org_id' => $this->org_id,
-            'is_active' => $this->is_active,
+            
+            // Role information 
+            'role' => $this->whenLoaded('role', fn () => [
+                'id' => $this->role?->public_id,
+                'slug' => $this->role?->slug,
+                'title' => $this->role?->title,
+                'forbidden' => $this->role?->getForbidden() ?? [],
+                'created_at' => $this->role?->created_at?->format('c'),
+                'updated_at' => $this->role?->updated_at?->format('c'),
+            ]),
+            
+            // Computed role checks
             'is_super_admin' => $this->isSuperAdmin(),
             'is_manager' => $this->isManager(),
             'is_employee' => $this->isEmployee(),
-            'created_at' => optional($this->created_at)?->toIso8601String(),
-            'updated_at' => optional($this->updated_at)?->toIso8601String(),
-            'organization' => new OrganizationResource($this->whenLoaded('organization')),
-            'items' => ItemResource::collection($this->whenLoaded('items')),
-            'attachments' => AttachmentResource::collection($this->whenLoaded('attachments')),
+            'is_admin' => $this->isManager() || $this->isSuperAdmin(), 
+            'is_active' => true, 
+            
+            // Organization 
+            'organization' => $this->organization ? [
+                'id' => $this->organization->public_id,
+                'name' => $this->organization->name,
+            ] : null,
+            
+            // Attachments
+            'attachments' => $this->whenLoaded('attachments', fn () => 
+                $this->attachments->map(fn ($attachment) => [
+                    'id' => $attachment->public_id,
+                    'name' => $attachment->name,
+                    'url' => $attachment->url,
+                    'size' => $attachment->size,
+                    'type' => $attachment->type,
+                ])
+            ),
+            
+            'created_at' => $this->created_at?->format('c'),
+            'updated_at' => $this->updated_at?->format('c'),
         ];
     }
 }

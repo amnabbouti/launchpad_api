@@ -10,18 +10,17 @@ class LocationResource extends BaseResource
     {
         $data = [
             'id' => $this->public_id,
+            'org_id' => $this->org_id,
             'name' => $this->name,
             'code' => $this->code,
-            'parent_id' => $this->parent?->public_id,
             'path' => $this->path,
             'description' => $this->description,
             'is_active' => $this->is_active,
-
-            'organization' => $this->whenLoaded('organization', fn () => new OrganizationResource($this->organization)),
-            'parent' => $this->whenLoaded('parent', fn () => new LocationResource($this->parent)),
-            'children' => $this->whenLoaded('children', fn () => LocationResource::collection($this->children)),
-            'childrenRecursive' => $this->whenLoaded('childrenRecursive', fn () => LocationResource::collection($this->childrenRecursive)),
-            'items' => $this->whenLoaded('items', fn () => ItemResource::collection($this->items)),
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
+            'organization' => $this->whenLoaded('organization', fn() => new OrganizationResource($this->organization)),
+            'children' => $this->whenLoaded('childrenRecursive', fn() => LocationResource::collection($this->childrenRecursive)),
+            'items' => $this->whenLoaded('items', fn() => ItemResource::collection($this->items)),
         ];
 
         return $this->addCommonData($data, $request);

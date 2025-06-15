@@ -16,10 +16,10 @@ class MaintenanceConditionResource extends BaseResource
             'maintenance_recurrence_quantity' => $this->maintenance_recurrence_quantity,
             'maintenance_warning_date' => $this->maintenance_warning_date?->toISOString(),
             'maintenance_date' => $this->maintenance_date?->toISOString(),
-            'quantity_for_warning' => $this->quantity_for_warning,
-            'quantity_for_maintenance' => $this->quantity_for_maintenance,
+            'quantity_for_warning' => $this->quantity_for_warning ? (float) $this->quantity_for_warning : null,
+            'quantity_for_maintenance' => $this->quantity_for_maintenance ? (float) $this->quantity_for_maintenance : null,
             'recurrence_unit' => $this->recurrence_unit,
-            'price_per_unit' => $this->price_per_unit,
+            'price_per_unit' => $this->price_per_unit ? (float) $this->price_per_unit : null,
             'is_active' => $this->is_active,
             'item_id' => $this->item_id,
             'status_when_returned_id' => $this->status_when_returned_id,
@@ -29,6 +29,12 @@ class MaintenanceConditionResource extends BaseResource
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
 
+            // Computed fields (aligned with service filters)
+            'is_overdue' => $this->maintenance_date && $this->maintenance_date->isPast(),
+            'is_warning_due' => $this->maintenance_warning_date && $this->maintenance_warning_date->isPast(),
+            'is_recurring' => $this->is_recurring,
+
+            // Relationships
             'organization' => new OrganizationResource($this->whenLoaded('organization')),
             'item' => new ItemResource($this->whenLoaded('item')),
             'status_when_returned' => new ItemStatusResource($this->whenLoaded('statusWhenReturned')),

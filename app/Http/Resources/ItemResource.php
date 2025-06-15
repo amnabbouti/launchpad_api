@@ -9,30 +9,52 @@ class ItemResource extends BaseResource
     public function toArray(Request $request): array
     {
         $data = [
-            'id' => $this->public_id, 
-            'org_id' => $this->org_id,
+            'id' => $this->public_id,
             'name' => $this->name,
             'code' => $this->code,
             'barcode' => $this->barcode,
+            'type' => $this->type,
             'description' => $this->description,
-            'quantity' => $this->quantity,
+            'tracking_mode' => $this->tracking_mode,
             'price' => $this->price,
-            'active' => $this->active,
+            'serial_number' => $this->serial_number,
+            'notes' => $this->notes,
             'specifications' => $this->specifications,
-            'category' => $this->category?->name,
-            'unit' => $this->unitOfMeasure?->name,
-            'status' => $this->status?->name,
-            'in_maintenance' => (bool) ($this->relationLoaded('maintenances')
-                ? $this->maintenances->whereNull('date_back_from_maintenance')->count() > 0
-                : ($this->maintenances()->whereNull('date_back_from_maintenance')->count() > 0)),
+            'org_id' => $this->org_id,
+            'created_at' => $this->created_at?->toISOString(),
+            'updated_at' => $this->updated_at?->toISOString(),
 
-            'organization' => $this->whenLoaded('organization', fn () => new OrganizationResource($this->organization)),
-            'user' => $this->whenLoaded('user', fn () => new UserResource($this->user)),
-            'stockItems' => $this->whenLoaded('stockItems', fn () => StockItemResource::collection($this->stockItems)),
-            'maintenances' => $this->whenLoaded('maintenances', fn () => MaintenanceResource::collection($this->maintenances)),
-            'maintenanceConditions' => $this->whenLoaded('maintenanceConditions', fn () => MaintenanceConditionResource::collection($this->maintenanceConditions)),
-            'suppliers' => $this->whenLoaded('suppliers', fn () => SupplierResource::collection($this->suppliers)),
-            'attachments' => $this->whenLoaded('attachments', fn () => AttachmentResource::collection($this->attachments)),
+            // Status indicators
+            'in_maintenance' => $this->maintenances()->whereNotNull('date_in_maintenance')->whereNull('date_back_from_maintenance')->exists(),
+            'is_active' => $this->is_active,
+
+            // Inventory summary
+            'total_quantity' => $this->whenLoaded('locations', fn() => $this->locations->sum('pivot.quantity') ?? 0),
+            'supplier_count' => $this->whenLoaded('suppliers', fn() => $this->suppliers->count() ?? 0),
+
+            // Related entities (simplified)
+            'organization' => $this->whenLoaded('organization', fn() => ['id' => $this->organization?->public_id, 'name' => $this->organization?->name]),
+            'category' => $this->whenLoaded('category', fn() => ['id' => $this->category?->public_id, 'name' => $this->category?->name]),
+            'status' => $this->whenLoaded('status', fn() => ['id' => $this->status?->public_id, 'name' => $this->status?->name]),
+            'unit_of_measure' => $this->whenLoaded('unitOfMeasure', fn() => ['name' => $this->unitOfMeasure?->name, 'symbol' => $this->unitOfMeasure?->symbol]),
+
+            // Detailed
+            'suppliers' => $this->whenLoaded('suppliers', fn() => $this->suppliers->map(function ($supplier) {
+                return [
+                    'id' => $supplier->public_id,
+                    'name' => $supplier->name,
+                    'is_preferred' => $supplier->pivot->is_preferred ?? false,
+                ];
+            })),
+            'locations' => $this->whenLoaded('locations', fn() => $this->locations->map(function ($location) {
+                return [
+                    'id' => $location->public_id,
+                    'name' => $location->name,
+                    'code' => $location->code,
+                    'quantity' => $location->pivot->quantity,
+                    'created_at' => $location->pivot->created_at?->toISOString(),
+                ];
+            })),
         ];
 
         return $this->addCommonData($data, $request);

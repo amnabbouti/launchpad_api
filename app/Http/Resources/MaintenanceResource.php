@@ -8,10 +8,11 @@ class MaintenanceResource extends BaseResource
 {
     public function toArray(Request $request): array
     {
-        $isActive = $this->date_in_maintenance && ! $this->date_back_from_maintenance;
+        // Calculate if maintenance is currently active
+        $isActive = $this->date_in_maintenance && !$this->date_back_from_maintenance;
 
+        // Calculate duration if maintenance is completed
         $duration = null;
-
         if ($this->date_in_maintenance && $this->date_back_from_maintenance) {
             $start = new \DateTime($this->date_in_maintenance);
             $end = new \DateTime($this->date_back_from_maintenance);
@@ -23,28 +24,67 @@ class MaintenanceResource extends BaseResource
             'remarks' => $this->remarks,
             'invoice_nbr' => $this->invoice_nbr,
             'cost' => $this->cost,
-            'date_in_maintenance' => $this->date_in_maintenance?->toISOString(),
-            'date_expected_back_from_maintenance' => $this->date_expected_back_from_maintenance?->toISOString(),
-            'date_back_from_maintenance' => $this->date_back_from_maintenance?->toISOString(),
+            'date_in_maintenance' => $this->date_in_maintenance?->format('c'),
+            'date_expected_back_from_maintenance' => $this->date_expected_back_from_maintenance?->format('c'),
+            'date_back_from_maintenance' => $this->date_back_from_maintenance?->format('c'),
             'duration_days' => $duration,
-            'active' => $this->active,
+            'is_active' => $isActive,
             'is_repair' => $this->is_repair,
             'import_id' => $this->import_id,
             'import_source' => $this->import_source,
-            'user_id' => $this->user_id,
-            'supplier_id' => $this->supplier?->public_id,
-            'stock_item_id' => $this->stockItem?->public_id,
-            'status_out_id' => $this->status_out_id,
-            'status_in_id' => $this->status_in_id,
-
-            'organization' => $this->whenLoaded('organization', fn () => new OrganizationResource($this->organization)),
-            'user' => $this->whenLoaded('user', fn () => new UserResource($this->user)),
-            'stockItem' => $this->whenLoaded('stockItem', fn () => new StockItemResource($this->stockItem)),
-            'supplier' => $this->whenLoaded('supplier', fn () => new SupplierResource($this->supplier)),
-            'statusOut' => $this->whenLoaded('statusOut', fn () => new ItemStatusResource($this->statusOut)),
-            'statusIn' => $this->whenLoaded('statusIn', fn () => new ItemStatusResource($this->statusIn)),
-            'maintenanceDetails' => $this->whenLoaded('maintenanceDetails', fn () => MaintenanceDetailResource::collection($this->maintenanceDetails)),
-            'attachments' => $this->whenLoaded('attachments', fn () => AttachmentResource::collection($this->attachments)),
+            
+            // Relationships
+            'user' => $this->whenLoaded('user', fn () => [
+                'id' => $this->user?->public_id,
+                'name' => $this->user?->name,
+                'email' => $this->user?->email,
+            ]),
+            'maintainable' => $this->whenLoaded('maintainable', function () {
+                if ($this->maintainable instanceof \App\Models\Item) {
+                    return [
+                        'id' => $this->maintainable->public_id,
+                        'name' => $this->maintainable->name,
+                        'code' => $this->maintainable->code,
+                        'type' => 'item',
+                    ];
+                }
+                // Handle other maintainable types if they exist
+                return [
+                    'id' => $this->maintainable?->public_id,
+                    'name' => $this->maintainable?->name ?? 'Unknown',
+                    'type' => class_basename($this->maintainable_type),
+                ];
+            }),
+            'supplier' => $this->whenLoaded('supplier', fn () => [
+                'id' => $this->supplier?->public_id,
+                'name' => $this->supplier?->name,
+                'email' => $this->supplier?->email,
+            ]),
+            'status_out' => $this->whenLoaded('statusOut', fn () => [
+                'id' => $this->statusOut?->public_id,
+                'name' => $this->statusOut?->name,
+                'color' => $this->statusOut?->color,
+            ]),
+            'status_in' => $this->whenLoaded('statusIn', fn () => [
+                'id' => $this->statusIn?->public_id,
+                'name' => $this->statusIn?->name,
+                'color' => $this->statusIn?->color,
+            ]),
+            'maintenance_details' => $this->whenLoaded('maintenanceDetails', fn () => 
+                $this->maintenanceDetails->map(fn ($detail) => [
+                    'id' => $detail->public_id,
+                    'description' => $detail->description,
+                    'cost' => $detail->cost,
+                ])
+            ),
+            'attachments' => $this->whenLoaded('attachments', fn () => 
+                $this->attachments->map(fn ($attachment) => [
+                    'id' => $attachment->public_id,
+                    'name' => $attachment->name,
+                    'url' => $attachment->url,
+                    'size' => $attachment->size,
+                ])
+            ),
         ];
 
         return $this->addCommonData($data, $request);
