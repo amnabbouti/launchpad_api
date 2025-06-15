@@ -32,7 +32,7 @@ class UserFactory extends Factory
             'address' => fake()->address(),
             'phone_number' => fake()->phoneNumber(),
             'remember_token' => Str::random(10),
-            'organization_id' => Organization::factory(),
+            'org_id' => Organization::factory(),
         ];
     }
 
