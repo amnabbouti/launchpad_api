@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Maintenance;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Auth;
 
 class MaintenanceService extends BaseService
 {
@@ -20,15 +21,7 @@ class MaintenanceService extends BaseService
      */
     public function getWithDetails(): Collection
     {
-        return $this->getQuery()->with(['stockItem', 'user', 'supplier', 'maintenanceDetails'])->get();
-    }
-
-    /**
-     * Get maintenances by stock item.
-     */
-    public function getByStockItem(int $stockItemId): Collection
-    {
-        return $this->getQuery()->where('stock_item_id', $stockItemId)->get();
+        return $this->getQuery()->with(['maintainable', 'user', 'supplier', 'maintenanceDetails'])->get();
     }
 
     /**
@@ -40,17 +33,6 @@ class MaintenanceService extends BaseService
     }
 
     /**
-     * Check if stock item has active maintenance.
-     */
-    public function hasActiveMaintenance(int $stockItemId): bool
-    {
-        return $this->getQuery()
-            ->where('stock_item_id', $stockItemId)
-            ->whereNull('date_back_from_maintenance')
-            ->exists();
-    }
-
-    /**
      * Get filtered maintenance records.
      */
     public function getFiltered(array $filters = []): Collection
@@ -58,15 +40,16 @@ class MaintenanceService extends BaseService
         $query = $this->getQuery();
 
         // Apply filters
-        $query->when($filters['org_id'] ?? null, fn ($q, $value) => $q->where('org_id', $value))
-            ->when($filters['stock_item_id'] ?? null, fn ($q, $value) => $q->where('stock_item_id', $value))
-            ->when($filters['user_id'] ?? null, fn ($q, $value) => $q->where('user_id', $value))
-            ->when($filters['supplier_id'] ?? null, fn ($q, $value) => $q->where('supplier_id', $value))
-            ->when($filters['active_only'] ?? null, fn ($q) => $q->whereNull('date_back_from_maintenance'))
-            ->when($filters['completed_only'] ?? null, fn ($q) => $q->whereNotNull('date_back_from_maintenance'))
-            ->when($filters['date_from'] ?? null, fn ($q, $value) => $q->where('date_in_for_maintenance', '>=', $value))
-            ->when($filters['date_to'] ?? null, fn ($q, $value) => $q->where('date_in_for_maintenance', '<=', $value))
-            ->when($filters['with'] ?? null, fn ($q, $relations) => $q->with($relations));
+        $query->when($filters['org_id'] ?? null, fn($q, $value) => $q->where('org_id', $value))
+            ->when($filters['maintainable_id'] ?? null, fn($q, $value) => $q->where('maintainable_id', $value))
+            ->when($filters['maintainable_type'] ?? null, fn($q, $value) => $q->where('maintainable_type', $value))
+            ->when($filters['user_id'] ?? null, fn($q, $value) => $q->where('user_id', $value))
+            ->when($filters['supplier_id'] ?? null, fn($q, $value) => $q->where('supplier_id', $value))
+            ->when($filters['active_only'] ?? null, fn($q) => $q->whereNull('date_back_from_maintenance'))
+            ->when($filters['completed_only'] ?? null, fn($q) => $q->whereNotNull('date_back_from_maintenance'))
+            ->when($filters['date_from'] ?? null, fn($q, $value) => $q->where('date_in_maintenance', '>=', $value))
+            ->when($filters['date_to'] ?? null, fn($q, $value) => $q->where('date_in_maintenance', '<=', $value))
+            ->when($filters['with'] ?? null, fn($q, $relations) => $q->with($relations));
 
         return $query->get();
     }
@@ -77,26 +60,53 @@ class MaintenanceService extends BaseService
     protected function getAllowedParams(): array
     {
         return array_merge(parent::getAllowedParams(), [
-            'org_id', 'stock_item_id', 'user_id', 'supplier_id',
-            'active_only', 'completed_only', 'date_from', 'date_to',
+            'org_id',
+            'maintainable_id',
+            'maintainable_type',
+            'user_id',
+            'supplier_id',
+            'active_only',
+            'completed_only',
+            'date_from',
+            'date_to',
         ]);
     }
 
     /**
-     * Process request parameters
+     * Process request parameters with validation and type conversion.
      */
     public function processRequestParams(array $params): array
     {
-        $processedParams = parent::processRequestParams($params);
-        $processedParams['org_id'] = $params['org_id'] ?? null;
-        $processedParams['stock_item_id'] = $params['stock_item_id'] ?? null;
-        $processedParams['user_id'] = $params['user_id'] ?? null;
-        $processedParams['supplier_id'] = $params['supplier_id'] ?? null;
-        $processedParams['active_only'] = isset($params['active_only']) ? filter_var($params['active_only'], FILTER_VALIDATE_BOOLEAN) : null;
-        $processedParams['completed_only'] = isset($params['completed_only']) ? filter_var($params['completed_only'], FILTER_VALIDATE_BOOLEAN) : null;
-        $processedParams['date_from'] = $params['date_from'] ?? null;
-        $processedParams['date_to'] = $params['date_to'] ?? null;
+        // Validate parameters against whitelist
+        $this->validateParams($params);
 
-        return $processedParams;
+        return [
+            'org_id' => $this->toInt($params['org_id'] ?? null),
+            'maintainable_id' => $this->toInt($params['maintainable_id'] ?? null),
+            'maintainable_type' => $this->toString($params['maintainable_type'] ?? null),
+            'user_id' => $this->toInt($params['user_id'] ?? null),
+            'supplier_id' => $this->toInt($params['supplier_id'] ?? null),
+            'active_only' => $this->toBool($params['active_only'] ?? null),
+            'completed_only' => $this->toBool($params['completed_only'] ?? null),
+            'date_from' => $this->toString($params['date_from'] ?? null),
+            'date_to' => $this->toString($params['date_to'] ?? null),
+            'with' => $this->processWithParameter($params['with'] ?? null),
+        ];
+    }
+
+    /**
+     * Find maintenance by ID with all relationships
+     */
+    public function findByIdWithRelations($id): Maintenance
+    {
+        return $this->findById($id, ['*'], [
+            'maintainable',
+            'user',
+            'supplier',
+            'statusOut',
+            'statusIn',
+            'maintenanceDetails',
+            'organization'
+        ]);
     }
 }

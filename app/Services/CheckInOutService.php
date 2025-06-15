@@ -2,20 +2,22 @@
 
 namespace App\Services;
 
+use App\Constants\ErrorMessages;
 use App\Models\CheckInOut;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
 use InvalidArgumentException;
 
 class CheckInOutService extends BaseService
 {
-    protected ItemService $itemService;
+    protected ItemLocationService $itemLocationService;
 
-    public function __construct(CheckInOut $checkInOut, ItemService $itemService)
+    public function __construct(CheckInOut $checkInOut, ItemLocationService $itemLocationService)
     {
         parent::__construct($checkInOut);
-        $this->itemService = $itemService;
+        $this->itemLocationService = $itemLocationService;
     }
 
     /**
@@ -27,11 +29,14 @@ class CheckInOutService extends BaseService
     }
 
     /**
-     * Get checkouts by stock item.
+     * Get checkouts by item location.
      */
-    public function getByStockItem(int $stockItemId): Collection
+    public function getByItemLocation(string $itemLocationId): Collection
     {
-        return $this->getQuery()->where('stock_item_id', $stockItemId)->get();
+        return $this->getQuery()
+            ->where('trackable_type', \App\Models\ItemLocation::class)
+            ->where('trackable_id', $itemLocationId)
+            ->get();
     }
 
     /**
@@ -47,7 +52,7 @@ class CheckInOutService extends BaseService
      */
     public function getWithRelations(array $relations = [
         'user',
-        'stockItem',
+        'trackable',
         'checkoutLocation',
         'checkinLocation',
         'statusOut',
@@ -70,51 +75,59 @@ class CheckInOutService extends BaseService
     }
 
     /**
-     * Get active checkouts for a stock item.
+     * Get active checkouts for an item location.
      */
-    public function getActiveCheckoutsForStockItem(int $stockItemId): Collection
+    public function getActiveCheckoutsForItemLocation(string $itemLocationId): Collection
     {
         return $this->getQuery()
-            ->where('stock_item_id', $stockItemId)
+            ->where('trackable_type', \App\Models\ItemLocation::class)
+            ->where('trackable_id', $itemLocationId)
             ->whereNull('checkin_date')
             ->get();
     }
 
     /**
-     * Checkout a stock item.
+     * Checkout an item location.
      */
-    public function checkout(int $stockItemId, array $data): Model
+    public function checkout(string $itemLocationId, array $data): Model
     {
-        $item = $this->itemService->findById($data['stock_item_id'], ['*'], [
-            'maintenances' => fn ($q) => $q->whereNull('date_back_from_maintenance'),
-            'stockItems' => fn ($q) => $q->where('id', $stockItemId),
-        ]);
+        $itemLocation = $this->itemLocationService->findById($itemLocationId, ['item', 'item.maintenances' => fn($q) => $q->whereNull('date_back_from_maintenance')]);
 
-        if (! $item) {
-            throw new InvalidArgumentException('Item not found');
+        if (! $itemLocation) {
+            throw new InvalidArgumentException(ErrorMessages::ITEM_NOT_FOUND);
         }
 
-        $stockItem = $item->stockItems->first();
+        $item = $itemLocation->item;
 
-        if (! $stockItem) {
-            throw new InvalidArgumentException('Stock item not found for this item');
-        }
-
+        // Check if item is in maintenance
         if ($item->maintenances->count() > 0) {
             throw new \Exception('Item is in maintenance');
         }
 
-        if ($this->getActiveCheckoutsForStockItem($stockItemId)->count() > 0) {
-            throw new \Exception('Stock item is already checked out');
+        // Check if this item location is already checked out
+        if ($this->getActiveCheckoutsForItemLocation($itemLocationId)->count() > 0) {
+            throw new \Exception('Item location is already checked out');
+        }
+
+        // Check if requested quantity is available
+        $requestedQuantity = $data['checkout_quantity'] ?? 1;
+        if ($itemLocation->quantity < $requestedQuantity) {
+            throw new \Exception('Insufficient quantity available at this location');
+        }
+
+        // For serialized tracking, ensure the item can be checked out
+        if ($item->tracking_mode === 'serialized' && $requestedQuantity > 1) {
+            throw new \Exception('Serialized items can only be checked out one at a time');
         }
 
         $checkoutData = [
             'org_id' => $data['org_id'],
             'user_id' => $data['user_id'],
-            'stock_item_id' => $stockItemId,
+            'trackable_type' => \App\Models\ItemLocation::class,
+            'trackable_id' => $itemLocation->id,
             'checkout_location_id' => $data['checkout_location_id'],
             'checkout_date' => $data['checkout_date'] ?? now(),
-            'quantity' => $data['checkout_quantity'],
+            'quantity' => $requestedQuantity,
             'status_out_id' => $data['status_out_id'] ?? null,
             'expected_return_date' => $data['expected_return_date'] ?? null,
             'reference' => $data['reference'] ?? null,
@@ -126,26 +139,31 @@ class CheckInOutService extends BaseService
     }
 
     /**
-     * Check in a stock item.
+     * Check in an item location.
      */
-    public function checkin(int $stockItemId, array $data): Model
+    public function checkin(string $itemLocationId, array $data): Model
     {
-        $item = $this->itemService->findById($data['stock_item_id']);
+        $itemLocation = $this->itemLocationService->findById($itemLocationId);
 
-        if (! $item) {
-            throw new InvalidArgumentException('Item not found');
+        if (! $itemLocation) {
+            throw new InvalidArgumentException(ErrorMessages::ITEM_NOT_FOUND);
         }
 
         $activeCheckout = $this->getQuery()
-            ->where('stock_item_id', $stockItemId)
+            ->where('trackable_type', \App\Models\ItemLocation::class)
+            ->where('trackable_id', $itemLocation->id)
             ->whereNull('checkin_date')
             ->first();
 
         if (! $activeCheckout) {
-            throw new \Exception('Stock item is not checked out');
+            throw new \Exception('Item location is not checked out');
         }
 
-        $user = auth()->user();
+        $user = Auth::guard('api')->user();
+
+        if (! $user) {
+            throw new \Exception('User not authenticated');
+        }
 
         if ($activeCheckout->user_id !== $user->id && ! ($user->is_admin ?? false)) {
             throw new \Exception('Not authorized to check in this item');
@@ -165,22 +183,24 @@ class CheckInOutService extends BaseService
     }
 
     /**
-     * Get history of a stock item.
+     * Get history of an item location.
      */
-    public function getHistory(int $stockItemId, int $perPage = 15): LengthAwarePaginator
+    public function getHistory(string $itemLocationId, int $perPage = 15): LengthAwarePaginator
     {
-        $item = $this->itemService->findById($stockItemId);
+        $itemLocation = $this->itemLocationService->findById($itemLocationId);
 
-        if (! $item) {
-            throw new InvalidArgumentException('Item not found');
+        if (! $itemLocation) {
+            throw new InvalidArgumentException(ErrorMessages::ITEM_NOT_FOUND);
         }
 
         return $this->getQuery()
-            ->where('stock_item_id', $stockItemId)
+            ->where('trackable_type', \App\Models\ItemLocation::class)
+            ->where('trackable_id', $itemLocationId)
             ->with([
                 'user',
                 'checkinUser',
-                'stockItem',
+                'trackable.item',
+                'trackable.location',
                 'checkoutLocation',
                 'checkinLocation',
                 'statusOut',
@@ -197,21 +217,23 @@ class CheckInOutService extends BaseService
     {
         $query = $this->getQuery();
 
-        // Apply filters using Laravel's when() method for clean conditional filtering
-        $query->when($filters['user_id'] ?? null, fn ($q, $value) => $q->where('user_id', $value))
-            ->when($filters['stock_item_id'] ?? null, fn ($q, $value) => $q->where('stock_item_id', $value))
-            ->when($filters['checkout_location_id'] ?? null, fn ($q, $value) => $q->where('checkout_location_id', $value))
-            ->when($filters['checkin_location_id'] ?? null, fn ($q, $value) => $q->where('checkin_location_id', $value))
-            ->when($filters['status_out_id'] ?? null, fn ($q, $value) => $q->where('status_out_id', $value))
-            ->when($filters['status_in_id'] ?? null, fn ($q, $value) => $q->where('status_in_id', $value))
-            ->when(isset($filters['is_active']), fn ($q) => $q->where('is_active', $filters['is_active']))
-            ->when($filters['active_only'] ?? null, fn ($q) => $q->whereNull('checkin_date'))
-            ->when($filters['overdue_only'] ?? null, fn ($q) => $q->whereNull('checkin_date')
+        // Apply filters 
+        $query->when($filters['user_id'] ?? null, fn($q, $value) => $q->where('user_id', $value))
+            ->when($filters['item_location_id'] ?? null, fn($q, $value) =>
+            $q->where('trackable_type', \App\Models\ItemLocation::class)
+                ->where('trackable_id', $value))
+            ->when($filters['checkout_location_id'] ?? null, fn($q, $value) => $q->where('checkout_location_id', $value))
+            ->when($filters['checkin_location_id'] ?? null, fn($q, $value) => $q->where('checkin_location_id', $value))
+            ->when($filters['status_out_id'] ?? null, fn($q, $value) => $q->where('status_out_id', $value))
+            ->when($filters['status_in_id'] ?? null, fn($q, $value) => $q->where('status_in_id', $value))
+            ->when(isset($filters['is_active']), fn($q) => $q->where('is_active', $filters['is_active']))
+            ->when($filters['active_only'] ?? null, fn($q) => $q->whereNull('checkin_date'))
+            ->when($filters['overdue_only'] ?? null, fn($q) => $q->whereNull('checkin_date')
                 ->whereNotNull('expected_return_date')
                 ->where('expected_return_date', '<', now()))
-            ->when($filters['date_from'] ?? null, fn ($q, $value) => $q->where('checkout_date', '>=', $value))
-            ->when($filters['date_to'] ?? null, fn ($q, $value) => $q->where('checkout_date', '<=', $value))
-            ->when($filters['with'] ?? null, fn ($q, $relations) => $q->with($relations));
+            ->when($filters['date_from'] ?? null, fn($q, $value) => $q->where('checkout_date', '>=', $value))
+            ->when($filters['date_to'] ?? null, fn($q, $value) => $q->where('checkout_date', '<=', $value))
+            ->when($filters['with'] ?? null, fn($q, $relations) => $q->with($relations));
 
         return $query->get();
     }

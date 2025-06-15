@@ -23,11 +23,11 @@ class LocationService extends BaseService
     {
         $query = $this->getQuery();
 
-        // Apply filters using Laravel's when() method for clean conditional filtering
-        $query->when($filters['name'] ?? null, fn ($q, $value) => $q->where('name', 'like', "%{$value}%"))
-            ->when($filters['code'] ?? null, fn ($q, $value) => $q->where('code', 'like', "%{$value}%"))
-            ->when($filters['description'] ?? null, fn ($q, $value) => $q->where('description', 'like', "%{$value}%"))
-            ->when(isset($filters['is_active']), fn ($q) => $q->where('is_active', $filters['is_active']))
+        // Apply filters
+        $query->when($filters['name'] ?? null, fn($q, $value) => $q->where('name', 'like', "%{$value}%"))
+            ->when($filters['code'] ?? null, fn($q, $value) => $q->where('code', 'like', "%{$value}%"))
+            ->when($filters['description'] ?? null, fn($q, $value) => $q->where('description', 'like', "%{$value}%"))
+            ->when(isset($filters['is_active']), fn($q) => $q->where('is_active', $filters['is_active']))
             ->when(isset($filters['parent_id']), function ($q) use ($filters) {
                 if ($filters['parent_id'] === 'null' || $filters['parent_id'] === null) {
                     return $q->whereNull('parent_id');
@@ -35,7 +35,10 @@ class LocationService extends BaseService
 
                 return $q->where('parent_id', $filters['parent_id']);
             })
-            ->when($filters['with'] ?? null, fn ($q, $relations) => $q->with($relations));
+            ->when($filters['with'] ?? null, fn($q, $relations) => $q->with($relations));
+
+        // Load nested children
+        $query->with('childrenRecursive');
 
         return $query->get();
     }
@@ -48,8 +51,8 @@ class LocationService extends BaseService
         // Handle path for hierarchical locations
         if (! empty($data['parent_id'])) {
             $parent = $this->findById($data['parent_id']);
-            $data['path'] = $parent->path ? $parent->path.$parent->id.'/' : $parent->id.'/';
-            
+            $data['path'] = $parent->path ? $parent->path . $parent->id . '/' : $parent->id . '/';
+
             // Convert public ID to internal ID for storage
             $data['parent_id'] = $parent->id;
         }
@@ -60,7 +63,7 @@ class LocationService extends BaseService
     /**
      * Update a location with validated data.
      */
-    public function updateLocation(array $data, int $id): Model
+    public function update($id, array $data): Model
     {
         $location = $this->findById($id);
 
@@ -68,13 +71,13 @@ class LocationService extends BaseService
         if (isset($data['parent_id'])) {
             if (! empty($data['parent_id'])) {
                 $parent = $this->findById($data['parent_id']);
-                $data['path'] = $parent->path ? $parent->path.$parent->id.'/' : $parent->id.'/';
+                $data['path'] = $parent->path ? $parent->path . $parent->id . '/' : $parent->id . '/';
             } else {
                 $data['path'] = null;
             }
         }
 
-        return $this->update($id, $data);
+        return parent::update($id, $data);
     }
 
     /**
@@ -118,19 +121,53 @@ class LocationService extends BaseService
     }
 
     /**
-     * Process request parameters for query building.
+     * Get locations with nested children
+     */
+    public function getWithNestedChildren(): Collection
+    {
+        return $this->getQuery()
+            ->whereNull('parent_id')
+            ->with('childrenRecursive')
+            ->get();
+    }
+
+    /**
+     * Get a single location with its full hierarchy.
+     */
+    public function findWithHierarchy($id): Model
+    {
+        $location = $this->findById($id);
+        $location->load('childrenRecursive');
+        return $location;
+    }
+
+    /**
+     * Get root locations with full nested hierarchy.
+     * This returns only top-level locations with all their children nested.
+     */
+    public function getRootLocationsWithHierarchy(): Collection
+    {
+        return $this->getQuery()
+            ->whereNull('parent_id')
+            ->with('childrenRecursive')
+            ->get();
+    }
+
+    /**
+     * Process request parameters
      */
     public function processRequestParams(array $params): array
     {
+        // Validate parameters against whitelist
+        $this->validateParams($params);
+
         return [
-            'name' => $params['name'] ?? null,
-            'code' => $params['code'] ?? null,
-            'description' => $params['description'] ?? null,
-            'is_active' => isset($params['is_active']) ? filter_var($params['is_active'], FILTER_VALIDATE_BOOLEAN) : null,
-            'parent_id' => $params['parent_id'] ?? null,
-            'with' => ! empty($params['with'])
-                ? (is_string($params['with']) ? array_filter(explode(',', $params['with'])) : $params['with'])
-                : null,
+            'name' => $this->toString($params['name'] ?? null),
+            'code' => $this->toString($params['code'] ?? null),
+            'description' => $this->toString($params['description'] ?? null),
+            'is_active' => $this->toBool($params['is_active'] ?? null),
+            'parent_id' => $this->toInt($params['parent_id'] ?? null),
+            'with' => $this->processWithParameter($params['with'] ?? null),
         ];
     }
 }

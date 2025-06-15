@@ -47,7 +47,7 @@ class CategoryService extends BaseService
     {
         $query = $this->getQuery();
 
-        // Apply filters using Laravel's when() method for clean conditional filtering
+        // Apply filters
         $query->when($filters['org_id'] ?? null, fn ($q, $value) => $q->where('org_id', $value))
             ->when($filters['name'] ?? null, fn ($q, $value) => $q->where('name', 'like', "%{$value}%"))
             ->when($filters['parent_id'] ?? null, fn ($q, $value) => $q->where('parent_id', $value))
@@ -107,16 +107,19 @@ class CategoryService extends BaseService
     }
 
     /**
-     * Process request parameters for query building.
+     * Process request parameters with explicit validation and type conversion.
      */
     public function processRequestParams(array $params): array
     {
-        $processedParams = parent::processRequestParams($params);
-        $processedParams['org_id'] = $params['org_id'] ?? null;
-        $processedParams['name'] = $params['name'] ?? null;
-        $processedParams['parent_id'] = isset($params['parent_id']) && is_numeric($params['parent_id']) ? (int) $params['parent_id'] : null;
-        $processedParams['is_active'] = isset($params['is_active']) ? filter_var($params['is_active'], FILTER_VALIDATE_BOOLEAN) : null;
+        // Validate parameters against whitelist for security
+        $this->validateParams($params);
 
-        return $processedParams;
+        return [
+            'org_id' => $this->toInt($params['org_id'] ?? null),
+            'name' => $this->toString($params['name'] ?? null),
+            'parent_id' => $this->toInt($params['parent_id'] ?? null),
+            'is_active' => $this->toBool($params['is_active'] ?? null),
+            'with' => $this->processWithParameter($params['with'] ?? null),
+        ];
     }
 }

@@ -14,16 +14,17 @@ class MaintenanceCategoryService extends BaseService
     }
 
     /**
-     * Process request parameters for query building.
+     * Process request parameters with explicit validation and type conversion.
      */
     public function processRequestParams(array $params): array
     {
+        // Validate parameters against whitelist.
+        $this->validateParams($params);
+
         return [
-            'with' => isset($params['with'])
-                ? (is_string($params['with']) ? array_filter(explode(',', $params['with'])) : $params['with'])
-                : null,
-            'name' => $params['name'] ?? null,
-            'is_active' => isset($params['is_active']) ? filter_var($params['is_active'], FILTER_VALIDATE_BOOLEAN) : null,
+            'name' => $this->toString($params['name'] ?? null),
+            'is_active' => $this->toBool($params['is_active'] ?? null),
+            'with' => $this->processWithParameter($params['with'] ?? null),
         ];
     }
 
@@ -40,7 +41,7 @@ class MaintenanceCategoryService extends BaseService
     }
 
     /**
-     * Create a new maintenance category with validated data.
+     * Create a new maintenance category with validation.
      */
     public function createMaintenanceCategory(array $data): Model
     {
@@ -48,7 +49,7 @@ class MaintenanceCategoryService extends BaseService
     }
 
     /**
-     * Update a maintenance category with validated data.
+     * Update a maintenance category with validation.
      */
     public function updateMaintenanceCategory(int $id, array $data): Model
     {
@@ -61,5 +62,23 @@ class MaintenanceCategoryService extends BaseService
     public function getActive(): Collection
     {
         return $this->getFiltered(['is_active' => true]);
+    }
+
+    /**
+     * Get allowed query parameters.
+     */
+    protected function getAllowedParams(): array
+    {
+        return array_merge(parent::getAllowedParams(), [
+            'name', 'is_active',
+        ]);
+    }
+
+    /**
+     * Get valid relations for the model.
+     */
+    protected function getValidRelations(): array
+    {
+        return ['maintenances'];
     }
 }

@@ -7,6 +7,8 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 
+use App\Constants\ErrorMessages;
+
 class OrganizationService extends BaseService
 {
     public function __construct(Organization $organization)
@@ -44,7 +46,7 @@ class OrganizationService extends BaseService
         $user = auth()->user();
 
         if (! $user || ! $user->isSuperAdmin()) {
-            throw new AuthorizationException('Only super administrators can update organizations');
+            throw new AuthorizationException(ErrorMessages::FORBIDDEN);
         }
 
         return parent::update($id, $data);
@@ -58,7 +60,7 @@ class OrganizationService extends BaseService
         $user = auth()->user();
 
         if (! $user || ! $user->isSuperAdmin()) {
-            throw new AuthorizationException('Only super administrators can delete organizations');
+            throw new AuthorizationException(ErrorMessages::FORBIDDEN);
         }
 
         return parent::delete($id);

@@ -17,20 +17,21 @@ class MaintenanceConditionService extends BaseService
     }
 
     /**
-     * Process request parameters for query building.
+     * Process request parameters with validation and type conversion.
      */
     public function processRequestParams(array $params): array
     {
+        // Validate parameters against whitelist
+        $this->validateParams($params);
+
         return [
-            'with' => isset($params['with'])
-                ? (is_string($params['with']) ? array_filter(explode(',', $params['with'])) : $params['with'])
-                : null,
-            'item_id' => isset($params['item_id']) ? (int) $params['item_id'] : null,
-            'maintenance_category_id' => isset($params['maintenance_category_id']) ? (int) $params['maintenance_category_id'] : null,
-            'unit_of_measure_id' => isset($params['unit_of_measure_id']) ? (int) $params['unit_of_measure_id'] : null,
-            'is_active' => isset($params['is_active']) ? filter_var($params['is_active'], FILTER_VALIDATE_BOOLEAN) : null,
-            'due_for_warning' => isset($params['due_for_warning']) ? filter_var($params['due_for_warning'], FILTER_VALIDATE_BOOLEAN) : null,
-            'due_for_maintenance' => isset($params['due_for_maintenance']) ? filter_var($params['due_for_maintenance'], FILTER_VALIDATE_BOOLEAN) : null,
+            'item_id' => $this->toInt($params['item_id'] ?? null),
+            'maintenance_category_id' => $this->toInt($params['maintenance_category_id'] ?? null),
+            'unit_of_measure_id' => $this->toInt($params['unit_of_measure_id'] ?? null),
+            'is_active' => $this->toBool($params['is_active'] ?? null),
+            'due_for_warning' => $this->toBool($params['due_for_warning'] ?? null),
+            'due_for_maintenance' => $this->toBool($params['due_for_maintenance'] ?? null),
+            'with' => $this->processWithParameter($params['with'] ?? null),
         ];
     }
 
@@ -84,5 +85,32 @@ class MaintenanceConditionService extends BaseService
     public function getDueForMaintenance(): Collection
     {
         return $this->getFiltered(['due_for_maintenance' => true]);
+    }
+
+    /**
+     * Get allowed query parameters.
+     */
+    protected function getAllowedParams(): array
+    {
+        return array_merge(parent::getAllowedParams(), [
+            'item_id', 'maintenance_category_id', 'unit_of_measure_id', 
+            'is_active', 'due_for_warning', 'due_for_maintenance',
+        ]);
+    }
+
+    /**
+     * Get valid relations for the model.
+     */
+    protected function getValidRelations(): array
+    {
+        return [
+            'organization',
+            'item', 
+            'statusWhenReturned', 
+            'statusWhenExceeded', 
+            'maintenanceCategory', 
+            'unitOfMeasure', 
+            'maintenanceDetails'
+        ];
     }
 }

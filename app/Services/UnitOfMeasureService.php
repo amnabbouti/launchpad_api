@@ -17,23 +17,24 @@ class UnitOfMeasureService extends BaseService
     }
 
     /**
-     * Process request parameters for query building.
+     * Process request parameters
      */
     public function processRequestParams(array $params): array
     {
+        // Validate parameters against whitelist
+        $this->validateParams($params);
+
         return [
-            'with' => ! empty($params['with'])
-                ? (is_string($params['with']) ? array_filter(explode(',', $params['with'])) : $params['with'])
-                : null,
-            'name' => $params['name'] ?? null,
-            'code' => $params['code'] ?? null,
-            'type' => $params['type'] ?? null,
-            'is_active' => isset($params['is_active']) ? filter_var($params['is_active'], FILTER_VALIDATE_BOOLEAN) : null,
+            'name' => $this->toString($params['name'] ?? null),
+            'code' => $this->toString($params['code'] ?? null),
+            'type' => $this->toString($params['type'] ?? null),
+            'is_active' => $this->toBool($params['is_active'] ?? null),
+            'with' => $this->processWithParameter($params['with'] ?? null),
         ];
     }
 
     /**
-     * Get filtered units of measure with optional relationships.
+     * Get filtered units of measure.
      */
     public function getFiltered(array $filters = []): Collection
     {
@@ -47,7 +48,7 @@ class UnitOfMeasureService extends BaseService
     }
 
     /**
-     * Get units of measure by name (partial match).
+     * Get units of measure by name.
      */
     public function getByName(string $name): Collection
     {
@@ -63,7 +64,7 @@ class UnitOfMeasureService extends BaseService
     }
 
     /**
-     * Create a new unit of measure with validated data.
+     * Create a new unit of measure with validaion
      */
     public function createUnitOfMeasure(array $data): Model
     {
@@ -71,7 +72,7 @@ class UnitOfMeasureService extends BaseService
     }
 
     /**
-     * Update a unit of measure with validated data.
+     * Update a unit of measure with validation
      */
     public function updateUnitOfMeasure(int $id, array $data): Model
     {
@@ -92,5 +93,23 @@ class UnitOfMeasureService extends BaseService
     public function getByType(string $type): Collection
     {
         return $this->getFiltered(['type' => $type]);
+    }
+
+    /**
+     * Get allowed query parameters.
+     */
+    protected function getAllowedParams(): array
+    {
+        return array_merge(parent::getAllowedParams(), [
+            'name', 'code', 'type', 'is_active',
+        ]);
+    }
+
+    /**
+     * Get valid relations for the model.
+     */
+    protected function getValidRelations(): array
+    {
+        return ['maintenanceConditions'];
     }
 }

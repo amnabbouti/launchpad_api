@@ -17,17 +17,18 @@ class ItemSupplierService extends BaseService
     }
 
     /**
-     * Process request parameters for query building.
+     * Process request parameters with explicit validation and type conversion.
      */
     public function processRequestParams(array $params): array
     {
+        // Validate parameters against whitelist
+        $this->validateParams($params);
+
         return [
-            'with' => isset($params['with'])
-                ? (is_string($params['with']) ? array_filter(explode(',', $params['with'])) : $params['with'])
-                : null,
-            'item_id' => isset($params['item_id']) ? (int) $params['item_id'] : null,
-            'supplier_id' => isset($params['supplier_id']) ? (int) $params['supplier_id'] : null,
-            'is_preferred' => isset($params['is_preferred']) ? filter_var($params['is_preferred'], FILTER_VALIDATE_BOOLEAN) : null,
+            'item_id' => $this->toInt($params['item_id'] ?? null),
+            'supplier_id' => $this->toInt($params['supplier_id'] ?? null),
+            'is_preferred' => $this->toBool($params['is_preferred'] ?? null),
+            'with' => $this->processWithParameter($params['with'] ?? null),
         ];
     }
 
@@ -62,9 +63,6 @@ class ItemSupplierService extends BaseService
 
     /**
      * Create a new item supplier with validated data.
-     *
-     * @param  array  $data  Validated item supplier data
-     * @return Model The created item supplier
      */
     public function createItemSupplier(array $data): Model
     {
@@ -93,13 +91,13 @@ class ItemSupplierService extends BaseService
     public function setPreferredSupplier(int $itemId, int $supplierId): bool
     {
         try {
-            // unset any existing preferred suppliers for this item
+            // unset existing preferred suppliers
             $this->getQuery()
                 ->where('item_id', $itemId)
                 ->where('is_preferred', true)
                 ->update(['is_preferred' => false]);
 
-            // Then set the new preferred supplier
+            // new preferred supplier
             $itemSupplier = $this->getQuery()
                 ->where('item_id', $itemId)
                 ->where('supplier_id', $supplierId)
@@ -115,5 +113,23 @@ class ItemSupplierService extends BaseService
         } catch (\Exception $e) {
             return false;
         }
+    }
+
+    /**
+     * Get allowed query parameters.
+     */
+    protected function getAllowedParams(): array
+    {
+        return array_merge(parent::getAllowedParams(), [
+            'item_id', 'supplier_id', 'is_preferred',
+        ]);
+    }
+
+    /**
+     * Get valid relations for the model.
+     */
+    protected function getValidRelations(): array
+    {
+        return ['item', 'supplier'];
     }
 }

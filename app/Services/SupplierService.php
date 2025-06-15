@@ -122,20 +122,21 @@ class SupplierService extends BaseService
     }
 
     /**
-     * Process request parameters for suppliers.
+     * Process request parameters with validation and type conversion.
      */
-    public function processSupplierParams(array $params): array
+    public function processRequestParams(array $params): array
     {
+        // Validate parameters against whitelist
+        $this->validateParams($params);
+
         return [
-            'name' => $params['name'] ?? null,
-            'code' => $params['code'] ?? null,
-            'email' => $params['email'] ?? null,
-            'city' => $params['city'] ?? null,
-            'country' => $params['country'] ?? null,
-            'is_active' => isset($params['is_active']) ? filter_var($params['is_active'], FILTER_VALIDATE_BOOLEAN) : null,
-            'with' => ! empty($params['with'])
-                ? (is_string($params['with']) ? array_filter(explode(',', $params['with'])) : $params['with'])
-                : null,
+            'name' => $this->toString($params['name'] ?? null),
+            'code' => $this->toString($params['code'] ?? null),
+            'email' => $this->toString($params['email'] ?? null),
+            'city' => $this->toString($params['city'] ?? null),
+            'country' => $this->toString($params['country'] ?? null),
+            'is_active' => $this->toBool($params['is_active'] ?? null),
+            'with' => $this->processWithParameter($params['with'] ?? null),
         ];
     }
 
@@ -145,15 +146,31 @@ class SupplierService extends BaseService
     public function processItemSupplierParams(array $params): array
     {
         return [
-            'item_id' => isset($params['item_id']) ? (int) $params['item_id'] : null,
-            'supplier_id' => isset($params['supplier_id']) ? (int) $params['supplier_id'] : null,
-            'is_preferred' => isset($params['is_preferred']) ? filter_var($params['is_preferred'], FILTER_VALIDATE_BOOLEAN) : null,
-            'min_price' => isset($params['min_price']) ? (float) $params['min_price'] : null,
-            'max_price' => isset($params['max_price']) ? (float) $params['max_price'] : null,
-            'currency' => $params['currency'] ?? null,
-            'with' => ! empty($params['with'])
-                ? (is_string($params['with']) ? array_filter(explode(',', $params['with'])) : $params['with'])
-                : null,
+            'item_id' => $this->toInt($params['item_id'] ?? null),
+            'supplier_id' => $this->toInt($params['supplier_id'] ?? null),
+            'is_preferred' => $this->toBool($params['is_preferred'] ?? null),
+            'min_price' => isset($params['min_price']) && is_numeric($params['min_price']) ? (float) $params['min_price'] : null,
+            'max_price' => isset($params['max_price']) && is_numeric($params['max_price']) ? (float) $params['max_price'] : null,
+            'currency' => $this->toString($params['currency'] ?? null),
+            'with' => $this->processWithParameter($params['with'] ?? null),
         ];
+    }
+
+    /**
+     * Get allowed query parameters.
+     */
+    protected function getAllowedParams(): array
+    {
+        return array_merge(parent::getAllowedParams(), [
+            'name', 'code', 'email', 'city', 'country', 'is_active',
+        ]);
+    }
+
+    /**
+     * Get valid relations for the model.
+     */
+    protected function getValidRelations(): array
+    {
+        return ['items', 'itemSuppliers', 'stocks'];
     }
 }

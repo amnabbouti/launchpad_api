@@ -17,19 +17,20 @@ class MaintenanceDetailService extends BaseService
     }
 
     /**
-     * Process request parameters for query building.
+     * Process request parameters with explicit validation and type conversion.
      */
     public function processRequestParams(array $params): array
     {
+        // Validate parameters against whitelist for security
+        $this->validateParams($params);
+
         return [
-            'with' => isset($params['with'])
-                ? (is_string($params['with']) ? array_filter(explode(',', $params['with'])) : $params['with'])
-                : null,
-            'maintenance_id' => isset($params['maintenance_id']) ? (int) $params['maintenance_id'] : null,
-            'maintenance_condition_id' => isset($params['maintenance_condition_id']) ? (int) $params['maintenance_condition_id'] : null,
-            'value' => isset($params['value']) ? (float) $params['value'] : null,
-            'created_at_from' => $params['created_at_from'] ?? null,
-            'created_at_to' => $params['created_at_to'] ?? null,
+            'maintenance_id' => $this->toInt($params['maintenance_id'] ?? null),
+            'maintenance_condition_id' => $this->toInt($params['maintenance_condition_id'] ?? null),
+            'value' => isset($params['value']) && is_numeric($params['value']) ? (float) $params['value'] : null,
+            'created_at_from' => $this->toString($params['created_at_from'] ?? null),
+            'created_at_to' => $this->toString($params['created_at_to'] ?? null),
+            'with' => $this->processWithParameter($params['with'] ?? null),
         ];
     }
 
@@ -49,7 +50,7 @@ class MaintenanceDetailService extends BaseService
     }
 
     /**
-     * Create a new maintenance detail with validated data.
+     * Create a new maintenance detail with validation.
      */
     public function createMaintenanceDetail(array $data): Model
     {
@@ -57,7 +58,7 @@ class MaintenanceDetailService extends BaseService
     }
 
     /**
-     * Update a maintenance detail with validated data.
+     * Update a maintenance detail with validation.
      */
     public function updateMaintenanceDetail(int $id, array $data): Model
     {
@@ -73,5 +74,24 @@ class MaintenanceDetailService extends BaseService
             ->where('maintenance_condition_id', $maintenanceConditionId)
             ->orderBy('created_at', 'desc')
             ->first();
+    }
+
+    /**
+     * Get allowed query parameters.
+     */
+    protected function getAllowedParams(): array
+    {
+        return array_merge(parent::getAllowedParams(), [
+            'maintenance_id', 'maintenance_condition_id', 'value', 
+            'created_at_from', 'created_at_to',
+        ]);
+    }
+
+    /**
+     * Get valid relations for the model.
+     */
+    protected function getValidRelations(): array
+    {
+        return ['maintenance', 'maintenanceCondition'];
     }
 }

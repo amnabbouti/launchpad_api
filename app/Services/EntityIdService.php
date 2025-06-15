@@ -11,7 +11,7 @@ use InvalidArgumentException;
 class EntityIdService extends BaseService
 {    protected array $entityTypeConfig = [
         'item' => ['prefix' => 'ITM', 'table' => 'items'],        
-        'stock_item' => ['prefix' => 'STK', 'table' => 'stock_items'],
+        // 'stock_item' => ['prefix' => 'STK', 'table' => 'stock_items'], // Removed as we now use the consolidated Item model
         'stock' => ['prefix' => 'BCH', 'table' => 'stocks'],
         'maintenance' => ['prefix' => 'MNT', 'table' => 'maintenances'],
         'check_in_out' => ['prefix' => 'TXN', 'table' => 'check_ins_outs'],
@@ -20,12 +20,11 @@ class EntityIdService extends BaseService
         'location' => ['prefix' => 'LOC', 'table' => 'locations'],
         'user' => ['prefix' => 'USR', 'table' => 'users'],
         'status' => ['prefix' => 'STA', 'table' => 'statuses'],
-        'item_status' => ['prefix' => 'IST', 'table' => 'item_statuses'],
         'organization' => ['prefix' => 'ORG', 'table' => 'organizations'],
         'role' => ['prefix' => 'ROL', 'table' => 'roles'],
         'unit_of_measure' => ['prefix' => 'UOM', 'table' => 'unit_of_measures'],
         'item_supplier' => ['prefix' => 'ISU', 'table' => 'item_suppliers'],
-        'stock_item_location' => ['prefix' => 'SIL', 'table' => 'stock_item_locations'],
+        'item_location' => ['prefix' => 'ITL', 'table' => 'item_locations'],
         'maintenance_category' => ['prefix' => 'MCA', 'table' => 'maintenance_categories'],
         'maintenance_condition' => ['prefix' => 'MCO', 'table' => 'maintenance_conditions'],
         'maintenance_detail' => ['prefix' => 'MDE', 'table' => 'maintenance_details'],
@@ -247,7 +246,7 @@ class EntityIdService extends BaseService
     {
         if (!isset($this->entityTypeConfig[$entityType])) {
             throw new InvalidArgumentException(
-                'Invalid entity type. Supported types: ' . implode(', ', array_keys($this->entityTypeConfig))
+                ErrorMessages::INVALID_ENTITY_TYPE . '. Supported types: ' . implode(', ', array_keys($this->entityTypeConfig))
             );
         }
     }
@@ -273,7 +272,7 @@ class EntityIdService extends BaseService
 
         // Basic format validation: PREFIX-XXXXXXXX
         if (!preg_match('/^[A-Z]{2,4}-\d{8}$/', $publicId)) {
-            throw new InvalidArgumentException('Invalid public ID format');
+            throw new InvalidArgumentException(ErrorMessages::INVALID_PUBLIC_ID_FORMAT);
         }
     }
 

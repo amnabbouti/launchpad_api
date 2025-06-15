@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Item;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class ItemService extends BaseService
 {
@@ -17,19 +18,45 @@ class ItemService extends BaseService
     }
 
     /**
-     * Get items with their relationships.
+     * Get filtered items with optional relationships.
      */
-    public function getWithRelations(array $relations = []): Collection
+    public function getFiltered(array $filters = []): Collection
     {
-        return $this->getQuery()->with($relations)->get();
+        $query = $this->getQuery()->with(['maintenances', 'locations', 'category', 'status', 'unitOfMeasure', 'suppliers', 'organization']);
+
+        // Apply filters using model scopes where available
+        $query->when($filters['tracking_mode'] ?? null, function ($q, $mode) {
+            switch ($mode) {
+                case Item::TRACKING_ABSTRACT:
+                    return $q->abstract();
+                case Item::TRACKING_BULK:
+                    return $q->bulk();
+                case Item::TRACKING_SERIALIZED:
+                    return $q->serialized();
+                default:
+                    return $q;
+            }
+        })
+            ->when($filters['location_id'] ?? null, fn($q, $value) => $q->byLocation($value))
+            ->when($filters['q'] ?? null, fn($q, $value) => $q->search($value))
+            ->when(isset($filters['is_active']) && $filters['is_active'], fn($q) => $q->active())
+            ->when($filters['org_id'] ?? null, fn($q, $value) => $q->where('org_id', $value))
+            ->when($filters['category_id'] ?? null, fn($q, $value) => $q->where('category_id', $value))
+            ->when($filters['user_id'] ?? null, fn($q, $value) => $q->where('user_id', $value))
+            ->when($filters['name'] ?? null, fn($q, $value) => $q->where('name', 'like', "%{$value}%"))
+            ->when($filters['code'] ?? null, fn($q, $value) => $q->where('code', 'like', "%{$value}%"))
+            ->when($filters['barcode'] ?? null, fn($q, $value) => $q->where('barcode', $value))
+            ->when($filters['with'] ?? null, fn($q, $relations) => $q->with($relations));
+
+        return $query->get();
     }
 
     /**
-     * Get items by category ID.
+     * Get items by tracking mode.
      */
-    public function getByCategoryId(int $categoryId): Collection
+    public function getByTrackingMode(string $trackingMode): Collection
     {
-        return $this->getQuery()->where('category_id', $categoryId)->get();
+        return $this->getFiltered(['tracking_mode' => $trackingMode]);
     }
 
     /**
@@ -37,81 +64,165 @@ class ItemService extends BaseService
      */
     public function getActive(): Collection
     {
-        return $this->getQuery()->where('is_active', true)->get();
+        return $this->getFiltered(['is_active' => true]);
     }
 
     /**
-     * Get items with low stock.
+     * Find item by ID
      */
-    public function getLowStock(int $threshold = 10): Collection
+    public function findById($id, array $columns = ['*'], array $relations = [], array $appends = []): Model
     {
-        return $this->getQuery()->where('quantity', '<', $threshold)->get();
+        $relations = array_unique(array_merge($relations, ['maintenances', 'locations', 'category', 'status', 'unitOfMeasure', 'suppliers', 'organization']));
+
+        return parent::findById($id, $columns, $relations, $appends);
     }
 
     /**
-     * Get filtered items with organization scoping.
+     * Update an item and its locations.
      */
-    public function getFiltered(array $filters = []): Collection
+    public function update($id, array $data): Model
     {
-        $query = $this->getQuery();
+        // Extract locations from data if present
+        $locations = $data['locations'] ?? null;
+        unset($data['locations']);
 
-        // Apply filters using Laravel's when() method for clean conditional filtering
-        $query->when($filters['org_id'] ?? null, fn ($q, $value) => $q->where('org_id', $value))
-            ->when($filters['category_id'] ?? null, fn ($q, $value) => $q->where('category_id', $value))
-            ->when($filters['status_id'] ?? null, fn ($q, $value) => $q->where('status_id', $value))
-            ->when($filters['user_id'] ?? null, fn ($q, $value) => $q->where('user_id', $value))
-            ->when($filters['low_stock'] ?? null, fn ($q, $value) => $q->where('quantity', '<', $value))
-            ->when($filters['q'] ?? null, fn ($q, $value) => $q->where(function ($subQuery) use ($value) {
-                $subQuery->where('name', 'like', "%{$value}%")
-                    ->orWhere('code', 'like', "%{$value}%")
-                    ->orWhere('description', 'like', "%{$value}%");
-            }))
-            ->when($filters['code'] ?? null, fn ($q, $value) => $q->where('code', $value))
-            ->when($filters['barcode'] ?? null, fn ($q, $value) => $q->where('barcode', $value))
-            ->when(isset($filters['is_active']), fn ($q) => $q->where('is_active', $filters['is_active']))
-            ->when($filters['with'] ?? null, fn ($q, $relations) => $q->with($relations));
+        // Update the main item using parent method
+        $item = parent::update($id, $data);
 
-        return $query->get();
+        // Handle locations update if provided
+        if ($locations !== null && is_array($locations)) {
+            $this->updateItemLocations($item, $locations);
+        }
+
+        // Reload the item with fresh location data
+        return $item->fresh(['locations']);
     }
 
     /**
-     * Get allowed query parameters
+     * Update item locations quantities.
+     */
+    private function updateItemLocations(Model $item, array $locations): void
+    {
+        foreach ($locations as $locationData) {
+            if (isset($locationData['id']) && isset($locationData['quantity'])) {
+                $locationId = $locationData['id'];
+
+                // If it's a public ID (LOC-xxxx), resolve to internal ID
+                if (is_string($locationId) && !is_numeric($locationId)) {
+                    $location = \App\Models\Location::findByPublicId($locationId, $item->org_id);
+                    if (!$location) {
+                        continue; // Skip if location not found
+                    }
+                    $locationId = $location->id;
+                }
+
+                // Update the quantity in the pivot table
+                $item->locations()->updateExistingPivot(
+                    $locationId,
+                    ['quantity' => $locationData['quantity']]
+                );
+            }
+        }
+    }
+
+    /**
+     * Get allowed query parameters for filtering items.
      */
     protected function getAllowedParams(): array
     {
         return array_merge(parent::getAllowedParams(), [
-            'org_id', 'category_id', 'status_id', 'user_id', 'low_stock',
-            'q', 'code', 'barcode', 'is_active',
+            'org_id',
+            'category_id',
+            'user_id',
+            'location_id',
+            'tracking_mode',
+            'is_active',
+            'name',
+            'code',
+            'barcode',
+            'q'
         ]);
     }
 
     /**
-     * Get valid relations for the model.
+     * Get valid relations
      */
     protected function getValidRelations(): array
     {
         return [
-            'organization', 'category', 'user', 'unitOfMeasure', 'status',
-            'stockItems', 'maintenances', 'maintenanceConditions', 'suppliers', 'attachments',
+            'category',
+            'user',
+            'organization',
+            'unitOfMeasure',
+            'status',
+            'parentItem',
+            'childItems',
+            'relatedItem',
+            'itemRelations',
+            'suppliers',
+            'maintenances',
+            'locations'
         ];
     }
 
     /**
-     * Process request parameters for query building.
+     * Process request parameters with validation and type conversion.
      */
     public function processRequestParams(array $params): array
     {
-        $processedParams = parent::processRequestParams($params);
-        $processedParams['org_id'] = $params['org_id'] ?? null;
-        $processedParams['category_id'] = isset($params['category_id']) && is_numeric($params['category_id']) ? (int) $params['category_id'] : null;
-        $processedParams['status_id'] = isset($params['status_id']) && is_numeric($params['status_id']) ? (int) $params['status_id'] : null;
-        $processedParams['user_id'] = isset($params['user_id']) && is_numeric($params['user_id']) ? (int) $params['user_id'] : null;
-        $processedParams['low_stock'] = isset($params['low_stock']) ? filter_var($params['low_stock'], FILTER_VALIDATE_BOOLEAN) : null;
-        $processedParams['is_active'] = isset($params['is_active']) ? filter_var($params['is_active'], FILTER_VALIDATE_BOOLEAN) : null;
-        $processedParams['q'] = $params['q'] ?? null;
-        $processedParams['code'] = $params['code'] ?? null;
-        $processedParams['barcode'] = $params['barcode'] ?? null;
+        $this->validateParams($params);
 
-        return $processedParams;
+        return [
+            'org_id' => $this->toInt($params['org_id'] ?? null),
+            'tracking_mode' => $this->toString($params['tracking_mode'] ?? null),
+            'category_id' => $this->toInt($params['category_id'] ?? null),
+            'user_id' => $this->toInt($params['user_id'] ?? null),
+            'location_id' => $this->toInt($params['location_id'] ?? null),
+            'is_active' => $this->toBool($params['is_active'] ?? null),
+            'name' => $this->toString($params['name'] ?? null),
+            'code' => $this->toString($params['code'] ?? null),
+            'barcode' => $this->toString($params['barcode'] ?? null),
+            'q' => $this->toString($params['q'] ?? null),
+            'with' => $this->processWithParameter($params['with'] ?? null),
+        ];
+    }
+
+    /**
+     * Toggle item maintenance status.
+     */
+    public function toggleMaintenance($id, string $action, string $date, ?string $remarks = null, bool $isRepair = false): Model
+    {
+        $item = $this->findById($id);
+        $user = auth()->user();
+        $orgId = $user->org_id ?? $item->org_id;
+
+        if ($action === 'in') {
+            // Send item to maintenance - create new maintenance record
+            $item->maintenances()->create([
+                'org_id' => $orgId,
+                'date_in_maintenance' => $date,
+                'remarks' => $remarks,
+                'is_repair' => $isRepair,
+                'user_id' => $user->id ?? null,
+                'maintainable_id' => $item->id,
+                'maintainable_type' => get_class($item),
+            ]);
+        } elseif ($action === 'out') {
+            // Return item from maintenance - update existing active maintenance
+            $activeMaintenance = $item->maintenances()
+                ->whereNotNull('date_in_maintenance')
+                ->whereNull('date_back_from_maintenance')
+                ->first();
+
+            if ($activeMaintenance) {
+                $activeMaintenance->update([
+                    'date_back_from_maintenance' => $date,
+                    'remarks' => $remarks ?: $activeMaintenance->remarks,
+                ]);
+            }
+        }
+
+        // Return fresh item with updated maintenance status
+        return $item->fresh(['maintenances']);
     }
 }
