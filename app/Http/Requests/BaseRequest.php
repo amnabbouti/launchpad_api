@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth;
 
 abstract class BaseRequest extends FormRequest
 {
@@ -40,8 +41,8 @@ abstract class BaseRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        if (! $this->has('org_id') && auth()->check() && auth()->user()->org_id) {
-            $this->merge(['org_id' => auth()->user()->org_id]);
+        if (! $this->has('org_id') && Auth::guard('api')->check() && Auth::guard('api')->user()->org_id) {
+            $this->merge(['org_id' => Auth::guard('api')->user()->org_id]);
         }
 
         // Resolve public IDs to internal IDs before validation
@@ -53,25 +54,27 @@ abstract class BaseRequest extends FormRequest
      */
     protected function resolvePublicIds(): void
     {
-        $user = auth()->user();
+        $user = Auth::guard('api')->user();
         if (!$user || !$user->org_id) {
             return;
         }
 
         $data = $this->all();
-        
+
         $foreignKeyMappings = [
             'item_id' => \App\Models\Item::class,
             'supplier_id' => \App\Models\Supplier::class,
             'parent_id' => \App\Models\Location::class,
             'location_id' => \App\Models\Location::class,
-            'stock_id' => \App\Models\Stock::class,
-            'stock_item_id' => \App\Models\StockItem::class,
-            'status_id' => \App\Models\ItemStatus::class,  // For StockItems
+            'to_location_id' => \App\Models\Location::class,
+            'from_location_id' => \App\Models\Location::class,
+            'status_id' => \App\Models\Status::class,
             'unit_id' => \App\Models\UnitOfMeasure::class,
             'role_id' => \App\Models\Role::class,
-            'general_status_id' => \App\Models\Status::class,  // For general statuses
-            'item_status_id' => \App\Models\ItemStatus::class,
+            'category_id' => \App\Models\Category::class,
+            'user_id' => \App\Models\User::class,
+            'parent_item_id' => \App\Models\Item::class,
+            'item_relation_id' => \App\Models\Item::class,
         ];
 
         $resolvedData = [];

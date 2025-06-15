@@ -14,20 +14,20 @@ class CheckInOutRequest extends BaseRequest
         $checkInOutId = $this->route('id') ?? null;
         $rules = [
             'org_id' => 'required|exists:organizations,id',
-            'stock_item_id' => 'required|exists:stock_items,id',
         ];
 
         $route = $this->route()->getName();
 
-        if ($route === 'check-ins-outs.checkout') {
+        if (in_array($route, ['checks.out', 'checks.out-with-components'])) {
             $rules = array_merge($rules, [
                 'user_id' => 'required|exists:users,id',
-                'checkout_location_id' => 'required|exists:locations,id',
+                'checkout_location_id' => 'required|string',
                 'checkout_quantity' => 'required|numeric|min:1',
                 'checkout_date' => 'nullable|date',
-                'status_out_id' => 'nullable|exists:item_statuses,id',
+                'status_out_id' => 'nullable|exists:statuses,id',
                 'expected_return_date' => 'nullable|date|after:today',
                 'notes' => 'nullable|string|max:500',
+                'include_components' => 'nullable|boolean',
                 'reference' => [
                     'nullable',
                     'string',
@@ -37,13 +37,13 @@ class CheckInOutRequest extends BaseRequest
                         ->ignore($checkInOutId),
                 ],
             ]);
-        } elseif ($route === 'check-ins-outs.checkin') {
+        } elseif ($route === 'checks.in') {
             $rules = array_merge($rules, [
-                'checkin_user_id' => 'required|exists:users,id',
-                'checkin_location_id' => 'required|exists:locations,id',
+                'checkin_user_id' => 'required',
+                'checkin_location_id' => 'required',
                 'checkin_quantity' => 'nullable|numeric|min:1',
                 'checkin_date' => 'nullable|date',
-                'status_in_id' => 'nullable|exists:item_statuses,id',
+                'status_in_id' => 'nullable|exists:statuses,public_id',
                 'notes' => 'nullable|string|max:500',
             ]);
         }
@@ -59,8 +59,8 @@ class CheckInOutRequest extends BaseRequest
         return [
             'org_id.required' => 'Organization ID is required',
             'org_id.exists' => 'The selected organization does not exist',
-            'stock_item_id.required' => 'The stock item is required',
-            'stock_item_id.exists' => 'The selected stock item does not exist',
+            'item_id.required' => 'The item is required',
+            'item_id.exists' => 'The selected item does not exist',
             'user_id.required' => 'The user is required',
             'user_id.exists' => 'The selected user does not exist',
             'checkout_location_id.required' => 'The checkout location is required',

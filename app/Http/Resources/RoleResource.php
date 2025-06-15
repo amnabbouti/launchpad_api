@@ -16,10 +16,10 @@ class RoleResource extends JsonResource
             'id' => $this->public_id,
             'slug' => $this->slug,
             'title' => $this->title,
-            'forbidden' => $this->getForbidden(),
+            'forbidden' => $this->getForbidden() ?? [],
             'users_count' => $this->when($this->relationLoaded('users'), fn () => $this->users->count()),
-            'created_at' => $this->created_at?->toIso8601String(),
-            'updated_at' => $this->updated_at?->toIso8601String(),
+            'created_at' => $this->created_at?->format('c'),
+            'updated_at' => $this->updated_at?->format('c'),
         ];
     }
 }

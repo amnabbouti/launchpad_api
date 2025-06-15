@@ -41,15 +41,11 @@ class UserRequest extends BaseRequest
                 'string',
             ],
             'role_id' => [
-                'required',
+                'sometimes',
                 'integer',
                 Rule::exists('roles', 'id'),
             ],
-            'org_id' => [
-                'required',
-                'integer',
-                Rule::exists('organizations', 'id'),
-            ],
+            'org_id' => $this->getOrgIdValidationRules(),
             'is_active' => ['sometimes', 'boolean'],
         ];
     }
@@ -76,7 +72,6 @@ class UserRequest extends BaseRequest
             'role_id.required' => 'The role field is required.',
             'role_id.exists' => 'The selected role is invalid.',
 
-            'org_id.required' => 'The organization field is required.',
             'org_id.exists' => 'The selected organization is invalid.',
         ];
     }
@@ -95,44 +90,19 @@ class UserRequest extends BaseRequest
     }
 
     /**
-     * Configure the validator instance.
+     * Get org_id validation rules.
+     * Pure validation only - business logic handled in service layer.
      */
-    public function withValidator($validator): void
+    protected function getOrgIdValidationRules(): array
     {
-        $validator->after(function ($validator) {
-            $this->validateRoleAssignment($validator);
-        });
+        // Simple validation - org_id can be nullable or integer with exists check
+        // The business logic for whether it's required based on role is handled in UserService
+        return [
+            'nullable',
+            'integer',
+            Rule::exists('organizations', 'id')
+        ];
     }
 
-    /**
-     * Validate role assignment based on current user permissions.
-     */
-    protected function validateRoleAssignment($validator): void
-    {
-        $currentUser = auth()->user();
-        $requestedRoleId = $this->input('role_id');
 
-        if (! $currentUser || ! $requestedRoleId) {
-            return;
-        }
-
-        // Super admins can assign any role
-        if ($currentUser->isSuperAdmin()) {
-            return;
-        }
-
-        // Managers can only assign organization roles (manager, employee)
-        if ($currentUser->isManager()) {
-            $role = \App\Models\Role::find($requestedRoleId);
-
-            if ($role && $role->slug === 'super_admin') {
-                $validator->errors()->add('role_id', 'You cannot assign super admin role.');
-            }
-
-            return;
-        }
-
-        // Employees cannot assign roles
-        $validator->errors()->add('role_id', 'You do not have permission to assign roles.');
-    }
 }

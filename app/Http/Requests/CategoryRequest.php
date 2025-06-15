@@ -9,7 +9,6 @@ class CategoryRequest extends BaseRequest
      */
     public function rules(): array
     {
-        // For GET requests (like index with query parameters), no validation needed
         if ($this->isMethod('GET')) {
             return [];
         }

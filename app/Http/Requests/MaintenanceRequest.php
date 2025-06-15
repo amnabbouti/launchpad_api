@@ -23,11 +23,12 @@ class MaintenanceRequest extends BaseRequest
             'date_back_from_maintenance' => 'nullable|date',
             'date_in_maintenance' => 'nullable|date',
             'is_repair' => 'boolean',
-            'supplier_id' => 'required|exists:suppliers,id',
-            'stock_item_id' => 'required|exists:stock_items,id',
+            'supplier_id' => 'nullable|exists:suppliers,id',
+            'maintainable_id' => 'nullable|string',
+            'maintainable_type' => 'nullable|string|in:App\\Models\\Item,App\\Models\\StockItem',
             'user_id' => 'nullable|exists:users,id',
-            'status_out_id' => 'nullable|exists:statuses,id',
-            'status_in_id' => 'nullable|exists:statuses,id',
+            'status_out_id' => 'nullable|exists:item_statuses,id',
+            'status_in_id' => 'nullable|exists:item_statuses,id',
             'org_id' => 'required|exists:organizations,id',
         ];
     }
@@ -39,7 +40,10 @@ class MaintenanceRequest extends BaseRequest
     {
         return [
             'supplier_id.exists' => 'The selected supplier does not exist',
-            'stock_item_id.exists' => 'The selected stock item does not exist',
+            'maintainable_id.required' => 'The maintainable item is required',
+            'maintainable_id.string' => 'The maintainable item ID must be a string',
+            'maintainable_type.required' => 'The maintainable type is required',
+            'maintainable_type.in' => 'The maintainable type must be either Item or StockItem',
             'user_id.exists' => 'The selected user does not exist',
             'status_out_id.exists' => 'The selected status does not exist',
             'status_in_id.exists' => 'The selected status does not exist',
