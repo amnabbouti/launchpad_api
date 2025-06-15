@@ -21,9 +21,14 @@ class LocationController extends BaseController
      * All locations.
      */
     public function index(Request $request): JsonResponse
-    {        // service handles relationship processing
-        $filters = $this->locationService->processRequestParams($request->query());
-        $locations = $this->locationService->getFiltered($filters);
+    {
+        $wantsHierarchy = $request->query('hierarchy', true);
+        if ($wantsHierarchy && $wantsHierarchy !== 'false') {
+            $locations = $this->locationService->getRootLocationsWithHierarchy();
+        } else {
+            $filters = $this->locationService->processRequestParams($request->query());
+            $locations = $this->locationService->getFiltered($filters);
+        }
 
         return $this->successResponse(LocationResource::collection($locations));
     }
@@ -47,13 +52,10 @@ class LocationController extends BaseController
      */
     public function show(Request $request, string $id): JsonResponse
     {
-        // Let service handle relationship processing
-        $processed = $this->locationService->processRequestParams($request->query());
+        // Load with children hierarchy by default
+        $location = $this->locationService->findWithHierarchy($id);
 
-        $location = $this->locationService->findById($id, ['*'], $processed['with'] ?? []);
-
-        return
-        $this->resourceResponse(
+        return $this->resourceResponse(
             new LocationResource($location),
             SuccessMessages::RESOURCE_RETRIEVED,
         );

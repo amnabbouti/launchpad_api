@@ -17,6 +17,7 @@ class AuthController extends BaseController
 {
     /**
      * Login user and return encrypted token
+     * Only super admin users can login to this dashboard
      */
     public function login(LoginRequest $request): JsonResponse
     {
@@ -31,10 +32,18 @@ class AuthController extends BaseController
 
         $user = Auth::user();
 
-        // Create a new token for the user
-        $token = $user->createToken('expo-app')->plainTextToken;
+        // Restrict access to super admin users only
+        if (!$user->isSuperAdmin()) {
+            return $this->errorResponse(
+                'Access denied. Only super administrators can access this dashboard.',
+                HttpStatus::HTTP_FORBIDDEN
+            );
+        }
 
-        // Token encryption
+        // Create a new token for the user
+        $token = $user->createToken('dashboard-app')->plainTextToken;
+
+        // Encrypt the token for additional security
         $encryptedToken = Crypt::encryptString($token);
 
         return $this->successResponse([
@@ -64,7 +73,7 @@ class AuthController extends BaseController
 
         return $this->successResponse(
             null,
-            'Logged out successfully'
+            SuccessMessages::LOGOUT_SUCCESS
         );
     }
 }

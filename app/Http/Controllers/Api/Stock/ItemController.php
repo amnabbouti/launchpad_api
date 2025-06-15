@@ -9,6 +9,7 @@ use App\Http\Requests\ItemRequest;
 use App\Http\Resources\ItemResource;
 use App\Services\ItemService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class ItemController extends BaseController
 {
@@ -19,26 +20,20 @@ class ItemController extends BaseController
     /**
      * Get items with optional filters.
      */
-    public function index(ItemRequest $request): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         $filters = $this->itemService->processRequestParams($request->query());
         $items = $this->itemService->getFiltered($filters);
-        $resourceType = 'items';
 
-        // Check if results are empty
-        if ($items->isEmpty()) {
-            $hasFilters = ! empty(array_filter($filters, fn ($value) => $value !== null && $value !== ''));
+        // Determine appropriate message
+        $message = $items->isEmpty()
+            ? 'No items found'
+            : SuccessMessages::RESOURCES_RETRIEVED;
 
-            if ($hasFilters) {
-                $message = str_replace('resources', $resourceType, SuccessMessages::NO_RESOURCES_FOUND);
-            } else {
-                $message = str_replace('resources', $resourceType, SuccessMessages::NO_RESOURCES_AVAILABLE);
-            }
-        } else {
-            $message = str_replace('Resources', ucfirst($resourceType), SuccessMessages::RESOURCES_RETRIEVED);
-        }
-
-        return $this->successResponse(ItemResource::collection($items), $message);
+        return $this->successResponse(
+            ItemResource::collection($items),
+            $message
+        );
     }
 
     /**
@@ -60,11 +55,7 @@ class ItemController extends BaseController
      */
     public function show($id): JsonResponse
     {
-        $with = [];
-        if (request()->has('with')) {
-            $with = array_filter(explode(',', request()->query('with')));
-        }
-        $item = $this->itemService->findById($id, ['*'], $with);
+        $item = $this->itemService->findById($id);
 
         return $this->successResponse(new ItemResource($item));
     }
@@ -93,6 +84,24 @@ class ItemController extends BaseController
             null,
             SuccessMessages::RESOURCE_DELETED,
             HttpStatus::HTTP_NO_CONTENT,
+        );
+    }
+
+    /**
+     * Toggle item maintenance status.
+     */
+    public function toggleMaintenance(Request $request, $id): JsonResponse
+    {
+        $action = $request->input('action'); // 'in' or 'out'
+        $date = $request->input('date', now()->toISOString());
+        $remarks = $request->input('remarks');
+        $isRepair = $request->boolean('is_repair', false);
+
+        $item = $this->itemService->toggleMaintenance($id, $action, $date, $remarks, $isRepair);
+
+        return $this->successResponse(
+            new ItemResource($item),
+            $action === 'in' ? 'Item sent to maintenance' : 'Item returned from maintenance'
         );
     }
 }

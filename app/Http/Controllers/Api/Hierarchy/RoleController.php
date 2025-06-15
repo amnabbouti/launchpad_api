@@ -2,10 +2,15 @@
 
 namespace App\Http\Controllers\Api\Hierarchy;
 
+use App\Constants\HttpStatus;
+use App\Constants\SuccessMessages;
 use App\Http\Controllers\Api\BaseController;
+use App\Http\Requests\StoreRoleRequest;
+use App\Http\Requests\UpdateRoleRequest;
 use App\Http\Resources\RoleResource;
 use App\Services\RoleService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class RoleController extends BaseController
 {
@@ -17,19 +22,12 @@ class RoleController extends BaseController
     ) {}
 
     /**
-     * Get all roles.
+     * Get all roles with filtering.
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        // Collect raw query parameters
-        $rawParams = [
-            'name' => request()->query('name'),
-            'slug' => request()->query('slug'),
-            'type' => request()->query('type'),
-            'with' => request()->query('with'),
-        ];
-
-        $roles = $this->roleService->getFiltered($rawParams);
+        $filters = $this->roleService->processRequestParams($request->query());
+        $roles = $this->roleService->getFiltered($filters);
 
         return $this->successResponse(RoleResource::collection($roles));
     }
@@ -59,12 +57,20 @@ class RoleController extends BaseController
      */
     public function show(int $id, Request $request): JsonResponse
     {
-        $with = $request->query('with') ? explode(',', $request->query('with')) : [];
-        $role = $this->roleService->findById($id, ['*'], $with);
+        $filters = $this->roleService->processRequestParams($request->query());
+        $role = $this->roleService->findById($id, ['*'], $filters['with'] ?? []);
 
-        return response()->json([
-            'data' => new RoleResource($role),
-        ]);
+        return $this->successResponse([new RoleResource($role)]);
+    }
+
+    /**
+     * Create a new role.
+     */
+    public function store(StoreRoleRequest $request): JsonResponse
+    {
+        $role = $this->roleService->create($request->validated());
+
+        return $this->successResponse([new RoleResource($role)], SuccessMessages::RESOURCE_CREATED, HttpStatus::HTTP_CREATED);
     }
 
     /**
@@ -74,10 +80,7 @@ class RoleController extends BaseController
     {
         $role = $this->roleService->update($id, $request->validated());
 
-        return response()->json([
-            'message' => 'Role updated successfully',
-            'data' => new RoleResource($role),
-        ]);
+        return $this->successResponse([new RoleResource($role)], SuccessMessages::RESOURCE_UPDATED);
     }
 
     /**
@@ -87,54 +90,44 @@ class RoleController extends BaseController
     {
         $this->roleService->delete($id);
 
-        return response()->json([
-            'message' => 'Role deleted successfully',
-        ]);
+        return $this->successResponse([], SuccessMessages::RESOURCE_DELETED);
     }
 
     /**
-     * Get all available permissions.
+     * Get all available actions that can be forbidden.
      */
-    public function permissions(): JsonResponse
+    public function availableActions(): JsonResponse
     {
-        $permissions = $this->roleService->getAvailablePermissions();
+        $actions = $this->roleService->getAvailableActions();
 
-        return response()->json([
-            'data' => $permissions,
-        ]);
+        return $this->successResponse([$actions]);
     }
 
     /**
-     * Add permission to role.
+     * Add forbidden action to role.
      */
-    public function addPermission(Request $request, int $id): JsonResponse
+    public function addForbiddenAction(Request $request, int $id): JsonResponse
     {
         $request->validate([
-            'permission' => 'required|string',
+            'action' => 'required|string',
         ]);
 
-        $role = $this->roleService->addPermission($id, $request->permission);
+        $role = $this->roleService->addForbiddenAction($id, $request->action);
 
-        return response()->json([
-            'message' => 'Permission added successfully',
-            'data' => new RoleResource($role),
-        ]);
+        return $this->successResponse([new RoleResource($role)], SuccessMessages::ACTION_FORBIDDEN);
     }
 
     /**
-     * Remove permission from role.
+     * Remove forbidden action from role (allow the action).
      */
-    public function removePermission(Request $request, int $id): JsonResponse
+    public function removeForbiddenAction(Request $request, int $id): JsonResponse
     {
         $request->validate([
-            'permission' => 'required|string',
+            'action' => 'required|string',
         ]);
 
-        $role = $this->roleService->removePermission($id, $request->permission);
+        $role = $this->roleService->removeForbiddenAction($id, $request->action);
 
-        return response()->json([
-            'message' => 'Permission removed successfully',
-            'data' => new RoleResource($role),
-        ]);
+        return $this->successResponse([new RoleResource($role)], SuccessMessages::ACTION_ALLOWED);
     }
 }

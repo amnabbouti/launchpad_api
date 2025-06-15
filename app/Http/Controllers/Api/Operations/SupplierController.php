@@ -33,7 +33,7 @@ class SupplierController extends BaseController
             );
         }
 
-        $filters = $this->supplierService->processSupplierParams($request->all());
+        $filters = $this->supplierService->processRequestParams($request->all());
         $suppliers = $this->supplierService->getFiltered($filters);
 
         return $this->successResponse(

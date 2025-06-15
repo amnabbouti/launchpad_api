@@ -22,17 +22,8 @@ class MaintenanceConditionController extends BaseController
     public function index(): JsonResponse
     {
         $request = request();
-        $filters = [
-            'item_id' => $request->query('item_id', null, 'intval'),
-            'maintenance_category_id' => $request->query('maintenance_category_id', null, 'intval'),
-            'unit_of_measure_id' => $request->query('unit_of_measure_id', null, 'intval'),
-            'is_active' => filter_var($request->query('is_active'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
-            'due_for_warning' => filter_var($request->query('due_for_warning'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
-            'due_for_maintenance' => filter_var($request->query('due_for_maintenance'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
-            'with' => array_filter(explode(',', $request->query('with', ''))),
-        ];
-
-        $maintenanceConditions = $this->maintenanceConditionService->getFiltered($filters);
+        $processedParams = $this->maintenanceConditionService->processRequestParams($request->query());
+        $maintenanceConditions = $this->maintenanceConditionService->getFiltered($processedParams);
 
         return $this->successResponse(MaintenanceConditionResource::collection($maintenanceConditions));
     }
@@ -56,7 +47,10 @@ class MaintenanceConditionController extends BaseController
      */
     public function show(int $id): JsonResponse
     {
-        $with = array_filter(explode(',', request()->query('with', '')));
+        $request = request();
+        $processedParams = $this->maintenanceConditionService->processRequestParams($request->query());
+        $with = $processedParams['with'] ?? [];
+        
         $maintenanceCondition = $this->maintenanceConditionService->find($id, $with);
 
         return $this->successResponse(new MaintenanceConditionResource($maintenanceCondition));

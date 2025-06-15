@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Api\Attachment;
 
+use App\Constants\HttpStatus;
+use App\Constants\SuccessMessages;
 use App\Http\Controllers\Api\BaseController;
 use App\Http\Requests\AttachmentRequest;
 use App\Http\Resources\AttachmentResource;
 use App\Services\AttachmentService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class AttachmentController extends BaseController
 {
@@ -20,13 +23,20 @@ class AttachmentController extends BaseController
     /**
      * Get attachments with optional filters.
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $rawParams = request()->query();
-        $processed = $this->attachmentService->processRequestParams($rawParams);
-        $attachments = $this->attachmentService->getFiltered($processed);
+        $filters = $this->attachmentService->processRequestParams($request->query());
+        $attachments = $this->attachmentService->getFiltered($filters);
 
-        return $this->successResponse(AttachmentResource::collection($attachments));
+        // Determine appropriate message
+        $message = $attachments->isEmpty() 
+            ? 'No attachments found' 
+            : SuccessMessages::RESOURCES_RETRIEVED;
+
+        return $this->successResponse(
+            AttachmentResource::collection($attachments),
+            $message
+        );
     }
 
     /**
@@ -38,8 +48,8 @@ class AttachmentController extends BaseController
 
         return $this->successResponse(
             new AttachmentResource($attachment),
-            'Attachment created successfully',
-            self::HTTP_CREATED,
+            SuccessMessages::RESOURCE_CREATED,
+            HttpStatus::HTTP_CREATED,
         );
     }
 
@@ -63,7 +73,7 @@ class AttachmentController extends BaseController
 
         return $this->successResponse(
             new AttachmentResource($updatedAttachment),
-            'Attachment updated successfully',
+            SuccessMessages::RESOURCE_UPDATED,
         );
     }
 
@@ -74,6 +84,23 @@ class AttachmentController extends BaseController
     {
         $this->attachmentService->deleteAttachment($id);
 
-        return $this->successResponse(null, 'Attachment deleted successfully');
+        return $this->successResponse(null, SuccessMessages::RESOURCE_DELETED);
+    }
+
+    /**
+     * Get attachment type options for UI dropdowns.
+     */
+    public function getTypeOptions(): JsonResponse
+    {
+        $options = $this->attachmentService->getAttachmentTypeOptions();
+
+        return $this->successResponse([
+            'options' => $options,
+            'instructions' => [
+                'step_1' => 'Select an attachment type',
+                'step_2' => 'Enter the specific entity ID (e.g., item ID, user ID)', 
+                'step_3' => 'Upload'
+            ]
+        ], SuccessMessages::OPTIONS_RETRIEVED);
     }
 }

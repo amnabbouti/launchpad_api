@@ -18,15 +18,15 @@ class CheckInOutController extends BaseController
     ) {}
 
     /**
-     * Check out a stock item.
+     * Check out an item.
      */
-    public function checkout(CheckInOutRequest $request, int $stockItemId): JsonResponse
+    public function checkout(CheckInOutRequest $request, string $itemLocationId): JsonResponse
     {
         try {
-            $checkInOut = $this->checkInOutService->checkout($stockItemId, $request->validated());
+            $checkInOut = $this->checkInOutService->checkout($itemLocationId, $request->validated());
 
             return $this->successResponse(
-                new CheckInOutResource($checkInOut->load(['user', 'checkoutLocation', 'statusOut'])),
+                new CheckInOutResource($checkInOut->load(['user', 'trackable.item', 'trackable.location', 'checkoutLocation', 'statusOut'])),
                 SuccessMessages::RESOURCE_CREATED,
                 HttpStatus::HTTP_CREATED,
             );
@@ -38,15 +38,15 @@ class CheckInOutController extends BaseController
     }
 
     /**
-     * Check in a stock item.
+     * Check in an item.
      */
-    public function checkin(CheckInOutRequest $request, int $stockItemId): JsonResponse
+    public function checkin(CheckInOutRequest $request, string $itemLocationId): JsonResponse
     {
         try {
-            $checkInOut = $this->checkInOutService->checkin($stockItemId, $request->validated());
+            $checkInOut = $this->checkInOutService->checkin($itemLocationId, $request->validated());
 
             return $this->successResponse(
-                new CheckInOutResource($checkInOut->load(['user', 'checkinUser', 'checkinLocation', 'statusIn'])),
+                new CheckInOutResource($checkInOut->load(['user', 'checkinUser', 'trackable.item', 'trackable.location', 'checkinLocation', 'statusIn'])),
                 SuccessMessages::RESOURCE_UPDATED,
             );
         } catch (\InvalidArgumentException $e) {
@@ -57,19 +57,40 @@ class CheckInOutController extends BaseController
     }
 
     /**
-     * Get the checkout history for a specific stock item.
+     * Get the checkout history for a specific item location.
      */
-    public function history(Request $request, int $stockItemId): JsonResponse
+    public function history(Request $request, string $itemLocationId): JsonResponse
     {
         try {
             $perPage = $request->query('per_page', 15);
-            $history = $this->checkInOutService->getHistory($stockItemId, $perPage);
+            $history = $this->checkInOutService->getHistory($itemLocationId, $perPage);
 
             return $this->successResponse(CheckInOutResource::collection($history));
         } catch (\InvalidArgumentException $e) {
             return $this->errorResponse($e->getMessage(), HttpStatus::HTTP_NOT_FOUND);
         } catch (\Exception $e) {
             return $this->errorResponse($e->getMessage(), HttpStatus::HTTP_CONFLICT);
+        }
+    }
+
+    /**
+     * Get filtered check-in/out records.
+     */
+    public function index(Request $request): JsonResponse
+    {
+        try {
+            $filters = $request->only([
+                'user_id', 'item_id', 'checkout_location_id', 'checkin_location_id',
+                'status_out_id', 'status_in_id', 'is_active', 'active_only', 
+                'overdue_only', 'date_from', 'date_to'
+            ]);
+            
+            $filters['with'] = ['user', 'trackable.item', 'trackable.location', 'checkoutLocation', 'checkinLocation', 'statusOut', 'statusIn'];
+            $checkInOuts = $this->checkInOutService->getFiltered($filters);
+
+            return $this->successResponse(CheckInOutResource::collection($checkInOuts));
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), HttpStatus::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 }

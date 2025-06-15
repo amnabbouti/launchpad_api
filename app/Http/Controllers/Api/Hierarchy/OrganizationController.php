@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Api\Hierarchy;
 
+use App\Constants\SuccessMessages;
 use App\Http\Controllers\Api\BaseController;
 use App\Http\Requests\OrganizationRequest;
 use App\Http\Resources\OrganizationResource;
 use App\Services\OrganizationService;
 use Illuminate\Http\JsonResponse;
+use App\Constants\HttpStatus;
 
 class OrganizationController extends BaseController
 {
@@ -37,8 +39,8 @@ class OrganizationController extends BaseController
 
         return $this->successResponse(
             new OrganizationResource($organization),
-            'Organization created successfully',
-            self::HTTP_CREATED,
+            SuccessMessages::ORG_CREATED,
+            HttpStatus::HTTP_CREATED,
         );
     }
 
@@ -62,7 +64,7 @@ class OrganizationController extends BaseController
 
         return $this->successResponse(
             new OrganizationResource($updatedOrganization),
-            'Organization updated successfully',
+            SuccessMessages::ORG_UPDATED,
         );
     }
 
@@ -73,7 +75,7 @@ class OrganizationController extends BaseController
     {
         $this->organizationService->delete($id);
 
-        return $this->successResponse(null, 'Organization deleted successfully');
+        return $this->successResponse(null, SuccessMessages::RESOURCE_DELETED);
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Stock;
 
+use App\Constants\ErrorMessages;
 use App\Constants\HttpStatus;
 use App\Constants\SuccessMessages;
 use App\Http\Controllers\Api\BaseController;
@@ -33,9 +34,9 @@ class CategoryController extends BaseController
             $hasFilters = ! empty(array_filter($filters, fn ($value) => $value !== null && $value !== ''));
 
             if ($hasFilters) {
-                $message = str_replace('resources', $resourceType, SuccessMessages::NO_RESOURCES_FOUND);
+                $message = str_replace('resources', $resourceType, ErrorMessages::NO_RESOURCES_FOUND);
             } else {
-                $message = str_replace('resources', $resourceType, SuccessMessages::NO_RESOURCES_AVAILABLE);
+                $message = str_replace('resources', $resourceType, ErrorMessages::NO_RESOURCES_AVAILABLE);
             }
         } else {
             $message = str_replace('Resources', ucfirst($resourceType), SuccessMessages::RESOURCES_RETRIEVED);
