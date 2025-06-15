@@ -38,9 +38,6 @@ class Attachment extends Model
         'deleted_at' => 'datetime',
     ];
 
-    /**
-     * Get the entity type for public_id generation
-     */
     protected static function getEntityType(): string
     {
         return 'attachment';
@@ -56,7 +53,6 @@ class Attachment extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    // Polymorphic relationships
     public function items(): MorphToMany
     {
         return $this->morphedByMany(Item::class, 'attachmentable', 'attachmentables');
@@ -72,7 +68,6 @@ class Attachment extends Model
         return $this->morphedByMany(CheckInOut::class, 'attachmentable', 'attachmentables');
     }
 
-    // Accessors
     public function getUrlAttribute(): string
     {
         return Storage::url($this->file_path);

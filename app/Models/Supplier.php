@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasAttachments;
 use App\Traits\HasOrganizationScope;
 use App\Traits\HasPublicId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Supplier extends Model
 {
+    use HasAttachments;
     use HasFactory;
     use HasOrganizationScope;
     use HasPublicId;

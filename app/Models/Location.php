@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasAttachments;
 use App\Traits\HasOrganizationScope;
 use App\Traits\HasPublicId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Location extends Model
 {
+    use HasAttachments;
     use HasFactory;
     use HasOrganizationScope;
     use HasPublicId;
@@ -56,13 +58,13 @@ class Location extends Model
         return $this->hasMany(Location::class, 'parent_id');
     }
 
-    // Loads all nested children recursively for hierarchy navigation
+    // nested children recursively for hierarchy
     public function childrenRecursive()
     {
         return $this->children()->with('childrenRecursive');
     }
 
-    // Items stored at this location with quantities
+    // Items stored with quantities
     public function items(): BelongsToMany
     {
         return $this->belongsToMany(Item::class, 'item_location', 'location_id', 'item_id')

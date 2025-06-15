@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasAttachments;
 use App\Traits\HasPublicId;
 
 use App\Traits\HasOrganizationScope;
@@ -14,7 +15,8 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasPublicId; // Add public_id support
+    use HasAttachments;
+    use HasPublicId;
     use HasApiTokens;
     use HasFactory;
     use HasOrganizationScope;

@@ -8,6 +8,7 @@ use App\Traits\HasPublicId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class CheckInOut extends Model
 {
@@ -26,7 +27,8 @@ class CheckInOut extends Model
     protected $fillable = [
         'org_id',
         'user_id',
-        'stock_item_id',
+        'trackable_id',
+        'trackable_type',
         'checkout_location_id',
         'checkout_date',
         'quantity',
@@ -68,9 +70,9 @@ class CheckInOut extends Model
         return $this->belongsTo(User::class, 'checkin_user_id');
     }
 
-    public function stockItem(): BelongsTo
+    public function trackable(): MorphTo
     {
-        return $this->belongsTo(StockItem::class, 'stock_item_id');
+        return $this->morphTo();
     }
 
     public function checkoutLocation(): BelongsTo
@@ -85,12 +87,12 @@ class CheckInOut extends Model
 
     public function statusOut(): BelongsTo
     {
-        return $this->belongsTo(ItemStatus::class, 'status_out_id');
+        return $this->belongsTo(Status::class, 'status_out_id');
     }
 
     public function statusIn(): BelongsTo
     {
-        return $this->belongsTo(ItemStatus::class, 'status_in_id');
+        return $this->belongsTo(Status::class, 'status_in_id');
     }
 
     public function getIsCheckedInAttribute(): bool

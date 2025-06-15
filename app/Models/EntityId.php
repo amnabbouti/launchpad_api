@@ -102,15 +102,16 @@ class EntityId extends Model
     /**
      * Find entity by public ID within organization
      */
-    public static function findByPublicId(string $publicId, int $orgId): ?self
+    public static function findByPublicId(string $publicId, ?int $orgId = null): ?self
     {
         return static::byPublicId($publicId, $orgId)->first();
     }
 
     /**
      * Get the internal ID for a given public ID
+     * For super admins, orgId can be null to allow accessing any organization's data
      */
-    public static function resolveInternalId(string $publicId, int $orgId): ?int
+    public static function resolveInternalId(string $publicId, ?int $orgId = null): ?int
     {
         $entityId = static::findByPublicId($publicId, $orgId);
 
@@ -119,13 +120,18 @@ class EntityId extends Model
 
     /**
      * Get the public ID for a given internal ID and entity type
+     * For super admins, orgId can be null to allow accessing any organization's data
      */
-    public static function getPublicId(int $internalId, string $entityType, int $orgId): ?string
+    public static function getPublicId(int $internalId, string $entityType, ?int $orgId = null): ?string
     {
-        $entityId = static::where('org_id', $orgId)
-            ->where('entity_type', $entityType)
-            ->where('entity_internal_id', $internalId)
-            ->first();
+        $query = static::where('entity_type', $entityType)
+            ->where('entity_internal_id', $internalId);
+            
+        if ($orgId !== null) {
+            $query->where('org_id', $orgId);
+        }
+        
+        $entityId = $query->first();
 
         return $entityId?->public_id;
     }

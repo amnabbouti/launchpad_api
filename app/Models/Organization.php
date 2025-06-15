@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasAttachments;
 use App\Traits\HasPublicId;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,7 +11,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Organization extends Model
 {
-    use HasPublicId; // Add public_id support
+    use HasAttachments;
+    use HasPublicId; 
     use HasFactory;
 
     protected $fillable = [
@@ -68,11 +70,6 @@ class Organization extends Model
     }
 
     public function statuses(): HasMany
-    {
-        return $this->hasMany(Status::class, 'org_id');
-    }
-
-    public function itemStatuses(): HasMany
     {
         return $this->hasMany(ItemStatus::class, 'org_id');
     }

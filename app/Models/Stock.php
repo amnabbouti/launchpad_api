@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasAttachments;
 use App\Traits\HasOrganizationScope;
 use App\Traits\HasPublicId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Stock extends Model
 {
+    use HasAttachments;
     use HasFactory;
     use HasOrganizationScope;
     use HasPublicId;
@@ -50,9 +52,9 @@ class Stock extends Model
         return $this->belongsTo(Supplier::class, 'supplier_id');
     }
 
-    public function stockItems(): HasMany
+    public function items(): HasMany
     {
-        return $this->hasMany(StockItem::class, 'stock_id');
+        return $this->hasMany(Item::class, 'stock_id');
     }
 
     public function checkInOuts(): HasMany

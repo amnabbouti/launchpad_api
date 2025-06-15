@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use App\Traits\HasOrganizationScope;
 use App\Traits\HasPublicId;
+
+use App\Traits\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,14 +16,15 @@ class Status extends Model
     use HasFactory;
     use HasOrganizationScope;
 
+    protected $table = 'statuses';
+
     protected $fillable = [
         'org_id',
         'name',
+        'code',
         'description',
         'is_active',
-    ];
-
-    protected static function getEntityType(): string
+    ];    protected static function getEntityType(): string
     {
         return 'status';
     }
@@ -53,23 +55,13 @@ class Status extends Model
         return $this->hasMany(Maintenance::class, 'status_in_id');
     }
 
-    public function checkInOutsOut(): HasMany
+    public function checkouts(): HasMany
     {
         return $this->hasMany(CheckInOut::class, 'status_out_id');
     }
 
-    public function checkInOutsIn(): HasMany
+    public function checkins(): HasMany
     {
         return $this->hasMany(CheckInOut::class, 'status_in_id');
-    }
-
-    public function maintenanceConditionsReturned(): HasMany
-    {
-        return $this->hasMany(MaintenanceCondition::class, 'status_when_returned_id');
-    }
-
-    public function maintenanceConditionsExceeded(): HasMany
-    {
-        return $this->hasMany(MaintenanceCondition::class, 'status_when_exceeded_id');
     }
 }
