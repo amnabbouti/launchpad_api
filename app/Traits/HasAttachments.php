@@ -18,7 +18,7 @@ trait HasAttachments
     {
         return $this->morphToMany(Attachment::class, 'attachmentable', 'attachmentables')
             ->where(function ($query) {
-                // Ensure organization separation for multi-tenant support
+                // Ensure organization separation
                 if (isset($this->org_id)) {
                     $query->where('org_id', $this->org_id);
                 }
@@ -30,7 +30,7 @@ trait HasAttachments
      */
     public function attachFile(UploadedFile $file, ?string $category = null, ?string $description = null): Attachment
     {
-        // Get organization ID from the model for multi-tenant support
+        // Get organization ID from the model
         $organizationId = $this->org_id ?? Auth::user()->org_id ?? null;
 
         if (! $organizationId) {
@@ -74,7 +74,7 @@ trait HasAttachments
      */
     public function detachFile(int $attachmentId, bool $deleteFile = true): bool
     {
-        // Get organization ID from the model for multi-tenant support
+
         $organizationId = $this->org_id ?? Auth::user()->org_id ?? null;
 
         $attachment = Attachment::where('id', $attachmentId)
@@ -85,7 +85,6 @@ trait HasAttachments
             return false;
         }
 
-        // Detach the file from the model
         $this->attachments()->detach($attachmentId);
 
         // If deleteFile is true, check if we should delete the physical file too

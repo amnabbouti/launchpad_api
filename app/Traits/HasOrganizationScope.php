@@ -11,7 +11,9 @@ use Illuminate\Support\Facades\Route;
 
 trait HasOrganizationScope
 {
-    /** Cache the authenticated user to avoid repeated queries. */
+    /** 
+     * Cache the authenticated user to avoid repeated queries.
+     */
     protected static $cachedAuthUser = null;
 
     protected static $cacheKey = null;
@@ -21,6 +23,11 @@ trait HasOrganizationScope
      */
     public static function validateCreateOrgAuthorization(Model $model): void
     {
+        // Skip authorization during database seeding
+        if (app()->runningInConsole() && app()->environment(['local', 'testing'])) {
+            return;
+        }
+
         $user = static::getCachedAuthUser();
 
         if (! $user) {
@@ -50,6 +57,11 @@ trait HasOrganizationScope
      */
     public static function validateUpdateOrgAuthorization(Model $model): void
     {
+        // Skip authorization during database seeding
+        if (app()->runningInConsole() && app()->environment(['local', 'testing'])) {
+            return;
+        }
+
         $user = static::getCachedAuthUser();
 
         if (! $user) {
@@ -74,6 +86,11 @@ trait HasOrganizationScope
      */
     public static function validateDeleteOrgAuthorization(Model $model): void
     {
+
+        if (app()->runningInConsole() && app()->environment(['local', 'testing'])) {
+            return;
+        }
+
         $user = static::getCachedAuthUser();
 
         if (! $user) {
@@ -222,6 +239,7 @@ trait HasOrganizationScope
                 return;
             }
 
+            // Super admins can access all records regardless of organization
             if (static::isSuperAdminUser($user)) {
                 return;
             }
@@ -230,7 +248,7 @@ trait HasOrganizationScope
                 if ($builder->getQuery()->wheres) {
                     static::checkRecordAccess($builder->getModel()->id);
                 }
-                $builder->where($builder->getModel()->getTable().'.org_id', $user->org_id);
+                $builder->where($builder->getModel()->getTable() . '.org_id', $user->org_id);
             } else {
                 $builder->whereRaw('1 = 0');
             }
@@ -258,17 +276,17 @@ trait HasOrganizationScope
         $request = request();
 
         return ($currentRoute && in_array($currentRoute, ['login', 'logout', 'register', 'sanctum.csrf-cookie']))
-               || ($request && (
-                   $request->is('api/login')
-                   || $request->is('api/logout')
-                   || $request->is('api/register')
-                   || $request->is('login')
-                   || $request->is('logout')
-                   || $request->is('register')
-                   || $request->is('sanctum/csrf-cookie')
-                   || $request->is('api/sanctum/token')
-               ))
-               || app()->runningInConsole();
+            || ($request && (
+                $request->is('api/login')
+                || $request->is('api/logout')
+                || $request->is('api/register')
+                || $request->is('login')
+                || $request->is('logout')
+                || $request->is('register')
+                || $request->is('sanctum/csrf-cookie')
+                || $request->is('api/sanctum/token')
+            ))
+            || app()->runningInConsole();
     }
 
     /**
@@ -310,7 +328,7 @@ trait HasOrganizationScope
     }
 
     /**
-     * Check record access and throw appropriate exceptions.
+     * Check record access and throw exceptions.
      */
     protected static function checkRecordAccess($id)
     {
@@ -326,10 +344,12 @@ trait HasOrganizationScope
             throw new UnauthorizedAccessException(ErrorMessages::UNAUTHORIZED);
         }
 
+        // Super admin can access all records 
         if (static::isSuperAdminUser($user)) {
             return true;
         }
 
+        // Regular users can only access records in their organization
         if (! $user->org_id || $record->org_id !== $user->org_id) {
             throw new UnauthorizedAccessException(ErrorMessages::CROSS_ORG_ACCESS);
         }

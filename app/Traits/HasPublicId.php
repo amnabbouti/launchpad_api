@@ -17,7 +17,6 @@ trait HasPublicId
         });
 
         static::deleted(function ($model) {
-            // Clean up the public ID when model is deleted
             $model->entityId()?->delete();
         });
     }
@@ -31,8 +30,17 @@ trait HasPublicId
             $entityType = static::getEntityType();
             $entityIdService = app(EntityIdService::class);
 
-            // Special case for Organization model - use its own ID as org_id
+            // For Organization model - use its own ID as org_id
             $orgId = $entityType === 'organization' ? $model->id : $model->org_id;
+
+            // Skip public ID generation for super admin
+            if ($entityType === 'user' && $orgId === null) {
+                \Log::info('Skipping public ID generation for super admin user', [
+                    'user_id' => $model->id,
+                    'email' => $model->email ?? 'unknown'
+                ]);
+                return;
+            }
 
             $entityIdService->generatePublicId($orgId, $entityType, $model->id);
         } catch (\Exception $e) {
@@ -89,7 +97,7 @@ trait HasPublicId
     /**
      * Find model by public ID within the current organization
      */
-    public static function findByPublicId(string $publicId, int $orgId): ?static
+    public static function findByPublicId(string $publicId, ?int $orgId): ?static
     {
         $entityId = \App\Models\EntityId::findByPublicId($publicId, $orgId);
 
@@ -97,23 +105,30 @@ trait HasPublicId
             return null;
         }
 
-        return static::where('org_id', $orgId)
-            ->where('id', $entityId->entity_internal_id)
-            ->first();
+        $query = static::where('id', $entityId->entity_internal_id);
+        if ($orgId !== null) {
+            $query->where('org_id', $orgId);
+        }
+
+        return $query->first();
     }
 
     /**
      * Scope to find by public ID
      */
-    public function scopeByPublicId($query, string $publicId, int $orgId)
+    public function scopeByPublicId($query, string $publicId, ?int $orgId)
     {
         $entityId = \App\Models\EntityId::findByPublicId($publicId, $orgId);
 
         if (!$entityId || $entityId->entity_type !== static::getEntityType()) {
-            return $query->whereRaw('1 = 0'); // Return empty result
+            return $query->whereRaw('1 = 0'); 
         }
 
-        return $query->where('org_id', $orgId)
-            ->where('id', $entityId->entity_internal_id);
+        $query = $query->where('id', $entityId->entity_internal_id);
+        if ($orgId !== null) {
+            $query->where('org_id', $orgId);
+        }
+
+        return $query;
     }
 }
