@@ -20,7 +20,8 @@ class VerifyOrganizationAccess extends BaseController
         }
 
         // only users with a valid organization ID are allowed
-        if (! Auth::check() || ! Auth::user()->org_id) {
+        // Exception: super admins don't need an organization ID
+        if (! Auth::check() || (! Auth::user()->org_id && ! Auth::user()->isSuperAdmin())) {
             return $this->errorResponse('User must belong to an organization', Response::HTTP_FORBIDDEN);
         }
 
