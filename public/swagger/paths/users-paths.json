@@ -1,0 +1,394 @@
+{
+  "/api/users": {
+    "get": {
+      "tags": ["Users"],
+      "summary": "Get all users",
+      "description": "Retrieve a list of users with optional filtering by various parameters",
+      "operationId": "getUsers",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "q",
+          "in": "query",
+          "description": "Search query to filter users by name or email",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "john"
+        },
+        {
+          "name": "role_id",
+          "in": "query",
+          "description": "Filter by role ID",
+          "required": false,
+          "schema": {
+            "type": "integer"
+          },
+          "example": 2
+        },
+        {
+          "name": "org_id",
+          "in": "query",
+          "description": "Filter by organization ID",
+          "required": false,
+          "schema": {
+            "type": "integer"
+          },
+          "example": 1
+        },
+        {
+          "name": "is_active",
+          "in": "query",
+          "description": "Filter by active status",
+          "required": false,
+          "schema": {
+            "type": "boolean"
+          },
+          "example": true
+        },
+        {
+          "name": "email",
+          "in": "query",
+          "description": "Filter by email address (partial match)",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "example.com"
+        },
+        {
+          "name": "name",
+          "in": "query",
+          "description": "Filter by name (partial match)",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "John"
+        },
+        {
+          "name": "with",
+          "in": "query",
+          "description": "Include related entities",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "organization,role"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Successful operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCollection"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden - Insufficient permissions",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        }
+      }
+    },
+    "post": {
+      "tags": ["Users"],
+      "summary": "Create user",
+      "description": "Create a new user with the provided data",
+      "operationId": "createUser",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "requestBody": {
+        "description": "User object that needs to be created",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/UserRequest"
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "User created successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserSingle"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden - Insufficient permissions",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/users/{id}": {
+    "get": {
+      "tags": ["Users"],
+      "summary": "Get user by ID",
+      "description": "Retrieve detailed information about a specific user",
+      "operationId": "getUser",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "User ID (public ID format)",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "USR-1234"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Successful operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserSingle"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden - Insufficient permissions",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "User not found",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        }
+      }
+    },
+    "patch": {
+      "tags": ["Users"],
+      "summary": "Update user",
+      "description": "Update a user with the provided data",
+      "operationId": "updateUser",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "User ID (public ID format)",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "USR-1234"
+        }
+      ],
+      "requestBody": {
+        "description": "User data that needs to be updated",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/UserUpdateRequest"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "User updated successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserSingle"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden - Insufficient permissions",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "User not found",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        }
+      }
+    },
+    "delete": {
+      "tags": ["Users"],
+      "summary": "Delete a user",
+      "description": "Delete a user by ID",
+      "operationId": "deleteUser",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "User ID (public ID format)",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "USR-1234"
+        }
+      ],
+      "responses": {
+        "204": {
+          "description": "User deleted successfully"
+        },
+        "401": {
+          "description": "Unauthorized",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden - Cannot delete yourself or users with equal/higher permissions",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "User not found",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
