@@ -1,0 +1,388 @@
+{
+  "/api/organizations": {
+    "get": {
+      "tags": ["Organizations"],
+      "summary": "Get all organizations",
+      "description": "Get all organizations accessible to the user. Regular users can only see their own organization, while super admins can see all.",
+      "operationId": "getOrganizations",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "with",
+          "in": "query",
+          "description": "Include related entities (comma-separated list)",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "users,items,locations",
+          "explode": false
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Successful operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationCollection"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        }
+      }
+    },
+    "post": {
+      "tags": ["Organizations"],
+      "summary": "Create a new organization",
+      "description": "Create a new organization. This action requires super admin privileges.",
+      "operationId": "createOrganization",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "requestBody": {
+        "description": "Organization object that needs to be created",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationRequest"
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Organization created successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationSingle"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden - requires super admin privileges",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/organizations/active": {
+    "get": {
+      "tags": ["Organizations"],
+      "summary": "Get active organizations",
+      "description": "Get all active organizations. Regular users can only see their own organization if active, while super admins can see all active organizations.",
+      "operationId": "getActiveOrganizations",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Successful operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationCollection"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/organizations/{id}": {
+    "get": {
+      "tags": ["Organizations"],
+      "summary": "Get organization by ID",
+      "description": "Get a specific organization by ID. Regular users can only access their own organization.",
+      "operationId": "getOrganization",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Organization ID (public ID format)",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "ORG-123"
+        },
+        {
+          "name": "with",
+          "in": "query",
+          "description": "Include related entities (comma-separated list)",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "users,items,locations",
+          "explode": false
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Successful operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationSingle"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Organization not found",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden - not authorized to view this organization",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        }
+      }
+    },
+    "patch": {
+      "tags": ["Organizations"],
+      "summary": "Update an organization",
+      "description": "Update an existing organization. This action requires super admin privileges.",
+      "operationId": "updateOrganization",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Organization ID (public ID format)",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "ORG-123"
+        }
+      ],
+      "requestBody": {
+        "description": "Organization data that needs to be updated",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationRequest"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Organization updated successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationSingle"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Organization not found",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden - requires super admin privileges",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        }
+      }
+    },
+    "delete": {
+      "tags": ["Organizations"],
+      "summary": "Delete an organization",
+      "description": "Delete an organization by ID. This action requires super admin privileges.",
+      "operationId": "deleteOrganization",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Organization ID (public ID format)",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "ORG-123"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Organization deleted successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "success": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Resource deleted successfully"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Organization not found",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden - requires super admin privileges",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

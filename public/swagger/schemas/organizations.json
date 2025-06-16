@@ -1,0 +1,138 @@
+{
+  "Organization": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "example": "ORG-123"
+      },
+      "name": {
+        "type": "string",
+        "example": "Acme Corporation"
+      },
+      "email": {
+        "type": "string",
+        "format": "email",
+        "example": "contact@acme.com"
+      },
+      "telephone": {
+        "type": "string",
+        "example": "+1-555-123-4567"
+      },
+      "address": {
+        "type": "string",
+        "example": "123 Corporate Drive, Business City"
+      },
+      "website": {
+        "type": "string",
+        "format": "uri",
+        "example": "https://www.acme.com"
+      },
+      "remarks": {
+        "type": "string",
+        "example": "Main corporate headquarters"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time",
+        "example": "2025-06-16T10:00:00Z"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time",
+        "example": "2025-06-16T10:00:00Z"
+      }
+    }
+  },
+  "OrganizationCollection": {
+    "type": "object",
+    "properties": {
+      "success": {
+        "type": "boolean",
+        "example": true
+      },
+      "data": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Organization"
+        }
+      },
+      "message": {
+        "type": "string",
+        "example": "Resources retrieved successfully"
+      }
+    }
+  },
+  "OrganizationSingle": {
+    "type": "object",
+    "properties": {
+      "success": {
+        "type": "boolean",
+        "example": true
+      },
+      "data": {
+        "$ref": "#/components/schemas/Organization"
+      },
+      "message": {
+        "type": "string",
+        "example": "Resource retrieved successfully"
+      }
+    }
+  },
+  "OrganizationRequest": {
+    "type": "object",
+    "required": ["name"],
+    "properties": {
+      "name": {
+        "type": "string",
+        "example": "Acme Corporation",
+        "maxLength": 255
+      },
+      "email": {
+        "type": "string",
+        "format": "email",
+        "example": "contact@acme.com",
+        "maxLength": 255
+      },
+      "telephone": {
+        "type": "string",
+        "example": "+1-555-123-4567",
+        "maxLength": 50
+      },
+      "address": {
+        "type": "string",
+        "example": "123 Corporate Drive, Business City",
+        "maxLength": 255
+      },
+      "website": {
+        "type": "string",
+        "format": "uri",
+        "example": "https://www.acme.com",
+        "maxLength": 255
+      },
+      "remarks": {
+        "type": "string",
+        "example": "Main corporate headquarters"
+      }
+    }
+  },
+  "Error": {
+    "type": "object",
+    "properties": {
+      "success": {
+        "type": "boolean",
+        "example": false
+      },
+      "message": {
+        "type": "string",
+        "example": "Resource not found"
+      },
+      "errors": {
+        "type": "object",
+        "example": {
+          "name": ["The organization name is required."]
+        }
+      }
+    }
+  }
+}
