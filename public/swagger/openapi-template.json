@@ -1,0 +1,44 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Launchpad API",
+    "description": "API documentation for the Launchpad application",
+    "version": "1.0.0",
+    "contact": {
+      "email": "support@launchpad.com"
+    },
+    "license": {
+      "name": "MIT License",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Local server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "User authentication endpoints for login, logout and profile access"
+    },
+    {
+      "name": "Items",
+      "description": "Item management endpoints with optional filtering, search, and maintenance operations"
+    },
+    {
+      "name": "Users",
+      "description": "User management endpoints with role-based access control and organization filtering"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
