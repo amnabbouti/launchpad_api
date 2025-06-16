@@ -1,0 +1,1821 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Launchpad API",
+    "description": "API documentation for the Launchpad application",
+    "version": "1.0.0",
+    "contact": {
+      "email": "support@launchpad.com"
+    },
+    "license": {
+      "name": "MIT License",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Local server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "User authentication endpoints for login, logout and profile access"
+    },
+    {
+      "name": "Items",
+      "description": "Item management endpoints with optional filtering, search, and maintenance operations"
+    },
+    {
+      "name": "Users",
+      "description": "User management endpoints with role-based access control and organization filtering"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "LoginRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "user@example.com"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "example": "password123"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "user": {
+                "$ref": "#/components/schemas/UserProfile"
+              },
+              "access_token": {
+                "type": "string",
+                "description": "Encrypted token that needs to be decrypted",
+                "example": "eyJpdiI6Im0zSlZuTVZHd0R2dGIrUGJMcEp..."
+              },
+              "token_type": {
+                "type": "string",
+                "example": "Bearer"
+              }
+            }
+          },
+          "message": {
+            "type": "string",
+            "example": "Login successful"
+          }
+        }
+      },
+      "LogoutResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "null"
+          },
+          "message": {
+            "type": "string",
+            "example": "Logout successful"
+          }
+        }
+      },
+      "UserProfile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "example": "John Doe"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "user@example.com"
+          },
+          "email_verified_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "example": "2025-06-01T10:00:00Z"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-01-01T00:00:00Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-06-01T10:00:00Z"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "create_items",
+              "view_items"
+            ]
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "example": 1
+                },
+                "name": {
+                  "type": "string",
+                  "example": "User"
+                }
+              }
+            }
+          },
+          "organization_id": {
+            "type": "integer",
+            "nullable": true,
+            "example": null
+          }
+        }
+      },
+      "Item": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "ITM-1234"
+          },
+          "name": {
+            "type": "string",
+            "example": "HP Laptop"
+          },
+          "code": {
+            "type": "string",
+            "example": "LPT-001"
+          },
+          "barcode": {
+            "type": "string",
+            "example": "1234567890"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "abstract",
+              "bulk",
+              "serialized"
+            ],
+            "example": "serialized",
+            "description": "Alias for tracking_mode, indicates how the item is tracked"
+          },
+          "description": {
+            "type": "string",
+            "example": "HP ProBook 450 G8 Business Laptop"
+          },
+          "tracking_mode": {
+            "type": "string",
+            "enum": [
+              "abstract",
+              "bulk",
+              "serialized"
+            ],
+            "example": "serialized",
+            "description": "Abstract: No tracking, Bulk: Track by quantity, Serialized: Track individual items"
+          },
+          "price": {
+            "type": "number",
+            "format": "float",
+            "example": 999.99
+          },
+          "serial_number": {
+            "type": "string",
+            "example": "SN12345678",
+            "description": "Required for serialized items"
+          },
+          "notes": {
+            "type": "string",
+            "example": "Purchased for marketing department"
+          },
+          "specifications": {
+            "type": "object",
+            "example": {
+              "cpu": "Intel Core i7",
+              "ram": "16GB",
+              "storage": "512GB SSD"
+            }
+          },
+          "org_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-06-16T10:00:00Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-06-16T10:00:00Z"
+          },
+          "in_maintenance": {
+            "type": "boolean",
+            "example": false,
+            "description": "Whether the item is currently in maintenance"
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          },
+          "total_quantity": {
+            "type": "integer",
+            "example": 10,
+            "description": "Sum of quantities across all locations"
+          },
+          "supplier_count": {
+            "type": "integer",
+            "example": 2,
+            "description": "Number of suppliers for this item"
+          },
+          "organization": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "example": "ORG-123"
+              },
+              "name": {
+                "type": "string",
+                "example": "Acme Inc."
+              }
+            }
+          },
+          "category": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "example": "CAT-123"
+              },
+              "name": {
+                "type": "string",
+                "example": "Electronics"
+              }
+            }
+          },
+          "status": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "example": "STS-123"
+              },
+              "name": {
+                "type": "string",
+                "example": "Available"
+              }
+            }
+          },
+          "unit_of_measure": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "example": "Each"
+              },
+              "symbol": {
+                "type": "string",
+                "example": "ea"
+              }
+            }
+          },
+          "suppliers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "example": "SUP-123"
+                },
+                "name": {
+                  "type": "string",
+                  "example": "HP Distributors"
+                },
+                "is_preferred": {
+                  "type": "boolean",
+                  "example": true
+                }
+              }
+            }
+          },
+          "locations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "example": "LOC-123"
+                },
+                "name": {
+                  "type": "string",
+                  "example": "Main Warehouse"
+                },
+                "code": {
+                  "type": "string",
+                  "example": "WH-001"
+                },
+                "quantity": {
+                  "type": "integer",
+                  "example": 5
+                },
+                "created_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2025-06-16T10:00:00Z"
+                }
+              }
+            }
+          }
+        }
+      },
+      "ItemCollection": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Item"
+            }
+          },
+          "message": {
+            "type": "string",
+            "example": "Resources retrieved successfully"
+          }
+        }
+      },
+      "ItemSingle": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/Item"
+          },
+          "message": {
+            "type": "string",
+            "example": "Resource retrieved successfully"
+          }
+        }
+      },
+      "ItemRequest": {
+        "type": "object",
+        "required": [
+          "name",
+          "code",
+          "tracking_mode",
+          "unit_id",
+          "org_id"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "HP Laptop",
+            "maxLength": 100
+          },
+          "code": {
+            "type": "string",
+            "example": "LPT-001",
+            "maxLength": 50
+          },
+          "barcode": {
+            "type": "string",
+            "example": "1234567890",
+            "maxLength": 255
+          },
+          "description": {
+            "type": "string",
+            "example": "HP ProBook 450 G8 Business Laptop",
+            "maxLength": 1000
+          },
+          "tracking_mode": {
+            "type": "string",
+            "enum": [
+              "abstract",
+              "bulk",
+              "serialized"
+            ],
+            "example": "serialized"
+          },
+          "unit_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "price": {
+            "type": "number",
+            "format": "float",
+            "example": 999.99,
+            "minimum": 0,
+            "maximum": 999999.99
+          },
+          "serial_number": {
+            "type": "string",
+            "example": "SN12345678",
+            "maxLength": 255
+          },
+          "category_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "status_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "user_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "specifications": {
+            "type": "object",
+            "example": {
+              "cpu": "Intel Core i7",
+              "ram": "16GB",
+              "storage": "512GB SSD"
+            }
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          },
+          "org_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "parent_item_id": {
+            "type": "integer",
+            "example": 10
+          },
+          "item_relation_id": {
+            "type": "integer",
+            "example": 20
+          },
+          "notes": {
+            "type": "string",
+            "example": "Purchased for marketing department",
+            "maxLength": 1000
+          },
+          "locations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "example": "LOC-123"
+                },
+                "quantity": {
+                  "type": "integer",
+                  "example": 5,
+                  "minimum": 0
+                }
+              }
+            }
+          }
+        }
+      },
+      "MaintenanceRequest": {
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "in",
+              "out"
+            ],
+            "example": "in",
+            "description": "'in' sends item to maintenance, 'out' returns it from maintenance"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-06-16T10:00:00Z",
+            "description": "Date of the maintenance action. Defaults to current timestamp if not provided."
+          },
+          "remarks": {
+            "type": "string",
+            "example": "Display screen flickering",
+            "description": "Notes about the maintenance operation"
+          },
+          "is_repair": {
+            "type": "boolean",
+            "example": true,
+            "description": "Whether this maintenance is a repair. Defaults to false if not provided.",
+            "default": false
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "message": {
+            "type": "string",
+            "example": "Resource not found"
+          },
+          "errors": {
+            "type": "object",
+            "example": {
+              "email": [
+                "The email has already been taken."
+              ],
+              "password": [
+                "The password confirmation does not match."
+              ]
+            }
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "USR-1234"
+          },
+          "first_name": {
+            "type": "string",
+            "example": "John"
+          },
+          "last_name": {
+            "type": "string",
+            "example": "Doe"
+          },
+          "full_name": {
+            "type": "string",
+            "example": "John Doe"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "john.doe@example.com"
+          },
+          "role": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "example": "ROL-123"
+              },
+              "slug": {
+                "type": "string",
+                "example": "manager"
+              },
+              "title": {
+                "type": "string",
+                "example": "Manager"
+              },
+              "forbidden": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "example": [
+                  "users.delete"
+                ]
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time",
+                "example": "2025-06-16T10:00:00Z"
+              },
+              "updated_at": {
+                "type": "string",
+                "format": "date-time",
+                "example": "2025-06-16T10:00:00Z"
+              }
+            }
+          },
+          "is_super_admin": {
+            "type": "boolean",
+            "example": false
+          },
+          "is_manager": {
+            "type": "boolean",
+            "example": true
+          },
+          "is_employee": {
+            "type": "boolean",
+            "example": false
+          },
+          "is_admin": {
+            "type": "boolean",
+            "example": true
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          },
+          "organization": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "example": "ORG-123"
+              },
+              "name": {
+                "type": "string",
+                "example": "Acme Inc."
+              }
+            }
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-06-16T10:00:00Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-06-16T10:00:00Z"
+          }
+        }
+      },
+      "UserCollection": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/User"
+            }
+          },
+          "message": {
+            "type": "string",
+            "example": "Users retrieved successfully"
+          }
+        }
+      },
+      "UserSingle": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/User"
+          },
+          "message": {
+            "type": "string",
+            "example": "User retrieved successfully"
+          }
+        }
+      },
+      "UserRequest": {
+        "type": "object",
+        "required": [
+          "name",
+          "email",
+          "password",
+          "password_confirmation"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "John Doe",
+            "maxLength": 255
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "john.doe@example.com",
+            "maxLength": 255
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "example": "Password123!",
+            "minLength": 8
+          },
+          "password_confirmation": {
+            "type": "string",
+            "format": "password",
+            "example": "Password123!"
+          },
+          "role_id": {
+            "type": "integer",
+            "example": 2
+          },
+          "org_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "UserUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "John Doe",
+            "maxLength": 255
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "john.doe@example.com",
+            "maxLength": 255
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "example": "NewPassword123!",
+            "minLength": 8
+          },
+          "password_confirmation": {
+            "type": "string",
+            "format": "password",
+            "example": "NewPassword123!"
+          },
+          "role_id": {
+            "type": "integer",
+            "example": 2
+          },
+          "org_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/login": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Login",
+        "description": "Login with email and password to get an encrypted Bearer token.",
+        "operationId": "login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        }
+      }
+    },
+    "/api/logout": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Logout",
+        "description": "Revokes the current access token",
+        "operationId": "logout",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Logout successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogoutResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/user": {
+      "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Get user profile",
+        "description": "Returns information about the currently authenticated user",
+        "operationId": "getUser",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User profile retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user": {
+                          "$ref": "#/components/schemas/UserProfile"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/items": {
+      "get": {
+        "tags": [
+          "Items"
+        ],
+        "summary": "Get all items",
+        "description": "Retrieve a list of items with optional filtering by various parameters",
+        "operationId": "getItems",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Search query to filter items by name, code, description, or serial number",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "laptop"
+          },
+          {
+            "name": "scannable",
+            "in": "query",
+            "description": "Scan code to find items by barcode, serial number, or code (exact match)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "1234567890"
+          },
+          {
+            "name": "tracking_mode",
+            "in": "query",
+            "description": "Filter by tracking mode",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "abstract",
+                "bulk",
+                "serialized"
+              ]
+            },
+            "example": "serialized"
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "description": "Filter by category ID",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "location_id",
+            "in": "query",
+            "description": "Filter by location ID",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "is_active",
+            "in": "query",
+            "description": "Filter by active status",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "example": true
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "description": "Filter by organization ID",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "description": "Filter by user ID",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "description": "Filter by name (partial match)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "laptop"
+          },
+          {
+            "name": "code",
+            "in": "query",
+            "description": "Filter by code (partial match)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "LPT"
+          },
+          {
+            "name": "barcode",
+            "in": "query",
+            "description": "Filter by exact barcode match",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "1234567890"
+          },
+          {
+            "name": "with",
+            "in": "query",
+            "description": "Include related entities (comma-separated list)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "category,status,locations,organization,unitOfMeasure,suppliers",
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemCollection"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Items"
+        ],
+        "summary": "Create item",
+        "description": "Create a new item",
+        "operationId": "createItem",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Item object that needs to be created",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Item created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemSingle"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/items/{id}": {
+      "get": {
+        "tags": [
+          "Items"
+        ],
+        "summary": "Get item by ID",
+        "description": "Retrieve detailed information about a specific item",
+        "operationId": "getItem",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Item ID (public ID format)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "ITM-1234"
+          },
+          {
+            "name": "with",
+            "in": "query",
+            "description": "Include related entities (comma-separated list)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "category,status,locations,organization,unitOfMeasure,suppliers",
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemSingle"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Item not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Items"
+        ],
+        "summary": "Update item",
+        "description": "Update an item with the provided data",
+        "operationId": "updateItem",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Item ID (public ID format)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "ITM-1234"
+          }
+        ],
+        "requestBody": {
+          "description": "Item data that needs to be updated",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Item updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemSingle"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Item not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Items"
+        ],
+        "summary": "Delete an item",
+        "description": "Delete an item by ID",
+        "operationId": "deleteItem",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Item ID (public ID format)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "ITM-1234"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Item deleted successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Item not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/items/{id}/maintenance/toggle": {
+      "post": {
+        "tags": [
+          "Items"
+        ],
+        "summary": "Toggle maintenance",
+        "description": "Send an item to maintenance or return it from maintenance",
+        "operationId": "toggleItemMaintenance",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Item ID (public ID format)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "ITM-1234"
+          }
+        ],
+        "requestBody": {
+          "description": "Maintenance toggle information",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaintenanceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Maintenance status toggled successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemSingle"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Item not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Get all users",
+        "description": "Retrieve a list of users with optional filtering by various parameters",
+        "operationId": "getUsers",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Search query to filter users by name or email",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "john"
+          },
+          {
+            "name": "role_id",
+            "in": "query",
+            "description": "Filter by role ID",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 2
+          },
+          {
+            "name": "org_id",
+            "in": "query",
+            "description": "Filter by organization ID",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "is_active",
+            "in": "query",
+            "description": "Filter by active status",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "example": true
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "description": "Filter by email address (partial match)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "example.com"
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "description": "Filter by name (partial match)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "John"
+          },
+          {
+            "name": "with",
+            "in": "query",
+            "description": "Include related entities",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "organization,role"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserCollection"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Create user",
+        "description": "Create a new user with the provided data",
+        "operationId": "createUser",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "User object that needs to be created",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSingle"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/{id}": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Get user by ID",
+        "description": "Retrieve detailed information about a specific user",
+        "operationId": "getUser",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "User ID (public ID format)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "USR-1234"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSingle"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Update user",
+        "description": "Update a user with the provided data",
+        "operationId": "updateUser",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "User ID (public ID format)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "USR-1234"
+          }
+        ],
+        "requestBody": {
+          "description": "User data that needs to be updated",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSingle"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Delete a user",
+        "description": "Delete a user by ID",
+        "operationId": "deleteUser",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "User ID (public ID format)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "USR-1234"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "User deleted successfully"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Cannot delete yourself or users with equal/higher permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
