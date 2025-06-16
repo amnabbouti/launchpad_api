@@ -1,0 +1,384 @@
+{
+  "Item": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "example": "ITM-1234"
+      },
+      "name": {
+        "type": "string",
+        "example": "HP Laptop"
+      },
+      "code": {
+        "type": "string",
+        "example": "LPT-001"
+      },
+      "barcode": {
+        "type": "string",
+        "example": "1234567890"
+      },
+      "type": {
+        "type": "string",
+        "enum": ["abstract", "bulk", "serialized"],
+        "example": "serialized",
+        "description": "Alias for tracking_mode, indicates how the item is tracked"
+      },
+      "description": {
+        "type": "string",
+        "example": "HP ProBook 450 G8 Business Laptop"
+      },
+      "tracking_mode": {
+        "type": "string",
+        "enum": ["abstract", "bulk", "serialized"],
+        "example": "serialized",
+        "description": "Abstract: No tracking, Bulk: Track by quantity, Serialized: Track individual items"
+      },
+      "price": {
+        "type": "number",
+        "format": "float",
+        "example": 999.99
+      },
+      "serial_number": {
+        "type": "string",
+        "example": "SN12345678",
+        "description": "Required for serialized items"
+      },
+      "notes": {
+        "type": "string",
+        "example": "Purchased for marketing department"
+      },
+      "specifications": {
+        "type": "object",
+        "example": {
+          "cpu": "Intel Core i7",
+          "ram": "16GB",
+          "storage": "512GB SSD"
+        }
+      },
+      "org_id": {
+        "type": "integer",
+        "example": 1
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time",
+        "example": "2025-06-16T10:00:00Z"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time",
+        "example": "2025-06-16T10:00:00Z"
+      },
+      "in_maintenance": {
+        "type": "boolean",
+        "example": false,
+        "description": "Whether the item is currently in maintenance"
+      },
+      "is_active": {
+        "type": "boolean",
+        "example": true
+      },
+      "total_quantity": {
+        "type": "integer",
+        "example": 10,
+        "description": "Sum of quantities across all locations"
+      },
+      "supplier_count": {
+        "type": "integer",
+        "example": 2,
+        "description": "Number of suppliers for this item"
+      },
+      "organization": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "ORG-123"
+          },
+          "name": {
+            "type": "string",
+            "example": "Acme Inc."
+          }
+        }
+      },
+      "category": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "CAT-123"
+          },
+          "name": {
+            "type": "string",
+            "example": "Electronics"
+          }
+        }
+      },
+      "status": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "STS-123"
+          },
+          "name": {
+            "type": "string",
+            "example": "Available"
+          }
+        }
+      },
+      "unit_of_measure": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Each"
+          },
+          "symbol": {
+            "type": "string",
+            "example": "ea"
+          }
+        }
+      },
+      "suppliers": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "example": "SUP-123"
+            },
+            "name": {
+              "type": "string",
+              "example": "HP Distributors"
+            },
+            "is_preferred": {
+              "type": "boolean",
+              "example": true
+            }
+          }
+        }
+      },
+      "locations": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "example": "LOC-123"
+            },
+            "name": {
+              "type": "string",
+              "example": "Main Warehouse"
+            },
+            "code": {
+              "type": "string",
+              "example": "WH-001"
+            },
+            "quantity": {
+              "type": "integer",
+              "example": 5
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2025-06-16T10:00:00Z"
+            }
+          }
+        }
+      }
+    }
+  },
+  "ItemCollection": {
+    "type": "object",
+    "properties": {
+      "success": {
+        "type": "boolean",
+        "example": true
+      },
+      "data": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Item"
+        }
+      },
+      "message": {
+        "type": "string",
+        "example": "Resources retrieved successfully"
+      }
+    }
+  },
+  "ItemSingle": {
+    "type": "object",
+    "properties": {
+      "success": {
+        "type": "boolean",
+        "example": true
+      },
+      "data": {
+        "$ref": "#/components/schemas/Item"
+      },
+      "message": {
+        "type": "string",
+        "example": "Resource retrieved successfully"
+      }
+    }
+  },
+  "ItemRequest": {
+    "type": "object",
+    "required": ["name", "code", "tracking_mode", "unit_id", "org_id"],
+    "properties": {
+      "name": {
+        "type": "string",
+        "example": "HP Laptop",
+        "maxLength": 100
+      },
+      "code": {
+        "type": "string",
+        "example": "LPT-001",
+        "maxLength": 50
+      },
+      "barcode": {
+        "type": "string",
+        "example": "1234567890",
+        "maxLength": 255
+      },
+      "description": {
+        "type": "string",
+        "example": "HP ProBook 450 G8 Business Laptop",
+        "maxLength": 1000
+      },
+      "tracking_mode": {
+        "type": "string",
+        "enum": ["abstract", "bulk", "serialized"],
+        "example": "serialized"
+      },
+      "unit_id": {
+        "type": "integer",
+        "example": 1
+      },
+      "price": {
+        "type": "number",
+        "format": "float",
+        "example": 999.99,
+        "minimum": 0,
+        "maximum": 999999.99
+      },
+      "serial_number": {
+        "type": "string",
+        "example": "SN12345678",
+        "maxLength": 255
+      },
+      "category_id": {
+        "type": "integer",
+        "example": 1
+      },
+      "status_id": {
+        "type": "integer",
+        "example": 1
+      },
+      "user_id": {
+        "type": "integer",
+        "example": 1
+      },
+      "specifications": {
+        "type": "object",
+        "example": {
+          "cpu": "Intel Core i7",
+          "ram": "16GB",
+          "storage": "512GB SSD"
+        }
+      },
+      "is_active": {
+        "type": "boolean",
+        "example": true
+      },
+      "org_id": {
+        "type": "integer",
+        "example": 1
+      },
+      "parent_item_id": {
+        "type": "integer",
+        "example": 10
+      },
+      "item_relation_id": {
+        "type": "integer",
+        "example": 20
+      },
+      "notes": {
+        "type": "string",
+        "example": "Purchased for marketing department",
+        "maxLength": 1000
+      },
+      "locations": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "example": "LOC-123"
+            },
+            "quantity": {
+              "type": "integer",
+              "example": 5,
+              "minimum": 0
+            }
+          }
+        }
+      }
+    }
+  },
+  "MaintenanceRequest": {
+    "type": "object",
+    "required": ["action"],
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": ["in", "out"],
+        "example": "in",
+        "description": "'in' sends item to maintenance, 'out' returns it from maintenance"
+      },
+      "date": {
+        "type": "string",
+        "format": "date-time",
+        "example": "2025-06-16T10:00:00Z",
+        "description": "Date of the maintenance action. Defaults to current timestamp if not provided."
+      },
+      "remarks": {
+        "type": "string",
+        "example": "Display screen flickering",
+        "description": "Notes about the maintenance operation"
+      },
+      "is_repair": {
+        "type": "boolean",
+        "example": true,
+        "description": "Whether this maintenance is a repair. Defaults to false if not provided.",
+        "default": false
+      }
+    }
+  },
+  "Error": {
+    "type": "object",
+    "properties": {
+      "success": {
+        "type": "boolean",
+        "example": false
+      },
+      "message": {
+        "type": "string",
+        "example": "Resource not found"
+      },
+      "errors": {
+        "type": "object",
+        "example": {
+          "name": ["The name field is required."],
+          "code": ["The code has already been taken."]
+        }
+      }
+    }
+  }
+}

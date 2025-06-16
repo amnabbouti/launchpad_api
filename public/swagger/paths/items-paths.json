@@ -1,0 +1,485 @@
+{
+  "/api/items": {
+    "get": {
+      "tags": ["Items"],
+      "summary": "Get all items",
+      "description": "Retrieve a list of items with optional filtering by various parameters",
+      "operationId": "getItems",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "q",
+          "in": "query",
+          "description": "Search query to filter items by name, code, description, or serial number",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "laptop"
+        },
+        {
+          "name": "scannable",
+          "in": "query",
+          "description": "Scan code to find items by barcode, serial number, or code (exact match)",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "1234567890"
+        },
+        {
+          "name": "tracking_mode",
+          "in": "query",
+          "description": "Filter by tracking mode",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "enum": ["abstract", "bulk", "serialized"]
+          },
+          "example": "serialized"
+        },
+        {
+          "name": "category_id",
+          "in": "query",
+          "description": "Filter by category ID",
+          "required": false,
+          "schema": {
+            "type": "integer"
+          },
+          "example": 1
+        },
+        {
+          "name": "location_id",
+          "in": "query",
+          "description": "Filter by location ID",
+          "required": false,
+          "schema": {
+            "type": "integer"
+          },
+          "example": 1
+        },
+        {
+          "name": "is_active",
+          "in": "query",
+          "description": "Filter by active status",
+          "required": false,
+          "schema": {
+            "type": "boolean"
+          },
+          "example": true
+        },
+        {
+          "name": "org_id",
+          "in": "query",
+          "description": "Filter by organization ID",
+          "required": false,
+          "schema": {
+            "type": "integer"
+          },
+          "example": 1
+        },
+        {
+          "name": "user_id",
+          "in": "query",
+          "description": "Filter by user ID",
+          "required": false,
+          "schema": {
+            "type": "integer"
+          },
+          "example": 1
+        },
+        {
+          "name": "name",
+          "in": "query",
+          "description": "Filter by name (partial match)",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "laptop"
+        },
+        {
+          "name": "code",
+          "in": "query",
+          "description": "Filter by code (partial match)",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "LPT"
+        },
+        {
+          "name": "barcode",
+          "in": "query",
+          "description": "Filter by exact barcode match",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "1234567890"
+        },
+        {
+          "name": "with",
+          "in": "query",
+          "description": "Include related entities (comma-separated list)",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "category,status,locations,organization,unitOfMeasure,suppliers",
+          "explode": false
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Successful operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemCollection"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        }
+      }
+    },
+    "post": {
+      "tags": ["Items"],
+      "summary": "Create item",
+      "description": "Create a new item",
+      "operationId": "createItem",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "requestBody": {
+        "description": "Item object that needs to be created",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ItemRequest"
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Item created successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemSingle"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/items/{id}": {
+    "get": {
+      "tags": ["Items"],
+      "summary": "Get item by ID",
+      "description": "Retrieve detailed information about a specific item",
+      "operationId": "getItem",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Item ID (public ID format)",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "ITM-1234"
+        },
+        {
+          "name": "with",
+          "in": "query",
+          "description": "Include related entities (comma-separated list)",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "category,status,locations,organization,unitOfMeasure,suppliers",
+          "explode": false
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Successful operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemSingle"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Item not found",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        }
+      }
+    },
+    "patch": {
+      "tags": ["Items"],
+      "summary": "Update item",
+      "description": "Update an item with the provided data",
+      "operationId": "updateItem",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Item ID (public ID format)",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "ITM-1234"
+        }
+      ],
+      "requestBody": {
+        "description": "Item data that needs to be updated",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ItemRequest"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Item updated successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemSingle"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Item not found",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        }
+      }
+    },
+    "delete": {
+      "tags": ["Items"],
+      "summary": "Delete an item",
+      "description": "Delete an item by ID",
+      "operationId": "deleteItem",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Item ID (public ID format)",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "ITM-1234"
+        }
+      ],
+      "responses": {
+        "204": {
+          "description": "Item deleted successfully"
+        },
+        "404": {
+          "description": "Item not found",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/items/{id}/maintenance/toggle": {
+    "post": {
+      "tags": ["Items"],
+      "summary": "Toggle maintenance",
+      "description": "Send an item to maintenance or return it from maintenance",
+      "operationId": "toggleItemMaintenance",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Item ID (public ID format)",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "ITM-1234"
+        }
+      ],
+      "requestBody": {
+        "description": "Maintenance toggle information",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MaintenanceRequest"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Maintenance status toggled successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemSingle"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Item not found",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
