@@ -5,18 +5,14 @@
   --scalar-font-size-2: 16px;
 }
 
-/* .light-mode {
-  --scalar-color-1: #121212;
+.light-mode {
+  /* --scalar-color-1: #121212;
   --scalar-color-2: rgba(0, 0, 0, 0.6);
-  --scalar-color-3: rgba(0, 0, 0, 0.4);
-  --scalar-color-accent: #00ffa3;
-  --scalar-background-1: #ffffff;
-  --scalar-background-2: #f6f5f4;
-  --scalar-background-3: #f1ede9;
-  --scalar-background-accent: rgba(0, 255, 163, 0.1);
-  --scalar-border-color: rgba(0, 0, 0, 0.08);
+  --scalar-color-3: rgba(0, 0, 0, 0.4); */
+  --scalar-background-1: #e0e0e0;
+  /* --scalar-border-color: rgba(0, 0, 0, 0.08); */
 }
-
+/*
 .dark-mode {
   --scalar-color-1: rgba(255, 255, 255, 0.81);
   --scalar-color-2: rgba(255, 255, 255, 0.443);
@@ -140,8 +136,9 @@
 
 .test-banner {
   background: rgba(0, 0, 0, 0.5);
-  border-bottom: 1px solid var(--scalar-border-color);
-  padding: 12px 28px;
+  padding: 10px;
+  box-shadow: 0 -6px 20px rgba(68, 67, 67, 0.5);
+  backdrop-filter: blur(18px);
 }
 
 .test-content {
@@ -151,8 +148,8 @@
 }
 
 .test-message {
-  color: #00ffa3;
-  font-size: 1rem;
+  color: #e5ebe9;
+  font-size: 0.9rem;
   font-weight: 400;
   letter-spacing: 0.5px;
   font-family: 'Roboto Mono', monospace;
@@ -218,49 +215,35 @@
 
 /* Override individual method colors with Scalar's color scheme */
 .sidebar-heading-link-method [data-v-43724d28].sidebar-heading-type--get {
-  background-color: var(--scalar-color-blue, #154188) !important;
-  --method-color: var(--scalar-color-blue, #154188) !important;
+  background-color: #0a4ab2 !important;
+  --method-color: #1350b2 !important;
 }
 
 .sidebar-heading-link-method [data-v-43724d28].sidebar-heading-type--post {
-  background-color: var(--scalar-color-green, #045622) !important;
-  --method-color: var(--scalar-color-green, #096b2d) !important;
-}
-
-.sidebar-heading-link-method [data-v-43724d28].sidebar-heading-type--put {
-  background-color: var(--scalar-color-orange, #f97316) !important;
-  --method-color: var(--scalar-color-orange, #f97316) !important;
+  background-color: #045622 !important;
+  --method-color: #096b2d !important;
 }
 
 .sidebar-heading-link-method [data-v-43724d28].sidebar-heading-type--delete {
-  background-color: var(--scalar-color-red, #ef4444) !important;
-  --method-color: var(--scalar-color-red, #ef4444) !important;
+  background-color: #ed0d0d !important;
+  --method-color: #ef4444 !important;
 }
 
 .sidebar-heading-link-method [data-v-43724d28].sidebar-heading-type--patch {
-  background-color: var(--scalar-color-yellow, #eab308) !important;
-  --method-color: var(--scalar-color-yellow, #eab308) !important;
+  background-color: #ea7908 !important;
+  --method-color: #ea8108 !important;
 }
 
 .sidebar-heading-link-method [data-v-43724d28].sidebar-heading-type--head {
-  background-color: var(--scalar-color-purple, #8b5cf6) !important;
-  --method-color: var(--scalar-color-purple, #8b5cf6) !important;
+  background-color: #8b5cf6 !important;
+  --method-color: #8b5cf6 !important;
 }
 
 .sidebar-heading-link-method [data-v-43724d28].sidebar-heading-type--options {
-  background-color: var(--scalar-color-teal, #14b8a6) !important;
-  --method-color: var(--scalar-color-teal, #14b8a6) !important;
+  background-color: #14b8a6 !important;
+  --method-color: #14b8a6 !important;
 }
 
-/* Additional selectors to precisely target the elements */
-/* .sidebar-heading-link-method {
-  display: flex !important;
-  align-items: center !important;
-} */
-
-/* Enhanced Sidebar Dropdown Buttons - Focused Styling */
-
-/* Enhanced chevron/dropdown buttons with smooth animations */
 .scalar-api-reference .toggle-nested-icon {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   border-radius: 4px !important;
@@ -281,9 +264,8 @@
   color: #00ffa3 !important;
 }
 
-/* Enhanced rotation for expanded state */
 .scalar-api-reference .toggle-nested-icon[aria-expanded='true'] {
-  background: rgba(0, 255, 163, 0.08) !important;
+  background: rgba(28, 185, 128, 0.08) !important;
 }
 
 .scalar-api-reference .toggle-nested-icon[aria-expanded='true'] svg {

@@ -511,3 +511,14 @@ function setupEventListeners() {
     if (e.key === 'Escape') toggleAssistant();
   });
 }
+
+// Export functions for ES modules
+export {
+  toggleAssistant,
+  clearChatHistory,
+  sendMessage,
+  addMessageToChat,
+  setupEventListeners,
+  loadChatHistory,
+  saveChatHistory,
+};

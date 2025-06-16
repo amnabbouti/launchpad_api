@@ -12,7 +12,7 @@
     <link href="assets/style.css" rel="stylesheet" />
     <link href="assets/chatbot-style.css" rel="stylesheet" />
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-    <script src="assets/env-loader.js"></script>
+    <script type="module" src="assets/env-loader.js"></script>
   </head>
   <body>
     <header class="custom-header scalar-app">
@@ -61,7 +61,7 @@
           aria-label="Clear Chat History"
         >
           <img
-            src="delete.svg"
+            src="assets/delete.svg"
             alt="Clear History"
             class="icon-svg"
             onerror="this.outerHTML='[Clear]'"
@@ -74,7 +74,7 @@
           aria-label="Close Assistant"
         >
           <img
-            src="close.svg"
+            src="assets/close.svg"
             alt="Close Chat"
             class="icon-svg"
             onerror="this.outerHTML='[Close]'"
@@ -97,7 +97,7 @@
           aria-disabled="false"
         >
           <img
-            src="send.svg"
+            src="assets/send.svg"
             alt="Send Message"
             class="icon-svg"
             onerror="this.outerHTML='[Send]'"
@@ -115,10 +115,6 @@
       <i data-lucide="bot"></i>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
-    <script src="assets/ai-service.js"></script>
-    <script src="assets/main-ai.js"></script>
-    <script>
-      lucide.createIcons();
-    </script>
+    <script type="module" src="main.js"></script>
   </body>
 </html>
