@@ -1,0 +1,777 @@
+{
+  "/api/categories": {
+    "get": {
+      "tags": ["Categories"],
+      "summary": "Get all categories",
+      "description": "Retrieve all categories with advanced filtering. Supports searching by name and parent relationships. Returns categories in their natural hierarchical structure with nested children.",
+      "operationId": "getCategories",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "name",
+          "in": "query",
+          "description": "Filter by category name (partial match, case-insensitive)",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "Electronics"
+        },
+        {
+          "name": "parent_id",
+          "in": "query",
+          "description": "Filter by parent category ID. Use 'null' to get root categories (no parent).",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "CAT-0001"
+        },
+        {
+          "name": "with",
+          "in": "query",
+          "description": "Include related data (comma-separated). Available: parent, children, childrenRecursive, organization, items",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "parent,children,organization,items"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Categories retrieved successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "success"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Success"
+                  },
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/CategoryHierarchical"
+                    }
+                  }
+                }
+              },
+              "examples": {
+                "hierarchical": {
+                  "summary": "Hierarchical categories with nested children",
+                  "value": {
+                    "status": "success",
+                    "message": "Categories retrieved successfully",
+                    "data": [
+                      {
+                        "id": "CAT-0001",
+                        "name": "Electronics",
+                        "parent_id": null,
+                        "path": "/CAT-0001/",
+                        "org_id": "org_xyz789",
+                        "created_at": "2024-01-15T10:30:00Z",
+                        "updated_at": "2024-01-15T10:30:00Z",
+                        "children": [
+                          {
+                            "id": "CAT-0002",
+                            "name": "Computers",
+                            "parent_id": "CAT-0001",
+                            "path": "/CAT-0001/CAT-0002/",
+                            "org_id": "org_xyz789",
+                            "created_at": "2024-01-15T11:00:00Z",
+                            "updated_at": "2024-01-15T11:00:00Z",
+                            "children": [
+                              {
+                                "id": "CAT-0003",
+                                "name": "Laptops",
+                                "parent_id": "CAT-0002",
+                                "path": "/CAT-0001/CAT-0002/CAT-0003/",
+                                "org_id": "org_xyz789",
+                                "created_at": "2024-01-15T11:30:00Z",
+                                "updated_at": "2024-01-15T11:30:00Z",
+                                "children": []
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "flat": {
+                  "summary": "Flat list of categories (hierarchy=false)",
+                  "value": {
+                    "status": "success",
+                    "message": "Categories retrieved successfully",
+                    "data": [
+                      {
+                        "id": "CAT-0001",
+                        "name": "Electronics",
+                        "parent_id": null,
+                        "path": "/CAT-0001/",
+                        "org_id": "org_xyz789",
+                        "created_at": "2024-01-15T10:30:00Z",
+                        "updated_at": "2024-01-15T10:30:00Z"
+                      },
+                      {
+                        "id": "CAT-0002",
+                        "name": "Computers",
+                        "parent_id": "CAT-0001",
+                        "path": "/CAT-0001/CAT-0002/",
+                        "org_id": "org_xyz789",
+                        "created_at": "2024-01-15T11:00:00Z",
+                        "updated_at": "2024-01-15T11:00:00Z"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Bad Request - Invalid query parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "Unknown query parameter: invalid_param",
+                "data": null
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized - Invalid or missing authentication token",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "Unauthorized",
+                "data": null
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden - User must belong to an organization",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "User must belong to an organization",
+                "data": null
+              }
+            }
+          }
+        }
+      }
+    },
+    "post": {
+      "tags": ["Categories"],
+      "summary": "Create a new category",
+      "description": "Create a new category in the organization. Supports hierarchical structure by specifying parent_id. The system automatically generates the path based on the hierarchy.",
+      "operationId": "createCategory",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CategoryInput"
+            },
+            "examples": {
+              "root_category": {
+                "summary": "Create a root category",
+                "value": {
+                  "name": "Electronics",
+                  "parent_id": null
+                }
+              },
+              "child_category": {
+                "summary": "Create a child category",
+                "value": {
+                  "name": "Computers",
+                  "parent_id": "CAT-0001"
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Category created successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "success"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Resource created successfully"
+                  },
+                  "data": {
+                    "$ref": "#/components/schemas/Category"
+                  }
+                }
+              },
+              "example": {
+                "status": "success",
+                "message": "Resource created successfully",
+                "data": {
+                  "id": "CAT-0004",
+                  "name": "Computers",
+                  "parent_id": "CAT-0001",
+                  "path": "/CAT-0001/CAT-0004/",
+                  "org_id": "org_xyz789",
+                  "created_at": "2024-01-16T14:20:00Z",
+                  "updated_at": "2024-01-16T14:20:00Z"
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Bad Request - Empty data or invalid input",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "Data cannot be empty",
+                "data": null
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized - Invalid or missing authentication token",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "Unauthorized",
+                "data": null
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden - User must belong to an organization",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "User must belong to an organization",
+                "data": null
+              }
+            }
+          }
+        },
+        "409": {
+          "description": "Conflict - Category with this name already exists under the same parent",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "A category with this name already exists under the specified parent",
+                "data": null
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error - Invalid input data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryValidationErrorResponse"
+              },
+              "example": {
+                "message": "The given data was invalid.",
+                "errors": {
+                  "name": ["The category name is required and cannot be empty"],
+                  "parent_id": [
+                    "The selected parent category does not exist in your organization"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/categories/{id}": {
+    "get": {
+      "tags": ["Categories"],
+      "summary": "Get category by ID",
+      "description": "Retrieve a specific category by its public ID with optional related data.",
+      "operationId": "getCategoryById",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "Public ID of the category to retrieve",
+          "schema": {
+            "type": "string"
+          },
+          "example": "CAT-0001"
+        },
+        {
+          "name": "with",
+          "in": "query",
+          "description": "Include related data (comma-separated). Available: parent, children, childrenRecursive, organization, items",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "parent,children,organization"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Category retrieved successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "success"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Success"
+                  },
+                  "data": {
+                    "$ref": "#/components/schemas/Category"
+                  }
+                }
+              },
+              "example": {
+                "status": "success",
+                "message": "Success",
+                "data": {
+                  "id": "CAT-0001",
+                  "name": "Electronics",
+                  "parent_id": null,
+                  "path": "/CAT-0001/",
+                  "org_id": "org_xyz789",
+                  "created_at": "2024-01-15T10:30:00Z",
+                  "updated_at": "2024-01-15T10:30:00Z",
+                  "parent": null,
+                  "children": [
+                    {
+                      "id": "CAT-0002",
+                      "name": "Computers",
+                      "parent_id": "CAT-0001",
+                      "path": "/CAT-0001/CAT-0002/",
+                      "org_id": "org_xyz789",
+                      "created_at": "2024-01-15T11:00:00Z",
+                      "updated_at": "2024-01-15T11:00:00Z"
+                    }
+                  ],
+                  "organization": {
+                    "id": "org_xyz789",
+                    "name": "ACME Corporation"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized - Invalid or missing authentication token",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "Unauthorized",
+                "data": null
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden - User must belong to an organization",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "User must belong to an organization",
+                "data": null
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Not Found - Category does not exist or does not belong to user's organization",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "Resource not found",
+                "data": null
+              }
+            }
+          }
+        }
+      }
+    },
+    "put": {
+      "tags": ["Categories"],
+      "summary": "Update category",
+      "description": "Update an existing category. When changing parent_id, the path is automatically recalculated. Moving a category will also update paths for all its descendants.",
+      "operationId": "updateCategory",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "Public ID of the category to update",
+          "schema": {
+            "type": "string"
+          },
+          "example": "CAT-0001"
+        }
+      ],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CategoryInput"
+            },
+            "examples": {
+              "rename_category": {
+                "summary": "Rename a category",
+                "value": {
+                  "name": "Consumer Electronics"
+                }
+              },
+              "move_category": {
+                "summary": "Move category to different parent",
+                "value": {
+                  "name": "Electronics",
+                  "parent_id": "CAT-0005"
+                }
+              },
+              "make_root_category": {
+                "summary": "Make category a root category",
+                "value": {
+                  "name": "Electronics",
+                  "parent_id": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Category updated successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "success"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Resource updated successfully"
+                  },
+                  "data": {
+                    "$ref": "#/components/schemas/Category"
+                  }
+                }
+              },
+              "example": {
+                "status": "success",
+                "message": "Resource updated successfully",
+                "data": {
+                  "id": "CAT-0001",
+                  "name": "Consumer Electronics",
+                  "parent_id": "CAT-0005",
+                  "path": "/CAT-0005/CAT-0001/",
+                  "org_id": "org_xyz789",
+                  "created_at": "2024-01-15T10:30:00Z",
+                  "updated_at": "2024-01-16T14:25:00Z"
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Bad Request - Empty data, circular reference, or invalid input",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryErrorResponse"
+              },
+              "examples": {
+                "empty_data": {
+                  "summary": "Empty request data",
+                  "value": {
+                    "status": "error",
+                    "message": "Data cannot be empty",
+                    "data": null
+                  }
+                },
+                "circular_reference": {
+                  "summary": "Circular reference detected",
+                  "value": {
+                    "status": "error",
+                    "message": "Cannot set a category as its own parent or descendant",
+                    "data": null
+                  }
+                }
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized - Invalid or missing authentication token",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "Unauthorized",
+                "data": null
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden - User must belong to an organization",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "User must belong to an organization",
+                "data": null
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Not Found - Category does not exist or does not belong to user's organization",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "Resource not found",
+                "data": null
+              }
+            }
+          }
+        },
+        "409": {
+          "description": "Conflict - Category with this name already exists under the same parent",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "A category with this name already exists under the specified parent",
+                "data": null
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error - Invalid input data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryValidationErrorResponse"
+              },
+              "example": {
+                "message": "The given data was invalid.",
+                "errors": {
+                  "name": ["The category name cannot exceed 100 characters"],
+                  "parent_id": [
+                    "The selected parent category does not exist in your organization"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "delete": {
+      "tags": ["Categories"],
+      "summary": "Delete category",
+      "description": "Delete a category from the system. Important: If the category has child categories, they will automatically become top-level categories (orphaned). Items in this category will become unassigned and may need to be recategorized.",
+      "operationId": "deleteCategory",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "Public ID of the category to delete",
+          "schema": {
+            "type": "string"
+          },
+          "example": "CAT-0001"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Category deleted successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "success"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Resource deleted successfully"
+                  },
+                  "data": {
+                    "type": "null",
+                    "example": null
+                  }
+                }
+              },
+              "example": {
+                "status": "success",
+                "message": "Resource deleted successfully",
+                "data": null
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized - Invalid or missing authentication token",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "Unauthorized",
+                "data": null
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden - User must belong to an organization",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "User must belong to an organization",
+                "data": null
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Not Found - Category does not exist or does not belong to user's organization",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "Resource not found",
+                "data": null
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

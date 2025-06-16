@@ -1,0 +1,215 @@
+{
+  "Category": {
+    "type": "object",
+    "description": "A category represents a hierarchical classification system for organizing items. Categories support unlimited nesting levels and maintain automatic path generation.",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Unique public identifier for the category (e.g., 'CAT-0001')",
+        "example": "CAT-0001"
+      },
+      "name": {
+        "type": "string",
+        "description": "Human-readable name of the category",
+        "maxLength": 100,
+        "example": "Electronics"
+      },
+      "parent_id": {
+        "type": "string",
+        "nullable": true,
+        "description": "Public ID of the parent category. Null for root categories.",
+        "example": "CAT-0002"
+      },
+      "path": {
+        "type": "string",
+        "nullable": true,
+        "description": "Hierarchical path showing the category's position in the tree structure (auto-generated)",
+        "maxLength": 500,
+        "example": "/CAT-0002/CAT_abc123/"
+      },
+      "org_id": {
+        "type": "string",
+        "description": "Organization identifier this category belongs to",
+        "example": "org_0001"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "ISO 8601 timestamp when the category was created",
+        "example": "2024-01-15T10:30:00Z"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "ISO 8601 timestamp when the category was last updated",
+        "example": "2024-01-16T14:20:00Z"
+      },
+      "organization": {
+        "$ref": "#/components/schemas/Organization",
+        "description": "Organization details (included when 'organization' is requested in 'with' parameter)"
+      },
+      "parent": {
+        "$ref": "#/components/schemas/Category",
+        "description": "Parent category details (included when 'parent' is requested in 'with' parameter)"
+      },
+      "children": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Category"
+        },
+        "description": "Direct child categories (included when 'children' is requested in 'with' parameter)"
+      },
+      "children_recursive": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Category"
+        },
+        "description": "All nested child categories recursively (included when 'childrenRecursive' is requested in 'with' parameter)"
+      },
+      "items": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Item"
+        },
+        "description": "Items assigned to this category (included when 'items' is requested in 'with' parameter)"
+      }
+    },
+    "required": ["id", "name", "org_id", "created_at", "updated_at"]
+  },
+  "CategoryHierarchical": {
+    "type": "object",
+    "description": "Category with nested children structure for hierarchical display",
+    "allOf": [
+      {
+        "$ref": "#/components/schemas/Category"
+      },
+      {
+        "type": "object",
+        "properties": {
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryHierarchical"
+            },
+            "description": "Nested child categories with their own children included"
+          }
+        }
+      }
+    ]
+  },
+  "CategoryInput": {
+    "type": "object",
+    "description": "Input schema for creating or updating a category",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "Category name (required, max 100 characters)",
+        "maxLength": 100,
+        "minLength": 1,
+        "example": "Electronics"
+      },
+      "parent_id": {
+        "type": "string",
+        "nullable": true,
+        "description": "Public ID of parent category. Set to null for root category.",
+        "example": "CAT-0002"
+      }
+    },
+    "required": ["name"]
+  },
+  "CategoryResponse": {
+    "type": "object",
+    "description": "Standard API response wrapper for category data",
+    "properties": {
+      "status": {
+        "type": "string",
+        "description": "Response status indicator",
+        "example": "success"
+      },
+      "message": {
+        "type": "string",
+        "description": "Human-readable response message",
+        "example": "Categories retrieved successfully"
+      },
+      "data": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/Category"
+          },
+          {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Category"
+            }
+          },
+          {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryHierarchical"
+            }
+          }
+        ],
+        "description": "Category data - single category, flat array, or hierarchical array depending on endpoint"
+      }
+    },
+    "required": ["status", "message", "data"]
+  },
+  "CategoryErrorResponse": {
+    "type": "object",
+    "description": "Standard API error response for category operations",
+    "properties": {
+      "status": {
+        "type": "string",
+        "description": "Error status indicator",
+        "example": "error"
+      },
+      "message": {
+        "type": "string",
+        "description": "Error message describing what went wrong",
+        "example": "Resource not found"
+      },
+      "data": {
+        "type": "null",
+        "description": "Always null for error responses",
+        "example": null
+      }
+    },
+    "required": ["status", "message", "data"]
+  },
+  "CategoryValidationErrorResponse": {
+    "type": "object",
+    "description": "Validation error response for category operations",
+    "properties": {
+      "message": {
+        "type": "string",
+        "description": "General validation error message",
+        "example": "The given data was invalid."
+      },
+      "errors": {
+        "type": "object",
+        "description": "Field-specific validation errors",
+        "properties": {
+          "name": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Name field validation errors",
+            "example": ["The category name is required and cannot be empty"]
+          },
+          "parent_id": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Parent ID field validation errors",
+            "example": [
+              "The selected parent category does not exist in your organization"
+            ]
+          }
+        }
+      }
+    },
+    "required": ["message", "errors"]
+  }
+}
