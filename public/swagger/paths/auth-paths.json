@@ -1,0 +1,105 @@
+{
+  "/api/login": {
+    "post": {
+      "tags": ["Authentication"],
+      "summary": "Login",
+      "description": "Login with email and password to get an encrypted Bearer token.",
+      "operationId": "login",
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/LoginRequest"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Login successful",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Invalid credentials"
+        }
+      }
+    }
+  },
+  "/api/logout": {
+    "post": {
+      "tags": ["Authentication"],
+      "summary": "Logout",
+      "description": "Revokes the current access token",
+      "operationId": "logout",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Logout successful",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogoutResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized"
+        }
+      }
+    }
+  },
+  "/api/user": {
+    "get": {
+      "tags": ["Authentication"],
+      "summary": "Get user profile",
+      "description": "Returns information about the currently authenticated user",
+      "operationId": "getUser",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "User profile retrieved",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "success": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "user": {
+                        "$ref": "#/components/schemas/UserProfile"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized"
+        }
+      }
+    }
+  }
+}
