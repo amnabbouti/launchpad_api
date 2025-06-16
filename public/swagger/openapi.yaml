@@ -2018,7 +2018,7 @@ components:
         children:
           type: array
           items:
-            type: object 
+            type: object
     Location:
       type: object
       properties:
@@ -2054,7 +2054,7 @@ components:
         children:
           type: array
           items:
-            type: object 
+            type: object
     Maintenance:
       type: object
       properties:

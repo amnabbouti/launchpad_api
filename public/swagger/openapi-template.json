@@ -28,6 +28,10 @@
       "description": "Item management endpoints with optional filtering, search, and maintenance operations"
     },
     {
+      "name": "Organizations",
+      "description": "Organization management endpoints for creating, accessing, and managing organizational data"
+    },
+    {
       "name": "Users",
       "description": "User management endpoints with role-based access control and organization filtering"
     }

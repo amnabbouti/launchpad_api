@@ -1,12 +1,10 @@
 const fs = require('fs');
 const path = require('path');
-
-// Directories
 const schemasDir = path.join(__dirname, 'schemas');
 const pathsDir = path.join(__dirname, 'paths');
 const outputFile = path.join(__dirname, 'openapi.json');
 
-// Load the main OpenAPI file as a template
+// Load the main OpenAPI file
 let mainSpec;
 try {
   const mainSpecTemplate = fs.readFileSync(
@@ -19,7 +17,7 @@ try {
   if (!mainSpec.components) mainSpec.components = {};
   if (!mainSpec.components.schemas) mainSpec.components.schemas = {};
 } catch (error) {
-  // Create a basic structure if template doesn't exist
+  // basic structure
   mainSpec = {
     openapi: '3.0.3',
     info: {
@@ -44,14 +42,10 @@ if (fs.existsSync(schemasDir)) {
           'utf8',
         );
         const schemaData = JSON.parse(schemaContent);
-
-        // Check if this is a multi-schema file or a single schema file
         if (schemaData.type && (schemaData.properties || schemaData.items)) {
-          // Single schema file
           mainSpec.components.schemas[schemaName] = schemaData;
           console.log(`✓ Added schema: ${schemaName}`);
         } else {
-          // Multi-schema file (like auth.json)
           Object.keys(schemaData).forEach((subSchemaName) => {
             mainSpec.components.schemas[subSchemaName] =
               schemaData[subSchemaName];
@@ -65,7 +59,7 @@ if (fs.existsSync(schemasDir)) {
   });
 }
 
-// Load all path files
+// path files
 if (fs.existsSync(pathsDir)) {
   fs.readdirSync(pathsDir).forEach((file) => {
     if (path.extname(file) === '.json') {
@@ -73,7 +67,7 @@ if (fs.existsSync(pathsDir)) {
         const pathContent = fs.readFileSync(path.join(pathsDir, file), 'utf8');
         const pathObject = JSON.parse(pathContent);
 
-        // Merge path objects into the main spec
+        // Merge path objects
         Object.assign(mainSpec.paths, pathObject);
         console.log(`✓ Added paths from: ${file}`);
       } catch (error) {
@@ -83,6 +77,5 @@ if (fs.existsSync(pathsDir)) {
   });
 }
 
-// Write the combined file
 fs.writeFileSync(outputFile, JSON.stringify(mainSpec, null, 2));
 console.log(`✓ Generated OpenAPI spec: ${outputFile}`);
