@@ -11,14 +11,15 @@
     <link href="assets/swagger-style.css" rel="stylesheet" />
     <link href="assets/style.css" rel="stylesheet" />
     <link href="assets/chatbot-style.css" rel="stylesheet" />
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <script src="assets/env-loader.js"></script>
   </head>
   <body>
     <header class="custom-header scalar-app">
       <div class="logo">
-        🚀
-        <span>Inventory</span>
-        API
+        <i data-lucide="rocket"></i>
+        <span>Mission</span>
+        Control
       </div>
       <div class="api-info">
         <code>
@@ -30,7 +31,7 @@
     <div class="test-banner">
       <div class="test-content">
         <div class="test-message" id="typing-text">
-          Welcome to the Inventory Management API
+          Welcome to Mission's Control API
         </div>
       </div>
     </div>
@@ -38,9 +39,7 @@
     <div id="app"></div>
 
     <div class="custom-footer">
-      <div class="copyright">
-        © 2025 Inventory Management System
-      </div>
+      <div class="copyright">© 2025 Mission Control</div>
       <div class="footer-links">
         <a href="/docs">Documentation</a>
         <a href="#">API Status</a>
@@ -113,10 +112,13 @@
       tabindex="0"
       role="button"
     >
-      🚀
+      <i data-lucide="bot"></i>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
     <script src="assets/ai-service.js"></script>
     <script src="assets/main-ai.js"></script>
+    <script>
+      lucide.createIcons();
+    </script>
   </body>
 </html>

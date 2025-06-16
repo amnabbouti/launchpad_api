@@ -19,7 +19,7 @@ class AIService {
     this.loadSwaggerData();
 
     // Base system message
-    this.systemMessage = `You are an API assistant for the Inventory Management System. You have comprehensive knowledge of all API endpoints, authentication mechanisms, and usage patterns.
+    this.systemMessage = `You are an API assistant for mission control inventory System. You have comprehensive knowledge of all API endpoints, authentication mechanisms, and usage patterns.
 
 PERSONALITY:
 - Be professional, but approachable and conversational
@@ -27,6 +27,7 @@ PERSONALITY:
 - Be confident and direct in your answers - users need accurate API information
 - When a user seems frustrated, be extra helpful and solution-oriented
 - Speak knowledgeably but avoid unnecessary technical jargon
+- Use clear, concise language that is easy to understand
 
 FORMATTING GUIDELINES:
 - Always format API endpoints with backticks: \`GET /api/items\`
@@ -155,8 +156,8 @@ Quick Replies:
     try {
       const response = await fetch('/swagger/openapi.json');
       if (response.ok) {
-        const yamlText = await response.text();
-        this.swaggerData = this.extractApiInfo(yamlText);
+        const jsonData = await response.json();
+        this.swaggerData = this.extractApiInfo(jsonData);
         this.hasLoadedSwagger = true;
         this.enhanceSystemMessage();
       }
@@ -165,50 +166,47 @@ Quick Replies:
     }
   }
 
-  extractApiInfo(yamlText) {
+  extractApiInfo(jsonData) {
     try {
-      const titleMatch = yamlText.match(/title:\s*([^\n]+)/);
-      const descriptionMatch = yamlText.match(
-        /description:\s*\|([^#]+?)\n\s*version:/s,
-      );
-
       const info = {
-        title: titleMatch ? titleMatch[1].trim() : 'Inventory Management API',
-        description: descriptionMatch
-          ? descriptionMatch[1].trim().replace(/\n\s{2,}/g, '\n')
-          : 'REST API for managing inventory items',
+        title: jsonData.info?.title || 'Inventory Management API',
+        description:
+          jsonData.info?.description || 'REST API for managing inventory items',
         endpoints: {},
       };
 
-      const pathRegex = /\/([^:\s]+):([\s\S]*?)(?=^\/|\s*$)/gm;
-      let pathMatch;
+      // Parse paths from JSON OpenAPI spec
+      if (jsonData.paths) {
+        for (const path in jsonData.paths) {
+          const pathData = jsonData.paths[path];
+          const methods = {};
 
-      while ((pathMatch = pathRegex.exec(yamlText)) !== null) {
-        const path = '/' + pathMatch[1].trim();
-        const pathContent = pathMatch[2];
+          // Check HTTP method
+          for (const method in pathData) {
+            if (
+              [
+                'get',
+                'post',
+                'put',
+                'delete',
+                'patch',
+                'head',
+                'options',
+              ].includes(method.toLowerCase())
+            ) {
+              const operation = pathData[method];
+              methods[method.toUpperCase()] = {
+                summary: operation.summary || '',
+                description: operation.description || '',
+                operationId: operation.operationId || '',
+                tags: operation.tags || [],
+              };
+            }
+          }
 
-        const methods = {};
-        const methodRegex =
-          /(get|post|put|delete|patch):([\s\S]*?)(?=^\s{2,}(get|post|put|delete|patch):|$)/gim;
-        let methodMatch;
-
-        while ((methodMatch = methodRegex.exec(pathContent)) !== null) {
-          const method = methodMatch[1].toUpperCase();
-          const methodContent = methodMatch[2];
-
-          const summary =
-            (methodContent.match(/summary:\s*([^\n]+)/) || [])[1] || '';
-          const description =
-            (methodContent.match(/description:\s*([^\n]+)/) || [])[1] || '';
-
-          methods[method] = {
-            summary: summary.trim(),
-            description: description.trim(),
-          };
-        }
-
-        if (Object.keys(methods).length > 0) {
-          info.endpoints[path] = { methods };
+          if (Object.keys(methods).length > 0) {
+            info.endpoints[path] = { methods };
+          }
         }
       }
 

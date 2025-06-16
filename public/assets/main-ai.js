@@ -137,14 +137,30 @@ class FormattingUtils {
 
 window.FormattingUtils = FormattingUtils;
 
+/* Themes:
+ * - 'default'
+ * - 'alternate'
+ * - 'moon'
+ * - 'purple'
+ * - 'solarized'
+ * - 'bluePlanet'
+ * - 'deepSpace'
+ * - 'saturn'
+ * - 'kepler'
+ * - 'mars'
+ * - 'laserwave'
+ * - 'elysiajs'
+ * - 'fastify'
+ */
+
 Scalar.createApiReference('#app', {
   url: '/swagger/openapi.json',
-  theme: 'kepler',
+  theme: 'purple',
   hideDarkModeToggle: false,
   showSidebar: true,
   hideTestRequestButton: false,
   hideClientButton: true,
-  withDefaultFonts: false,
+  withDefaultFonts: true,
   showAuthButtonInHeader: true,
   authPersistence: true,
 });
