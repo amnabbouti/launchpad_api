@@ -1,0 +1,761 @@
+{
+  "/suppliers": {
+    "get": {
+      "tags": ["Suppliers"],
+      "summary": "Get all suppliers",
+      "description": "Retrieve a list of suppliers with optional filtering. Use 'type=relationships' to get item-supplier relationships instead.",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "type",
+          "in": "query",
+          "description": "Type of data to retrieve (relationships for item-supplier relationships)",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "enum": ["relationships"]
+          }
+        },
+        {
+          "name": "name",
+          "in": "query",
+          "description": "Filter by supplier name (partial match, suppliers only)",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "Tech Components"
+        },
+        {
+          "name": "code",
+          "in": "query",
+          "description": "Filter by supplier code (partial match, suppliers only)",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "TCL"
+        },
+        {
+          "name": "email",
+          "in": "query",
+          "description": "Filter by supplier email (partial match, suppliers only)",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "contact@techcomponents.com"
+        },
+        {
+          "name": "city",
+          "in": "query",
+          "description": "Filter by supplier city (partial match, suppliers only)",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "New York"
+        },
+        {
+          "name": "country",
+          "in": "query",
+          "description": "Filter by supplier country (partial match, suppliers only)",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "United States"
+        },
+        {
+          "name": "is_active",
+          "in": "query",
+          "description": "Filter by active status (suppliers only)",
+          "required": false,
+          "schema": {
+            "type": "boolean"
+          }
+        },
+        {
+          "name": "item_id",
+          "in": "query",
+          "description": "Filter by item ID (relationships only)",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "ITM-0001"
+        },
+        {
+          "name": "supplier_id",
+          "in": "query",
+          "description": "Filter by supplier ID (relationships only)",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "SUP-0001"
+        },
+        {
+          "name": "is_preferred",
+          "in": "query",
+          "description": "Filter by preferred status (relationships only)",
+          "required": false,
+          "schema": {
+            "type": "boolean"
+          }
+        },
+        {
+          "name": "min_price",
+          "in": "query",
+          "description": "Minimum price filter (relationships only)",
+          "required": false,
+          "schema": {
+            "type": "number",
+            "minimum": 0
+          },
+          "example": 10.0
+        },
+        {
+          "name": "max_price",
+          "in": "query",
+          "description": "Maximum price filter (relationships only)",
+          "required": false,
+          "schema": {
+            "type": "number",
+            "minimum": 0
+          },
+          "example": 100.0
+        },
+        {
+          "name": "currency",
+          "in": "query",
+          "description": "Filter by currency code (relationships only)",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 3
+          },
+          "example": "USD"
+        },
+        {
+          "name": "with",
+          "in": "query",
+          "description": "Include related models (comma-separated). For suppliers: items, itemSuppliers, stocks. For relationships: organization, item, supplier",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "items,itemSuppliers"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Suppliers or relationships retrieved successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "success": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Resource retrieved successfully"
+                  },
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "oneOf": [
+                        {
+                          "$ref": "#/components/schemas/Supplier"
+                        },
+                        {
+                          "$ref": "#/components/schemas/ItemSupplier"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized - Authentication required",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              },
+              "example": {
+                "message": "Unauthorized"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden - Organization access required",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "Trying to access other organization resources is not allowed, this action has been logged for security purposes",
+                "code": 403
+              }
+            }
+          }
+        }
+      }
+    },
+    "post": {
+      "tags": ["Suppliers"],
+      "summary": "Create new supplier",
+      "description": "Create a new supplier or establish a relationship between an item and a supplier.",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/SupplierCreateRequest"
+                },
+                {
+                  "$ref": "#/components/schemas/ItemSupplierCreateRequest"
+                }
+              ]
+            },
+            "examples": {
+              "create_supplier": {
+                "summary": "Create new supplier",
+                "value": {
+                  "name": "Tech Components Ltd",
+                  "code": "TCL-001",
+                  "contact_name": "John Smith",
+                  "email": "contact@techcomponents.com",
+                  "phone": "+1-555-123-4567",
+                  "address": "123 Tech Street",
+                  "city": "New York",
+                  "state": "NY",
+                  "postal_code": "10001",
+                  "country": "United States",
+                  "website": "https://techcomponents.com",
+                  "tax_id": "123456789",
+                  "notes": "Preferred supplier for electronic components",
+                  "is_active": true
+                }
+              },
+              "create_item_supplier_relationship": {
+                "summary": "Create item-supplier relationship",
+                "value": {
+                  "type": "relationship",
+                  "item_id": "ITM-0001",
+                  "supplier_id": "SUP-0001",
+                  "supplier_part_number": "TC-RES-100K",
+                  "price": 0.05,
+                  "currency": "USD",
+                  "lead_time_days": 7,
+                  "is_preferred": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Supplier or relationship created successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "success": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Resource created successfully"
+                  },
+                  "data": {
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/Supplier"
+                      },
+                      {
+                        "$ref": "#/components/schemas/ItemSupplier"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Bad Request - Validation failed",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidationErrorResponse"
+              },
+              "example": {
+                "message": "The given data was invalid.",
+                "errors": {
+                  "name": ["The supplier name is required"],
+                  "email": ["Please enter a valid email address"]
+                }
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized - Authentication required",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              },
+              "example": {
+                "message": "Unauthorized"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden - Organization access required",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "Trying to access other organization resources is not allowed, this action has been logged for security purposes",
+                "code": 403
+              }
+            }
+          }
+        },
+        "409": {
+          "description": "Conflict - Relationship already exists or duplicate constraint violation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "Resource already exists",
+                "code": 409
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/suppliers/{id}": {
+    "get": {
+      "tags": ["Suppliers"],
+      "summary": "Get supplier by ID",
+      "description": "Retrieve details of a specific supplier or item-supplier relationship by ID.",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Supplier ID (e.g., SUP-0001) or ItemSupplier relationship ID (e.g., IS-0001)",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "SUP-0001"
+        },
+        {
+          "name": "type",
+          "in": "query",
+          "description": "Type of resource (relationship for item-supplier relationships)",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "enum": ["relationship"]
+          }
+        },
+        {
+          "name": "with",
+          "in": "query",
+          "description": "Include related models (comma-separated). For suppliers: items, itemSuppliers, stocks. For relationships: organization, item, supplier",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "items,itemSuppliers"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Supplier or relationship retrieved successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "success": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Resource retrieved successfully"
+                  },
+                  "data": {
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/Supplier"
+                      },
+                      {
+                        "$ref": "#/components/schemas/ItemSupplier"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized - Authentication required",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              },
+              "example": {
+                "message": "Unauthorized"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden - Organization access required",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "Trying to access other organization resources is not allowed, this action has been logged for security purposes",
+                "code": 403
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Supplier or relationship not found",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "Resource not found",
+                "code": 404
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "Internal Server Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "An internal server error occurred",
+                "code": 400
+              }
+            }
+          }
+        }
+      }
+    },
+    "patch": {
+      "tags": ["Suppliers"],
+      "summary": "Update supplier",
+      "description": "Update an existing supplier's information or modify an item-supplier relationship.",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Supplier ID (e.g., SUP-0001) or ItemSupplier relationship ID (e.g., IS-0001)",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "SUP-0001"
+        }
+      ],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/SupplierUpdateRequest"
+                },
+                {
+                  "$ref": "#/components/schemas/ItemSupplierUpdateRequest"
+                }
+              ]
+            },
+            "examples": {
+              "update_supplier": {
+                "summary": "Update supplier information",
+                "value": {
+                  "name": "Tech Components Ltd - Updated",
+                  "contact_name": "Jane Doe",
+                  "email": "newcontact@techcomponents.com",
+                  "phone": "+1-555-987-6543",
+                  "is_active": true
+                }
+              },
+              "update_item_supplier_relationship": {
+                "summary": "Update item-supplier relationship",
+                "value": {
+                  "type": "relationship",
+                  "price": 0.06,
+                  "lead_time_days": 5,
+                  "is_preferred": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Supplier or relationship updated successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "success": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Resource updated successfully"
+                  },
+                  "data": {
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/Supplier"
+                      },
+                      {
+                        "$ref": "#/components/schemas/ItemSupplier"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Bad Request - Validation failed",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidationErrorResponse"
+              },
+              "example": {
+                "message": "The given data was invalid.",
+                "errors": {
+                  "email": ["Please enter a valid email address"],
+                  "price": ["The price cannot be negative"]
+                }
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized - Authentication required",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              },
+              "example": {
+                "message": "Unauthorized"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden - Organization access required",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "Trying to access other organization resources is not allowed, this action has been logged for security purposes",
+                "code": 403
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Supplier or relationship not found",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "Resource not found",
+                "code": 404
+              }
+            }
+          }
+        }
+      }
+    },
+    "delete": {
+      "tags": ["Suppliers"],
+      "summary": "Delete supplier",
+      "description": "Delete a supplier or remove an item-supplier relationship.",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Supplier ID (e.g., SUP-0001) or ItemSupplier relationship ID (e.g., IS-0001)",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "SUP-0001"
+        },
+        {
+          "name": "type",
+          "in": "query",
+          "description": "Type of resource to delete (relationship for item-supplier relationships)",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "enum": ["relationship"]
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Supplier or relationship deleted successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "success": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Resource deleted successfully"
+                  },
+                  "data": {
+                    "type": "null",
+                    "example": null
+                  }
+                }
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized - Authentication required",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              },
+              "example": {
+                "message": "Unauthorized"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden - Organization access required",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "Trying to access other organization resources is not allowed, this action has been logged for security purposes",
+                "code": 403
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Supplier or relationship not found",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "Resource not found",
+                "code": 404
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

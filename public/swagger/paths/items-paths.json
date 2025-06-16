@@ -151,6 +151,9 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/Error"
+              },
+              "example": {
+                "message": "Unauthorized"
               }
             }
           }
@@ -205,6 +208,9 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/Error"
+              },
+              "example": {
+                "message": "Unauthorized"
               }
             }
           }
@@ -263,6 +269,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/Error"
+              },
+              "example": {
+                "status": "error",
+                "message": "Resource not found",
+                "code": 404
               }
             }
           }
@@ -273,6 +284,9 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/Error"
+              },
+              "example": {
+                "message": "Unauthorized"
               }
             }
           }
@@ -329,6 +343,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/Error"
+              },
+              "example": {
+                "status": "error",
+                "message": "Resource not found",
+                "code": 404
               }
             }
           }
@@ -349,6 +368,9 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/Error"
+              },
+              "example": {
+                "message": "Unauthorized"
               }
             }
           }
@@ -387,6 +409,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/Error"
+              },
+              "example": {
+                "status": "error",
+                "message": "Resource not found",
+                "code": 404
               }
             }
           }
@@ -397,6 +424,9 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/Error"
+              },
+              "example": {
+                "message": "Unauthorized"
               }
             }
           }
@@ -455,6 +485,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/Error"
+              },
+              "example": {
+                "status": "error",
+                "message": "Resource not found",
+                "code": 404
               }
             }
           }
@@ -475,6 +510,9 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/Error"
+              },
+              "example": {
+                "message": "Unauthorized"
               }
             }
           }

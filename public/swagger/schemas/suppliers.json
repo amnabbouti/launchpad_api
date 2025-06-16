@@ -1,0 +1,823 @@
+{
+  "Supplier": {
+    "type": "object",
+    "description": "A supplier represents a vendor or source from which items can be purchased. Suppliers maintain contact information, business details, and can be linked to specific items with pricing and lead time information.",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Unique public identifier for the supplier (e.g., 'SUP-0001')",
+        "example": "SUP-0001"
+      },
+      "name": {
+        "type": "string",
+        "description": "Supplier company name (required)",
+        "maxLength": 255,
+        "example": "Tech Components Ltd"
+      },
+      "code": {
+        "type": "string",
+        "description": "Unique supplier code within the organization (optional)",
+        "maxLength": 50,
+        "nullable": true,
+        "example": "TCL-001"
+      },
+      "contact_name": {
+        "type": "string",
+        "description": "Primary contact person name (optional)",
+        "maxLength": 255,
+        "nullable": true,
+        "example": "John Smith"
+      },
+      "email": {
+        "type": "string",
+        "format": "email",
+        "description": "Supplier email address (optional)",
+        "maxLength": 255,
+        "nullable": true,
+        "example": "contact@techcomponents.com"
+      },
+      "phone": {
+        "type": "string",
+        "description": "Supplier phone number (optional)",
+        "maxLength": 50,
+        "nullable": true,
+        "example": "+1-555-123-4567"
+      },
+      "address": {
+        "type": "string",
+        "description": "Street address (optional)",
+        "maxLength": 255,
+        "nullable": true,
+        "example": "123 Industrial Blvd"
+      },
+      "city": {
+        "type": "string",
+        "description": "City (optional)",
+        "maxLength": 100,
+        "nullable": true,
+        "example": "San Francisco"
+      },
+      "state": {
+        "type": "string",
+        "description": "State or province (optional)",
+        "maxLength": 100,
+        "nullable": true,
+        "example": "CA"
+      },
+      "postal_code": {
+        "type": "string",
+        "description": "Postal or zip code (optional)",
+        "maxLength": 20,
+        "nullable": true,
+        "example": "94105"
+      },
+      "country": {
+        "type": "string",
+        "description": "Country (optional)",
+        "maxLength": 100,
+        "nullable": true,
+        "example": "United States"
+      },
+      "website": {
+        "type": "string",
+        "format": "url",
+        "description": "Supplier website URL (optional)",
+        "maxLength": 255,
+        "nullable": true,
+        "example": "https://www.techcomponents.com"
+      },
+      "tax_id": {
+        "type": "string",
+        "description": "Tax identification number (optional)",
+        "maxLength": 50,
+        "nullable": true,
+        "example": "123-45-6789"
+      },
+      "notes": {
+        "type": "string",
+        "description": "Additional notes about the supplier (optional)",
+        "nullable": true,
+        "example": "Preferred supplier for electronic components. Good lead times and competitive pricing."
+      },
+      "is_active": {
+        "type": "boolean",
+        "description": "Whether the supplier is currently active",
+        "default": true,
+        "example": true
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "ISO 8601 timestamp when the supplier was created",
+        "example": "2024-01-15T10:30:00Z"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "ISO 8601 timestamp when the supplier was last updated",
+        "example": "2024-01-16T14:20:00Z"
+      },
+      "organization": {
+        "$ref": "#/components/schemas/Organization",
+        "description": "Organization details (included when 'organization' is requested in 'with' parameter)"
+      },
+      "items": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Item"
+        },
+        "description": "Items supplied by this supplier (included when 'items' is requested in 'with' parameter)"
+      },
+      "item_suppliers": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ItemSupplier"
+        },
+        "description": "Item-supplier relationships with pricing details (included when 'itemSuppliers' is requested in 'with' parameter)"
+      }
+    },
+    "required": ["id", "name", "is_active", "created_at", "updated_at"]
+  },
+  "ItemSupplier": {
+    "type": "object",
+    "description": "An item-supplier relationship represents the association between a specific item and supplier, including pricing, lead time, and preference information.",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Unique public identifier for the item-supplier relationship",
+        "example": "IS-0001"
+      },
+      "org_id": {
+        "type": "string",
+        "description": "Organization identifier",
+        "example": "org_xyz789"
+      },
+      "item_id": {
+        "type": "string",
+        "description": "Item identifier",
+        "example": "ITM-0001"
+      },
+      "supplier_id": {
+        "type": "string",
+        "description": "Supplier identifier",
+        "example": "SUP-0001"
+      },
+      "supplier_part_number": {
+        "type": "string",
+        "description": "Supplier's part number for this item (optional)",
+        "maxLength": 100,
+        "nullable": true,
+        "example": "TCL-LAP-2024-001"
+      },
+      "price": {
+        "type": "number",
+        "format": "decimal",
+        "description": "Price per unit from this supplier (optional)",
+        "minimum": 0,
+        "nullable": true,
+        "example": 1250.0
+      },
+      "currency": {
+        "type": "string",
+        "description": "Currency code (3 characters, ISO 4217)",
+        "minLength": 3,
+        "maxLength": 3,
+        "default": "USD",
+        "example": "USD"
+      },
+      "lead_time_days": {
+        "type": "integer",
+        "description": "Lead time in days for delivery (optional)",
+        "minimum": 0,
+        "nullable": true,
+        "example": 14
+      },
+      "is_preferred": {
+        "type": "boolean",
+        "description": "Whether this is the preferred supplier for this item",
+        "default": false,
+        "example": true
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "ISO 8601 timestamp when the relationship was created",
+        "example": "2024-01-15T10:30:00Z"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "ISO 8601 timestamp when the relationship was last updated",
+        "example": "2024-01-16T14:20:00Z"
+      },
+      "organization": {
+        "$ref": "#/components/schemas/Organization",
+        "description": "Organization details (included when 'organization' is requested in 'with' parameter)"
+      },
+      "item": {
+        "$ref": "#/components/schemas/Item",
+        "description": "Item details (included when 'item' is requested in 'with' parameter)"
+      },
+      "supplier": {
+        "$ref": "#/components/schemas/Supplier",
+        "description": "Supplier details (included when 'supplier' is requested in 'with' parameter)"
+      }
+    },
+    "required": [
+      "id",
+      "org_id",
+      "item_id",
+      "supplier_id",
+      "currency",
+      "is_preferred",
+      "created_at",
+      "updated_at"
+    ]
+  },
+  "SupplierInput": {
+    "type": "object",
+    "description": "Input schema for creating or updating a supplier",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "Supplier company name (required)",
+        "maxLength": 255,
+        "minLength": 1,
+        "example": "Tech Components Ltd"
+      },
+      "code": {
+        "type": "string",
+        "description": "Unique supplier code within the organization (optional)",
+        "maxLength": 50,
+        "nullable": true,
+        "example": "TCL-001"
+      },
+      "contact_name": {
+        "type": "string",
+        "description": "Primary contact person name (optional)",
+        "maxLength": 255,
+        "nullable": true,
+        "example": "John Smith"
+      },
+      "email": {
+        "type": "string",
+        "format": "email",
+        "description": "Supplier email address (optional)",
+        "maxLength": 255,
+        "nullable": true,
+        "example": "contact@techcomponents.com"
+      },
+      "phone": {
+        "type": "string",
+        "description": "Supplier phone number (optional)",
+        "maxLength": 50,
+        "nullable": true,
+        "example": "+1-555-123-4567"
+      },
+      "address": {
+        "type": "string",
+        "description": "Street address (optional)",
+        "maxLength": 255,
+        "nullable": true,
+        "example": "123 Industrial Blvd"
+      },
+      "city": {
+        "type": "string",
+        "description": "City (optional)",
+        "maxLength": 100,
+        "nullable": true,
+        "example": "San Francisco"
+      },
+      "state": {
+        "type": "string",
+        "description": "State or province (optional)",
+        "maxLength": 100,
+        "nullable": true,
+        "example": "CA"
+      },
+      "postal_code": {
+        "type": "string",
+        "description": "Postal or zip code (optional)",
+        "maxLength": 20,
+        "nullable": true,
+        "example": "94105"
+      },
+      "country": {
+        "type": "string",
+        "description": "Country (optional)",
+        "maxLength": 100,
+        "nullable": true,
+        "example": "United States"
+      },
+      "website": {
+        "type": "string",
+        "format": "url",
+        "description": "Supplier website URL (optional)",
+        "maxLength": 255,
+        "nullable": true,
+        "example": "https://www.techcomponents.com"
+      },
+      "tax_id": {
+        "type": "string",
+        "description": "Tax identification number (optional)",
+        "maxLength": 50,
+        "nullable": true,
+        "example": "123-45-6789"
+      },
+      "notes": {
+        "type": "string",
+        "description": "Additional notes about the supplier (optional)",
+        "nullable": true,
+        "example": "Preferred supplier for electronic components"
+      },
+      "is_active": {
+        "type": "boolean",
+        "description": "Whether the supplier is currently active (optional, defaults to true)",
+        "default": true,
+        "example": true
+      },
+      "org_id": {
+        "type": "string",
+        "description": "Organization ID (optional, inferred from authenticated user)",
+        "nullable": true,
+        "example": "org_xyz789"
+      }
+    },
+    "required": ["name"]
+  },
+  "ItemSupplierInput": {
+    "type": "object",
+    "description": "Input schema for creating or updating item-supplier relationships",
+    "properties": {
+      "item_id": {
+        "type": "string",
+        "description": "Item ID (required)",
+        "example": "ITM-0001"
+      },
+      "supplier_id": {
+        "type": "string",
+        "description": "Supplier ID (required)",
+        "example": "SUP-0001"
+      },
+      "supplier_part_number": {
+        "type": "string",
+        "description": "Supplier's part number for this item (optional)",
+        "maxLength": 100,
+        "nullable": true,
+        "example": "TCL-LAP-2024-001"
+      },
+      "price": {
+        "type": "number",
+        "format": "decimal",
+        "description": "Price per unit from this supplier (optional, must be >= 0)",
+        "minimum": 0,
+        "nullable": true,
+        "example": 1250.0
+      },
+      "currency": {
+        "type": "string",
+        "description": "Currency code (optional, defaults to USD, must be exactly 3 characters)",
+        "minLength": 3,
+        "maxLength": 3,
+        "nullable": true,
+        "example": "USD"
+      },
+      "lead_time_days": {
+        "type": "integer",
+        "description": "Lead time in days for delivery (optional, must be >= 0)",
+        "minimum": 0,
+        "nullable": true,
+        "example": 14
+      },
+      "is_preferred": {
+        "type": "boolean",
+        "description": "Whether this is the preferred supplier for this item (optional, defaults to false)",
+        "default": false,
+        "example": true
+      }
+    },
+    "required": ["item_id", "supplier_id"]
+  },
+  "SupplierErrorResponse": {
+    "type": "object",
+    "description": "Standard API error response for supplier operations",
+    "properties": {
+      "status": {
+        "type": "string",
+        "description": "Error status indicator",
+        "example": "error"
+      },
+      "message": {
+        "type": "string",
+        "description": "Error message describing what went wrong",
+        "example": "Resource not found"
+      },
+      "data": {
+        "type": "null",
+        "description": "Always null for error responses",
+        "example": null
+      }
+    },
+    "required": ["status", "message", "data"]
+  },
+  "SupplierValidationErrorResponse": {
+    "type": "object",
+    "description": "Validation error response for supplier operations",
+    "properties": {
+      "message": {
+        "type": "string",
+        "description": "General validation error message",
+        "example": "The given data was invalid."
+      },
+      "errors": {
+        "type": "object",
+        "description": "Field-specific validation errors",
+        "properties": {
+          "name": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Name field validation errors",
+            "example": ["The supplier name is required"]
+          },
+          "code": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Code field validation errors",
+            "example": [
+              "This supplier code is already used in your organization."
+            ]
+          },
+          "email": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Email field validation errors",
+            "example": ["Please enter a valid email address"]
+          },
+          "website": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Website field validation errors",
+            "example": ["Please enter a valid website URL"]
+          },
+          "item_id": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Item ID field validation errors (for item-supplier relationships)",
+            "example": ["The selected item is invalid"]
+          },
+          "supplier_id": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Supplier ID field validation errors (for item-supplier relationships)",
+            "example": ["The selected supplier is invalid"]
+          },
+          "price": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Price field validation errors",
+            "example": ["The price cannot be negative"]
+          },
+          "currency": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Currency field validation errors",
+            "example": ["Currency code must be exactly 3 characters"]
+          },
+          "lead_time_days": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Lead time field validation errors",
+            "example": ["The lead time cannot be negative"]
+          }
+        }
+      }
+    },
+    "required": ["message", "errors"]
+  },
+  "SupplierCreateRequest": {
+    "type": "object",
+    "description": "Request payload for creating a new supplier",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "Supplier company name (required)",
+        "maxLength": 255,
+        "example": "Tech Components Ltd"
+      },
+      "code": {
+        "type": "string",
+        "description": "Unique supplier code within the organization (optional)",
+        "maxLength": 50,
+        "nullable": true,
+        "example": "TCL-001"
+      },
+      "contact_name": {
+        "type": "string",
+        "description": "Primary contact person name (optional)",
+        "maxLength": 255,
+        "nullable": true,
+        "example": "John Smith"
+      },
+      "email": {
+        "type": "string",
+        "format": "email",
+        "description": "Supplier email address (optional)",
+        "maxLength": 255,
+        "nullable": true,
+        "example": "contact@techcomponents.com"
+      },
+      "phone": {
+        "type": "string",
+        "description": "Supplier phone number (optional)",
+        "maxLength": 50,
+        "nullable": true,
+        "example": "+1-555-123-4567"
+      },
+      "address": {
+        "type": "string",
+        "description": "Street address (optional)",
+        "maxLength": 255,
+        "nullable": true,
+        "example": "123 Tech Street"
+      },
+      "city": {
+        "type": "string",
+        "description": "City (optional)",
+        "maxLength": 100,
+        "nullable": true,
+        "example": "New York"
+      },
+      "state": {
+        "type": "string",
+        "description": "State or province (optional)",
+        "maxLength": 100,
+        "nullable": true,
+        "example": "NY"
+      },
+      "postal_code": {
+        "type": "string",
+        "description": "Postal or ZIP code (optional)",
+        "maxLength": 20,
+        "nullable": true,
+        "example": "10001"
+      },
+      "country": {
+        "type": "string",
+        "description": "Country (optional)",
+        "maxLength": 100,
+        "nullable": true,
+        "example": "United States"
+      },
+      "website": {
+        "type": "string",
+        "format": "uri",
+        "description": "Supplier website URL (optional)",
+        "maxLength": 255,
+        "nullable": true,
+        "example": "https://techcomponents.com"
+      },
+      "tax_id": {
+        "type": "string",
+        "description": "Tax identification number (optional)",
+        "maxLength": 50,
+        "nullable": true,
+        "example": "123456789"
+      },
+      "notes": {
+        "type": "string",
+        "description": "Additional notes about the supplier (optional)",
+        "nullable": true,
+        "example": "Preferred supplier for electronic components"
+      },
+      "is_active": {
+        "type": "boolean",
+        "description": "Whether the supplier is active",
+        "example": true
+      }
+    },
+    "required": ["name"]
+  },
+  "SupplierUpdateRequest": {
+    "type": "object",
+    "description": "Request payload for updating an existing supplier",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "Supplier company name",
+        "maxLength": 255,
+        "example": "Tech Components Ltd - Updated"
+      },
+      "code": {
+        "type": "string",
+        "description": "Unique supplier code within the organization",
+        "maxLength": 50,
+        "nullable": true,
+        "example": "TCL-001"
+      },
+      "contact_name": {
+        "type": "string",
+        "description": "Primary contact person name",
+        "maxLength": 255,
+        "nullable": true,
+        "example": "Jane Doe"
+      },
+      "email": {
+        "type": "string",
+        "format": "email",
+        "description": "Supplier email address",
+        "maxLength": 255,
+        "nullable": true,
+        "example": "newcontact@techcomponents.com"
+      },
+      "phone": {
+        "type": "string",
+        "description": "Supplier phone number",
+        "maxLength": 50,
+        "nullable": true,
+        "example": "+1-555-987-6543"
+      },
+      "address": {
+        "type": "string",
+        "description": "Street address",
+        "maxLength": 255,
+        "nullable": true,
+        "example": "456 Updated Street"
+      },
+      "city": {
+        "type": "string",
+        "description": "City",
+        "maxLength": 100,
+        "nullable": true,
+        "example": "Boston"
+      },
+      "state": {
+        "type": "string",
+        "description": "State or province",
+        "maxLength": 100,
+        "nullable": true,
+        "example": "MA"
+      },
+      "postal_code": {
+        "type": "string",
+        "description": "Postal or ZIP code",
+        "maxLength": 20,
+        "nullable": true,
+        "example": "02101"
+      },
+      "country": {
+        "type": "string",
+        "description": "Country",
+        "maxLength": 100,
+        "nullable": true,
+        "example": "United States"
+      },
+      "website": {
+        "type": "string",
+        "format": "uri",
+        "description": "Supplier website URL",
+        "maxLength": 255,
+        "nullable": true,
+        "example": "https://updated.techcomponents.com"
+      },
+      "tax_id": {
+        "type": "string",
+        "description": "Tax identification number",
+        "maxLength": 50,
+        "nullable": true,
+        "example": "987654321"
+      },
+      "notes": {
+        "type": "string",
+        "description": "Additional notes about the supplier",
+        "nullable": true,
+        "example": "Updated supplier information"
+      },
+      "is_active": {
+        "type": "boolean",
+        "description": "Whether the supplier is active",
+        "example": true
+      }
+    }
+  },
+  "ItemSupplierCreateRequest": {
+    "type": "object",
+    "description": "Request payload for creating a new item-supplier relationship",
+    "properties": {
+      "type": {
+        "type": "string",
+        "description": "Must be 'relationship' to create item-supplier relationship",
+        "enum": ["relationship"],
+        "example": "relationship"
+      },
+      "item_id": {
+        "type": "string",
+        "description": "ID of the item (required)",
+        "example": "ITM-0001"
+      },
+      "supplier_id": {
+        "type": "string",
+        "description": "ID of the supplier (required)",
+        "example": "SUP-0001"
+      },
+      "supplier_part_number": {
+        "type": "string",
+        "description": "Supplier's part number for this item (optional)",
+        "maxLength": 100,
+        "nullable": true,
+        "example": "TC-RES-100K"
+      },
+      "price": {
+        "type": "number",
+        "description": "Price from this supplier (optional)",
+        "minimum": 0,
+        "nullable": true,
+        "example": 0.05
+      },
+      "currency": {
+        "type": "string",
+        "description": "Currency code (optional, 3 characters)",
+        "minLength": 3,
+        "maxLength": 3,
+        "nullable": true,
+        "example": "USD"
+      },
+      "lead_time_days": {
+        "type": "integer",
+        "description": "Lead time in days (optional)",
+        "minimum": 0,
+        "nullable": true,
+        "example": 7
+      },
+      "is_preferred": {
+        "type": "boolean",
+        "description": "Whether this is the preferred supplier for this item",
+        "example": true
+      }
+    },
+    "required": ["item_id", "supplier_id"]
+  },
+  "ItemSupplierUpdateRequest": {
+    "type": "object",
+    "description": "Request payload for updating an existing item-supplier relationship",
+    "properties": {
+      "type": {
+        "type": "string",
+        "description": "Must be 'relationship' to update item-supplier relationship",
+        "enum": ["relationship"],
+        "example": "relationship"
+      },
+      "supplier_part_number": {
+        "type": "string",
+        "description": "Supplier's part number for this item",
+        "maxLength": 100,
+        "nullable": true,
+        "example": "TC-RES-100K-V2"
+      },
+      "price": {
+        "type": "number",
+        "description": "Price from this supplier",
+        "minimum": 0,
+        "nullable": true,
+        "example": 0.06
+      },
+      "currency": {
+        "type": "string",
+        "description": "Currency code (3 characters)",
+        "minLength": 3,
+        "maxLength": 3,
+        "nullable": true,
+        "example": "USD"
+      },
+      "lead_time_days": {
+        "type": "integer",
+        "description": "Lead time in days",
+        "minimum": 0,
+        "nullable": true,
+        "example": 5
+      },
+      "is_preferred": {
+        "type": "boolean",
+        "description": "Whether this is the preferred supplier for this item",
+        "example": false
+      }
+    }
+  }
+}

@@ -207,7 +207,7 @@
               "example": {
                 "status": "error",
                 "message": "Unknown query parameter: invalid_param",
-                "data": null
+                "code": 400
               }
             }
           }
@@ -234,9 +234,7 @@
                 }
               },
               "example": {
-                "status": "error",
-                "message": "Unauthorized",
-                "data": null
+                "message": "Unauthorized"
               }
             }
           }
@@ -265,7 +263,7 @@
               "example": {
                 "status": "error",
                 "message": "User must belong to an organization",
-                "data": null
+                "code": 400
               }
             }
           }
@@ -402,7 +400,7 @@
               "example": {
                 "status": "error",
                 "message": "Data cannot be empty",
-                "data": null
+                "code": 400
               }
             }
           }
@@ -429,9 +427,7 @@
                 }
               },
               "example": {
-                "status": "error",
-                "message": "Unauthorized",
-                "data": null
+                "message": "Unauthorized"
               }
             }
           }
@@ -460,7 +456,7 @@
               "example": {
                 "status": "error",
                 "message": "User must belong to an organization",
-                "data": null
+                "code": 400
               }
             }
           }
@@ -640,9 +636,7 @@
                 }
               },
               "example": {
-                "status": "error",
-                "message": "Unauthorized",
-                "data": null
+                "message": "Unauthorized"
               }
             }
           }
@@ -671,7 +665,7 @@
               "example": {
                 "status": "error",
                 "message": "Trying to access other organization resources is not allowed, this action has been logged for security purposes",
-                "data": null
+                "code": 400
               }
             }
           }
@@ -700,7 +694,7 @@
               "example": {
                 "status": "error",
                 "message": "Resource not found",
-                "data": null
+                "code": 404
               }
             }
           }
@@ -822,7 +816,7 @@
               "example": {
                 "status": "error",
                 "message": "Data cannot be empty",
-                "data": null
+                "code": 400
               }
             }
           }
@@ -849,9 +843,7 @@
                 }
               },
               "example": {
-                "status": "error",
-                "message": "Unauthorized",
-                "data": null
+                "message": "Unauthorized"
               }
             }
           }
@@ -880,7 +872,7 @@
               "example": {
                 "status": "error",
                 "message": "Trying to access other organization resources is not allowed, this action has been logged for security purposes",
-                "data": null
+                "code": 400
               }
             }
           }
@@ -909,7 +901,7 @@
               "example": {
                 "status": "error",
                 "message": "Resource not found",
-                "data": null
+                "code": 404
               }
             }
           }
@@ -1063,9 +1055,7 @@
                 }
               },
               "example": {
-                "status": "error",
-                "message": "Unauthorized",
-                "data": null
+                "message": "Unauthorized"
               }
             }
           }
@@ -1094,7 +1084,7 @@
               "example": {
                 "status": "error",
                 "message": "Trying to access other organization resources is not allowed, this action has been logged for security purposes",
-                "data": null
+                "code": 400
               }
             }
           }
@@ -1123,7 +1113,7 @@
               "example": {
                 "status": "error",
                 "message": "Resource not found",
-                "data": null
+                "code": 404
               }
             }
           }
@@ -1152,7 +1142,7 @@
               "example": {
                 "status": "error",
                 "message": "Cannot delete resource as it is currently in use",
-                "data": null
+                "code": 400
               }
             }
           }

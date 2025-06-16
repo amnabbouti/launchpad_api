@@ -119,19 +119,17 @@
   "Error": {
     "type": "object",
     "properties": {
-      "success": {
-        "type": "boolean",
-        "example": false
+      "status": {
+        "type": "string",
+        "example": "error"
       },
       "message": {
         "type": "string",
         "example": "Resource not found"
       },
-      "errors": {
-        "type": "object",
-        "example": {
-          "name": ["The organization name is required."]
-        }
+      "code": {
+        "type": "integer",
+        "example": 404
       }
     }
   }

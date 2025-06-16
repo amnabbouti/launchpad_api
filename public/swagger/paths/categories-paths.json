@@ -149,7 +149,7 @@
               "example": {
                 "status": "error",
                 "message": "Unknown query parameter: invalid_param",
-                "data": null
+                "code": 400
               }
             }
           }
@@ -159,12 +159,24 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CategoryErrorResponse"
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "error"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Unauthorized"
+                  },
+                  "data": {
+                    "type": "null",
+                    "example": null
+                  }
+                }
               },
               "example": {
-                "status": "error",
-                "message": "Unauthorized",
-                "data": null
+                "message": "Unauthorized"
               }
             }
           }
@@ -179,7 +191,7 @@
               "example": {
                 "status": "error",
                 "message": "User must belong to an organization",
-                "data": null
+                "code": 400
               }
             }
           }
@@ -269,7 +281,7 @@
               "example": {
                 "status": "error",
                 "message": "Data cannot be empty",
-                "data": null
+                "code": 400
               }
             }
           }
@@ -282,9 +294,7 @@
                 "$ref": "#/components/schemas/CategoryErrorResponse"
               },
               "example": {
-                "status": "error",
-                "message": "Unauthorized",
-                "data": null
+                "message": "Unauthorized"
               }
             }
           }
@@ -299,7 +309,7 @@
               "example": {
                 "status": "error",
                 "message": "User must belong to an organization",
-                "data": null
+                "code": 400
               }
             }
           }
@@ -313,8 +323,8 @@
               },
               "example": {
                 "status": "error",
-                "message": "A category with this name already exists under the specified parent",
-                "data": null
+                "message": "Resource already exists",
+                "code": 409
               }
             }
           }
@@ -435,9 +445,7 @@
                 "$ref": "#/components/schemas/CategoryErrorResponse"
               },
               "example": {
-                "status": "error",
-                "message": "Unauthorized",
-                "data": null
+                "message": "Unauthorized"
               }
             }
           }
@@ -452,7 +460,7 @@
               "example": {
                 "status": "error",
                 "message": "User must belong to an organization",
-                "data": null
+                "code": 400
               }
             }
           }
@@ -467,14 +475,14 @@
               "example": {
                 "status": "error",
                 "message": "Resource not found",
-                "data": null
+                "code": 404
               }
             }
           }
         }
       }
     },
-    "put": {
+    "patch": {
       "tags": ["Categories"],
       "summary": "Update category",
       "description": "Update an existing category. When changing parent_id, the path is automatically recalculated. Moving a category will also update paths for all its descendants.",
@@ -572,13 +580,18 @@
               "schema": {
                 "$ref": "#/components/schemas/CategoryErrorResponse"
               },
+              "example": {
+                "status": "error",
+                "message": "Unknown query parameter: invalid_param",
+                "code": 400
+              },
               "examples": {
                 "empty_data": {
                   "summary": "Empty request data",
                   "value": {
                     "status": "error",
                     "message": "Data cannot be empty",
-                    "data": null
+                    "code": 400
                   }
                 },
                 "circular_reference": {
@@ -586,7 +599,7 @@
                   "value": {
                     "status": "error",
                     "message": "Cannot set a category as its own parent or descendant",
-                    "data": null
+                    "code": 400
                   }
                 }
               }
@@ -601,9 +614,7 @@
                 "$ref": "#/components/schemas/CategoryErrorResponse"
               },
               "example": {
-                "status": "error",
-                "message": "Unauthorized",
-                "data": null
+                "message": "Unauthorized"
               }
             }
           }
@@ -618,7 +629,7 @@
               "example": {
                 "status": "error",
                 "message": "User must belong to an organization",
-                "data": null
+                "code": 400
               }
             }
           }
@@ -633,7 +644,7 @@
               "example": {
                 "status": "error",
                 "message": "Resource not found",
-                "data": null
+                "code": 404
               }
             }
           }
@@ -647,8 +658,8 @@
               },
               "example": {
                 "status": "error",
-                "message": "A category with this name already exists under the specified parent",
-                "data": null
+                "message": "Resource already exists",
+                "code": 409
               }
             }
           }
@@ -721,7 +732,7 @@
               "example": {
                 "status": "success",
                 "message": "Resource deleted successfully",
-                "data": null
+                "code": 400
               }
             }
           }
@@ -734,9 +745,7 @@
                 "$ref": "#/components/schemas/CategoryErrorResponse"
               },
               "example": {
-                "status": "error",
-                "message": "Unauthorized",
-                "data": null
+                "message": "Unauthorized"
               }
             }
           }
@@ -751,7 +760,7 @@
               "example": {
                 "status": "error",
                 "message": "User must belong to an organization",
-                "data": null
+                "code": 400
               }
             }
           }
@@ -766,7 +775,7 @@
               "example": {
                 "status": "error",
                 "message": "Resource not found",
-                "data": null
+                "code": 404
               }
             }
           }

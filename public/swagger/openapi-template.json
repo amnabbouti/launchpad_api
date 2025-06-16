@@ -24,6 +24,14 @@
       "description": "User authentication endpoints for login, logout and profile access"
     },
     {
+      "name": "Categories",
+      "description": "Category management endpoints for hierarchical classification and organization of items"
+    },
+    {
+      "name": "Item Locations",
+      "description": "Item location management endpoints for tracking item distribution across storage locations"
+    },
+    {
       "name": "Items",
       "description": "Item management endpoints with optional filtering, search, and maintenance operations"
     },
@@ -34,6 +42,10 @@
     {
       "name": "Organizations",
       "description": "Organization management endpoints for creating, accessing, and managing organizational data"
+    },
+    {
+      "name": "Suppliers",
+      "description": "Supplier management and item-supplier relationship endpoints for procurement and vendor management"
     },
     {
       "name": "Users",

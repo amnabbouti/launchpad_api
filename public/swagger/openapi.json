@@ -24,6 +24,14 @@
       "description": "User authentication endpoints for login, logout and profile access"
     },
     {
+      "name": "Categories",
+      "description": "Category management endpoints for hierarchical classification and organization of items"
+    },
+    {
+      "name": "Item Locations",
+      "description": "Item location management endpoints for tracking item distribution across storage locations"
+    },
+    {
       "name": "Items",
       "description": "Item management endpoints with optional filtering, search, and maintenance operations"
     },
@@ -34,6 +42,10 @@
     {
       "name": "Organizations",
       "description": "Organization management endpoints for creating, accessing, and managing organizational data"
+    },
+    {
+      "name": "Suppliers",
+      "description": "Supplier management and item-supplier relationship endpoints for procurement and vendor management"
     },
     {
       "name": "Users",
@@ -178,6 +190,549 @@
             "example": null
           }
         }
+      },
+      "Category": {
+        "type": "object",
+        "description": "A category represents a hierarchical classification system for organizing items. Categories support unlimited nesting levels and maintain automatic path generation.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique public identifier for the category (e.g., 'CAT-0001')",
+            "example": "CAT-0001"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable name of the category",
+            "maxLength": 100,
+            "example": "Electronics"
+          },
+          "parent_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "Public ID of the parent category. Null for root categories.",
+            "example": "CAT-0002"
+          },
+          "path": {
+            "type": "string",
+            "nullable": true,
+            "description": "Hierarchical path showing the category's position in the tree structure (auto-generated)",
+            "maxLength": 500,
+            "example": "/CAT-0002/CAT_abc123/"
+          },
+          "org_id": {
+            "type": "string",
+            "description": "Organization identifier this category belongs to",
+            "example": "org_0001"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp when the category was created",
+            "example": "2024-01-15T10:30:00Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp when the category was last updated",
+            "example": "2024-01-16T14:20:00Z"
+          },
+          "organization": {
+            "$ref": "#/components/schemas/Organization",
+            "description": "Organization details (included when 'organization' is requested in 'with' parameter)"
+          },
+          "parent": {
+            "$ref": "#/components/schemas/Category",
+            "description": "Parent category details (included when 'parent' is requested in 'with' parameter)"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Category"
+            },
+            "description": "Direct child categories (included when 'children' is requested in 'with' parameter)"
+          },
+          "children_recursive": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Category"
+            },
+            "description": "All nested child categories recursively (included when 'childrenRecursive' is requested in 'with' parameter)"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Item"
+            },
+            "description": "Items assigned to this category (included when 'items' is requested in 'with' parameter)"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "org_id",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "CategoryHierarchical": {
+        "type": "object",
+        "description": "Category with nested children structure for hierarchical display",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Category"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "children": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CategoryHierarchical"
+                },
+                "description": "Nested child categories with their own children included"
+              }
+            }
+          }
+        ]
+      },
+      "CategoryInput": {
+        "type": "object",
+        "description": "Input schema for creating or updating a category",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Category name (required, max 100 characters)",
+            "maxLength": 100,
+            "minLength": 1,
+            "example": "Electronics"
+          },
+          "parent_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "Public ID of parent category. Set to null for root category.",
+            "example": "CAT-0002"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "CategoryResponse": {
+        "type": "object",
+        "description": "Standard API response wrapper for category data",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "Response status indicator",
+            "example": "success"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable response message",
+            "example": "Categories retrieved successfully"
+          },
+          "data": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Category"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Category"
+                }
+              },
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CategoryHierarchical"
+                }
+              }
+            ],
+            "description": "Category data - single category, flat array, or hierarchical array depending on endpoint"
+          }
+        },
+        "required": [
+          "status",
+          "message",
+          "data"
+        ]
+      },
+      "CategoryErrorResponse": {
+        "type": "object",
+        "description": "Standard API error response for category operations",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "Error status indicator",
+            "example": "error"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error message describing what went wrong",
+            "example": "Resource not found"
+          },
+          "data": {
+            "type": "null",
+            "description": "Always null for error responses",
+            "example": null
+          }
+        },
+        "required": [
+          "status",
+          "message",
+          "data"
+        ]
+      },
+      "CategoryValidationErrorResponse": {
+        "type": "object",
+        "description": "Validation error response for category operations",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "General validation error message",
+            "example": "The given data was invalid."
+          },
+          "errors": {
+            "type": "object",
+            "description": "Field-specific validation errors",
+            "properties": {
+              "name": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Name field validation errors",
+                "example": [
+                  "The category name is required and cannot be empty"
+                ]
+              },
+              "parent_id": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Parent ID field validation errors",
+                "example": [
+                  "The selected parent category does not exist in your organization"
+                ]
+              }
+            }
+          }
+        },
+        "required": [
+          "message",
+          "errors"
+        ]
+      },
+      "ItemLocation": {
+        "type": "object",
+        "description": "An item location represents the assignment of a specific quantity of an item to a particular location. This enables tracking of item distribution across multiple storage locations.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique public identifier for the item location (e.g., 'IL-0001')",
+            "example": "IL-0001"
+          },
+          "quantity": {
+            "type": "number",
+            "format": "decimal",
+            "description": "Quantity of the item stored at this location",
+            "minimum": 0,
+            "example": 25.5
+          },
+          "moved_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Date when the item was moved to this location (ISO 8601 date format)",
+            "nullable": true,
+            "example": "2024-01-15"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional notes about this item location assignment",
+            "nullable": true,
+            "maxLength": 65535,
+            "example": "Items stored on shelf B3, handle with care"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp when the item location was created",
+            "example": "2024-01-15T10:30:00Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp when the item location was last updated",
+            "example": "2024-01-16T14:20:00Z"
+          },
+          "organization": {
+            "type": "object",
+            "description": "Organization information",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Organization identifier",
+                "example": "org_xyz789"
+              },
+              "name": {
+                "type": "string",
+                "description": "Organization name",
+                "example": "ACME Corporation"
+              }
+            }
+          },
+          "item": {
+            "$ref": "#/components/schemas/Item",
+            "description": "Item details (included when 'item' is requested in 'with' parameter)"
+          },
+          "location": {
+            "$ref": "#/components/schemas/Location",
+            "description": "Location details (included when 'location' is requested in 'with' parameter)"
+          }
+        },
+        "required": [
+          "id",
+          "quantity",
+          "created_at",
+          "updated_at",
+          "organization"
+        ]
+      },
+      "ItemLocationInput": {
+        "type": "object",
+        "description": "Input schema for creating or updating an item location",
+        "properties": {
+          "org_id": {
+            "type": "string",
+            "description": "Organization ID (required)",
+            "example": "org_xyz789"
+          },
+          "item_id": {
+            "type": "string",
+            "description": "Item ID that will be assigned to the location (required)",
+            "example": "ITM-0001"
+          },
+          "location_id": {
+            "type": "string",
+            "description": "Location ID where the item will be stored (required)",
+            "example": "LOC-0001"
+          },
+          "quantity": {
+            "type": "number",
+            "format": "decimal",
+            "description": "Quantity of the item to assign to this location (required, must be >= 0)",
+            "minimum": 0,
+            "example": 25.5
+          },
+          "moved_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Date when the item was moved to this location (optional, YYYY-MM-DD format)",
+            "nullable": true,
+            "example": "2024-01-15"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional notes about this item location assignment (optional, max 65535 characters)",
+            "nullable": true,
+            "maxLength": 65535,
+            "example": "Items stored on shelf B3, handle with care"
+          }
+        },
+        "required": [
+          "org_id",
+          "item_id",
+          "location_id",
+          "quantity"
+        ]
+      },
+      "ItemMoveRequest": {
+        "type": "object",
+        "description": "Input schema for moving items between locations",
+        "properties": {
+          "org_id": {
+            "type": "string",
+            "description": "Organization ID (required)",
+            "example": "org_xyz789"
+          },
+          "item_id": {
+            "type": "string",
+            "description": "Item ID to move (required)",
+            "example": "ITM-0001"
+          },
+          "from_location_id": {
+            "type": "string",
+            "description": "Source location ID (required)",
+            "example": "LOC-0001"
+          },
+          "to_location_id": {
+            "type": "string",
+            "description": "Destination location ID (required, must be different from source)",
+            "example": "LOC-0002"
+          },
+          "quantity": {
+            "type": "number",
+            "format": "decimal",
+            "description": "Quantity to move (required, must be >= 0 and <= available quantity)",
+            "minimum": 0,
+            "example": 10
+          },
+          "moved_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Date of the move operation (optional, YYYY-MM-DD format)",
+            "nullable": true,
+            "example": "2024-01-16"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Notes about the move operation (optional, max 65535 characters)",
+            "nullable": true,
+            "maxLength": 65535,
+            "example": "Moved for maintenance purposes"
+          }
+        },
+        "required": [
+          "org_id",
+          "item_id",
+          "from_location_id",
+          "to_location_id",
+          "quantity"
+        ]
+      },
+      "ItemLocationResponse": {
+        "type": "object",
+        "description": "Standard API response wrapper for item location data",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "Response status indicator",
+            "example": "success"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable response message",
+            "example": "Item locations retrieved successfully"
+          },
+          "data": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ItemLocation"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ItemLocation"
+                }
+              }
+            ],
+            "description": "Item location data - single item location or array of item locations"
+          }
+        },
+        "required": [
+          "status",
+          "message",
+          "data"
+        ]
+      },
+      "ItemLocationErrorResponse": {
+        "type": "object",
+        "description": "Standard API error response for item location operations",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "Error status indicator",
+            "example": "error"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error message describing what went wrong",
+            "example": "Resource not found"
+          },
+          "data": {
+            "type": "null",
+            "description": "Always null for error responses",
+            "example": null
+          }
+        },
+        "required": [
+          "status",
+          "message",
+          "data"
+        ]
+      },
+      "ItemLocationValidationErrorResponse": {
+        "type": "object",
+        "description": "Validation error response for item location operations",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "General validation error message",
+            "example": "The given data was invalid."
+          },
+          "errors": {
+            "type": "object",
+            "description": "Field-specific validation errors",
+            "properties": {
+              "item_id": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Item ID field validation errors",
+                "example": [
+                  "The selected item is invalid"
+                ]
+              },
+              "location_id": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Location ID field validation errors",
+                "example": [
+                  "This item is already assigned to this location for the organization"
+                ]
+              },
+              "quantity": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Quantity field validation errors",
+                "example": [
+                  "The quantity cannot be negative"
+                ]
+              },
+              "from_location_id": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Source location field validation errors (for move operations)",
+                "example": [
+                  "The selected source location is invalid"
+                ]
+              },
+              "to_location_id": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Destination location field validation errors (for move operations)",
+                "example": [
+                  "The destination location must be different from the source location"
+                ]
+              }
+            }
+          }
+        },
+        "required": [
+          "message",
+          "errors"
+        ]
       },
       "Item": {
         "type": "object",
@@ -1077,6 +1632,870 @@
           }
         }
       },
+      "Supplier": {
+        "type": "object",
+        "description": "A supplier represents a vendor or source from which items can be purchased. Suppliers maintain contact information, business details, and can be linked to specific items with pricing and lead time information.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique public identifier for the supplier (e.g., 'SUP-0001')",
+            "example": "SUP-0001"
+          },
+          "name": {
+            "type": "string",
+            "description": "Supplier company name (required)",
+            "maxLength": 255,
+            "example": "Tech Components Ltd"
+          },
+          "code": {
+            "type": "string",
+            "description": "Unique supplier code within the organization (optional)",
+            "maxLength": 50,
+            "nullable": true,
+            "example": "TCL-001"
+          },
+          "contact_name": {
+            "type": "string",
+            "description": "Primary contact person name (optional)",
+            "maxLength": 255,
+            "nullable": true,
+            "example": "John Smith"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Supplier email address (optional)",
+            "maxLength": 255,
+            "nullable": true,
+            "example": "contact@techcomponents.com"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Supplier phone number (optional)",
+            "maxLength": 50,
+            "nullable": true,
+            "example": "+1-555-123-4567"
+          },
+          "address": {
+            "type": "string",
+            "description": "Street address (optional)",
+            "maxLength": 255,
+            "nullable": true,
+            "example": "123 Industrial Blvd"
+          },
+          "city": {
+            "type": "string",
+            "description": "City (optional)",
+            "maxLength": 100,
+            "nullable": true,
+            "example": "San Francisco"
+          },
+          "state": {
+            "type": "string",
+            "description": "State or province (optional)",
+            "maxLength": 100,
+            "nullable": true,
+            "example": "CA"
+          },
+          "postal_code": {
+            "type": "string",
+            "description": "Postal or zip code (optional)",
+            "maxLength": 20,
+            "nullable": true,
+            "example": "94105"
+          },
+          "country": {
+            "type": "string",
+            "description": "Country (optional)",
+            "maxLength": 100,
+            "nullable": true,
+            "example": "United States"
+          },
+          "website": {
+            "type": "string",
+            "format": "url",
+            "description": "Supplier website URL (optional)",
+            "maxLength": 255,
+            "nullable": true,
+            "example": "https://www.techcomponents.com"
+          },
+          "tax_id": {
+            "type": "string",
+            "description": "Tax identification number (optional)",
+            "maxLength": 50,
+            "nullable": true,
+            "example": "123-45-6789"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional notes about the supplier (optional)",
+            "nullable": true,
+            "example": "Preferred supplier for electronic components. Good lead times and competitive pricing."
+          },
+          "is_active": {
+            "type": "boolean",
+            "description": "Whether the supplier is currently active",
+            "default": true,
+            "example": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp when the supplier was created",
+            "example": "2024-01-15T10:30:00Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp when the supplier was last updated",
+            "example": "2024-01-16T14:20:00Z"
+          },
+          "organization": {
+            "$ref": "#/components/schemas/Organization",
+            "description": "Organization details (included when 'organization' is requested in 'with' parameter)"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Item"
+            },
+            "description": "Items supplied by this supplier (included when 'items' is requested in 'with' parameter)"
+          },
+          "item_suppliers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemSupplier"
+            },
+            "description": "Item-supplier relationships with pricing details (included when 'itemSuppliers' is requested in 'with' parameter)"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "is_active",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "ItemSupplier": {
+        "type": "object",
+        "description": "An item-supplier relationship represents the association between a specific item and supplier, including pricing, lead time, and preference information.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique public identifier for the item-supplier relationship",
+            "example": "IS-0001"
+          },
+          "org_id": {
+            "type": "string",
+            "description": "Organization identifier",
+            "example": "org_xyz789"
+          },
+          "item_id": {
+            "type": "string",
+            "description": "Item identifier",
+            "example": "ITM-0001"
+          },
+          "supplier_id": {
+            "type": "string",
+            "description": "Supplier identifier",
+            "example": "SUP-0001"
+          },
+          "supplier_part_number": {
+            "type": "string",
+            "description": "Supplier's part number for this item (optional)",
+            "maxLength": 100,
+            "nullable": true,
+            "example": "TCL-LAP-2024-001"
+          },
+          "price": {
+            "type": "number",
+            "format": "decimal",
+            "description": "Price per unit from this supplier (optional)",
+            "minimum": 0,
+            "nullable": true,
+            "example": 1250
+          },
+          "currency": {
+            "type": "string",
+            "description": "Currency code (3 characters, ISO 4217)",
+            "minLength": 3,
+            "maxLength": 3,
+            "default": "USD",
+            "example": "USD"
+          },
+          "lead_time_days": {
+            "type": "integer",
+            "description": "Lead time in days for delivery (optional)",
+            "minimum": 0,
+            "nullable": true,
+            "example": 14
+          },
+          "is_preferred": {
+            "type": "boolean",
+            "description": "Whether this is the preferred supplier for this item",
+            "default": false,
+            "example": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp when the relationship was created",
+            "example": "2024-01-15T10:30:00Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp when the relationship was last updated",
+            "example": "2024-01-16T14:20:00Z"
+          },
+          "organization": {
+            "$ref": "#/components/schemas/Organization",
+            "description": "Organization details (included when 'organization' is requested in 'with' parameter)"
+          },
+          "item": {
+            "$ref": "#/components/schemas/Item",
+            "description": "Item details (included when 'item' is requested in 'with' parameter)"
+          },
+          "supplier": {
+            "$ref": "#/components/schemas/Supplier",
+            "description": "Supplier details (included when 'supplier' is requested in 'with' parameter)"
+          }
+        },
+        "required": [
+          "id",
+          "org_id",
+          "item_id",
+          "supplier_id",
+          "currency",
+          "is_preferred",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "SupplierInput": {
+        "type": "object",
+        "description": "Input schema for creating or updating a supplier",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Supplier company name (required)",
+            "maxLength": 255,
+            "minLength": 1,
+            "example": "Tech Components Ltd"
+          },
+          "code": {
+            "type": "string",
+            "description": "Unique supplier code within the organization (optional)",
+            "maxLength": 50,
+            "nullable": true,
+            "example": "TCL-001"
+          },
+          "contact_name": {
+            "type": "string",
+            "description": "Primary contact person name (optional)",
+            "maxLength": 255,
+            "nullable": true,
+            "example": "John Smith"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Supplier email address (optional)",
+            "maxLength": 255,
+            "nullable": true,
+            "example": "contact@techcomponents.com"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Supplier phone number (optional)",
+            "maxLength": 50,
+            "nullable": true,
+            "example": "+1-555-123-4567"
+          },
+          "address": {
+            "type": "string",
+            "description": "Street address (optional)",
+            "maxLength": 255,
+            "nullable": true,
+            "example": "123 Industrial Blvd"
+          },
+          "city": {
+            "type": "string",
+            "description": "City (optional)",
+            "maxLength": 100,
+            "nullable": true,
+            "example": "San Francisco"
+          },
+          "state": {
+            "type": "string",
+            "description": "State or province (optional)",
+            "maxLength": 100,
+            "nullable": true,
+            "example": "CA"
+          },
+          "postal_code": {
+            "type": "string",
+            "description": "Postal or zip code (optional)",
+            "maxLength": 20,
+            "nullable": true,
+            "example": "94105"
+          },
+          "country": {
+            "type": "string",
+            "description": "Country (optional)",
+            "maxLength": 100,
+            "nullable": true,
+            "example": "United States"
+          },
+          "website": {
+            "type": "string",
+            "format": "url",
+            "description": "Supplier website URL (optional)",
+            "maxLength": 255,
+            "nullable": true,
+            "example": "https://www.techcomponents.com"
+          },
+          "tax_id": {
+            "type": "string",
+            "description": "Tax identification number (optional)",
+            "maxLength": 50,
+            "nullable": true,
+            "example": "123-45-6789"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional notes about the supplier (optional)",
+            "nullable": true,
+            "example": "Preferred supplier for electronic components"
+          },
+          "is_active": {
+            "type": "boolean",
+            "description": "Whether the supplier is currently active (optional, defaults to true)",
+            "default": true,
+            "example": true
+          },
+          "org_id": {
+            "type": "string",
+            "description": "Organization ID (optional, inferred from authenticated user)",
+            "nullable": true,
+            "example": "org_xyz789"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "ItemSupplierInput": {
+        "type": "object",
+        "description": "Input schema for creating or updating item-supplier relationships",
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "description": "Item ID (required)",
+            "example": "ITM-0001"
+          },
+          "supplier_id": {
+            "type": "string",
+            "description": "Supplier ID (required)",
+            "example": "SUP-0001"
+          },
+          "supplier_part_number": {
+            "type": "string",
+            "description": "Supplier's part number for this item (optional)",
+            "maxLength": 100,
+            "nullable": true,
+            "example": "TCL-LAP-2024-001"
+          },
+          "price": {
+            "type": "number",
+            "format": "decimal",
+            "description": "Price per unit from this supplier (optional, must be >= 0)",
+            "minimum": 0,
+            "nullable": true,
+            "example": 1250
+          },
+          "currency": {
+            "type": "string",
+            "description": "Currency code (optional, defaults to USD, must be exactly 3 characters)",
+            "minLength": 3,
+            "maxLength": 3,
+            "nullable": true,
+            "example": "USD"
+          },
+          "lead_time_days": {
+            "type": "integer",
+            "description": "Lead time in days for delivery (optional, must be >= 0)",
+            "minimum": 0,
+            "nullable": true,
+            "example": 14
+          },
+          "is_preferred": {
+            "type": "boolean",
+            "description": "Whether this is the preferred supplier for this item (optional, defaults to false)",
+            "default": false,
+            "example": true
+          }
+        },
+        "required": [
+          "item_id",
+          "supplier_id"
+        ]
+      },
+      "SupplierErrorResponse": {
+        "type": "object",
+        "description": "Standard API error response for supplier operations",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "Error status indicator",
+            "example": "error"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error message describing what went wrong",
+            "example": "Resource not found"
+          },
+          "data": {
+            "type": "null",
+            "description": "Always null for error responses",
+            "example": null
+          }
+        },
+        "required": [
+          "status",
+          "message",
+          "data"
+        ]
+      },
+      "SupplierValidationErrorResponse": {
+        "type": "object",
+        "description": "Validation error response for supplier operations",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "General validation error message",
+            "example": "The given data was invalid."
+          },
+          "errors": {
+            "type": "object",
+            "description": "Field-specific validation errors",
+            "properties": {
+              "name": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Name field validation errors",
+                "example": [
+                  "The supplier name is required"
+                ]
+              },
+              "code": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Code field validation errors",
+                "example": [
+                  "This supplier code is already used in your organization."
+                ]
+              },
+              "email": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Email field validation errors",
+                "example": [
+                  "Please enter a valid email address"
+                ]
+              },
+              "website": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Website field validation errors",
+                "example": [
+                  "Please enter a valid website URL"
+                ]
+              },
+              "item_id": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Item ID field validation errors (for item-supplier relationships)",
+                "example": [
+                  "The selected item is invalid"
+                ]
+              },
+              "supplier_id": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Supplier ID field validation errors (for item-supplier relationships)",
+                "example": [
+                  "The selected supplier is invalid"
+                ]
+              },
+              "price": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Price field validation errors",
+                "example": [
+                  "The price cannot be negative"
+                ]
+              },
+              "currency": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Currency field validation errors",
+                "example": [
+                  "Currency code must be exactly 3 characters"
+                ]
+              },
+              "lead_time_days": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Lead time field validation errors",
+                "example": [
+                  "The lead time cannot be negative"
+                ]
+              }
+            }
+          }
+        },
+        "required": [
+          "message",
+          "errors"
+        ]
+      },
+      "SupplierCreateRequest": {
+        "type": "object",
+        "description": "Request payload for creating a new supplier",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Supplier company name (required)",
+            "maxLength": 255,
+            "example": "Tech Components Ltd"
+          },
+          "code": {
+            "type": "string",
+            "description": "Unique supplier code within the organization (optional)",
+            "maxLength": 50,
+            "nullable": true,
+            "example": "TCL-001"
+          },
+          "contact_name": {
+            "type": "string",
+            "description": "Primary contact person name (optional)",
+            "maxLength": 255,
+            "nullable": true,
+            "example": "John Smith"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Supplier email address (optional)",
+            "maxLength": 255,
+            "nullable": true,
+            "example": "contact@techcomponents.com"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Supplier phone number (optional)",
+            "maxLength": 50,
+            "nullable": true,
+            "example": "+1-555-123-4567"
+          },
+          "address": {
+            "type": "string",
+            "description": "Street address (optional)",
+            "maxLength": 255,
+            "nullable": true,
+            "example": "123 Tech Street"
+          },
+          "city": {
+            "type": "string",
+            "description": "City (optional)",
+            "maxLength": 100,
+            "nullable": true,
+            "example": "New York"
+          },
+          "state": {
+            "type": "string",
+            "description": "State or province (optional)",
+            "maxLength": 100,
+            "nullable": true,
+            "example": "NY"
+          },
+          "postal_code": {
+            "type": "string",
+            "description": "Postal or ZIP code (optional)",
+            "maxLength": 20,
+            "nullable": true,
+            "example": "10001"
+          },
+          "country": {
+            "type": "string",
+            "description": "Country (optional)",
+            "maxLength": 100,
+            "nullable": true,
+            "example": "United States"
+          },
+          "website": {
+            "type": "string",
+            "format": "uri",
+            "description": "Supplier website URL (optional)",
+            "maxLength": 255,
+            "nullable": true,
+            "example": "https://techcomponents.com"
+          },
+          "tax_id": {
+            "type": "string",
+            "description": "Tax identification number (optional)",
+            "maxLength": 50,
+            "nullable": true,
+            "example": "123456789"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional notes about the supplier (optional)",
+            "nullable": true,
+            "example": "Preferred supplier for electronic components"
+          },
+          "is_active": {
+            "type": "boolean",
+            "description": "Whether the supplier is active",
+            "example": true
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "SupplierUpdateRequest": {
+        "type": "object",
+        "description": "Request payload for updating an existing supplier",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Supplier company name",
+            "maxLength": 255,
+            "example": "Tech Components Ltd - Updated"
+          },
+          "code": {
+            "type": "string",
+            "description": "Unique supplier code within the organization",
+            "maxLength": 50,
+            "nullable": true,
+            "example": "TCL-001"
+          },
+          "contact_name": {
+            "type": "string",
+            "description": "Primary contact person name",
+            "maxLength": 255,
+            "nullable": true,
+            "example": "Jane Doe"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Supplier email address",
+            "maxLength": 255,
+            "nullable": true,
+            "example": "newcontact@techcomponents.com"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Supplier phone number",
+            "maxLength": 50,
+            "nullable": true,
+            "example": "+1-555-987-6543"
+          },
+          "address": {
+            "type": "string",
+            "description": "Street address",
+            "maxLength": 255,
+            "nullable": true,
+            "example": "456 Updated Street"
+          },
+          "city": {
+            "type": "string",
+            "description": "City",
+            "maxLength": 100,
+            "nullable": true,
+            "example": "Boston"
+          },
+          "state": {
+            "type": "string",
+            "description": "State or province",
+            "maxLength": 100,
+            "nullable": true,
+            "example": "MA"
+          },
+          "postal_code": {
+            "type": "string",
+            "description": "Postal or ZIP code",
+            "maxLength": 20,
+            "nullable": true,
+            "example": "02101"
+          },
+          "country": {
+            "type": "string",
+            "description": "Country",
+            "maxLength": 100,
+            "nullable": true,
+            "example": "United States"
+          },
+          "website": {
+            "type": "string",
+            "format": "uri",
+            "description": "Supplier website URL",
+            "maxLength": 255,
+            "nullable": true,
+            "example": "https://updated.techcomponents.com"
+          },
+          "tax_id": {
+            "type": "string",
+            "description": "Tax identification number",
+            "maxLength": 50,
+            "nullable": true,
+            "example": "987654321"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional notes about the supplier",
+            "nullable": true,
+            "example": "Updated supplier information"
+          },
+          "is_active": {
+            "type": "boolean",
+            "description": "Whether the supplier is active",
+            "example": true
+          }
+        }
+      },
+      "ItemSupplierCreateRequest": {
+        "type": "object",
+        "description": "Request payload for creating a new item-supplier relationship",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Must be 'relationship' to create item-supplier relationship",
+            "enum": [
+              "relationship"
+            ],
+            "example": "relationship"
+          },
+          "item_id": {
+            "type": "string",
+            "description": "ID of the item (required)",
+            "example": "ITM-0001"
+          },
+          "supplier_id": {
+            "type": "string",
+            "description": "ID of the supplier (required)",
+            "example": "SUP-0001"
+          },
+          "supplier_part_number": {
+            "type": "string",
+            "description": "Supplier's part number for this item (optional)",
+            "maxLength": 100,
+            "nullable": true,
+            "example": "TC-RES-100K"
+          },
+          "price": {
+            "type": "number",
+            "description": "Price from this supplier (optional)",
+            "minimum": 0,
+            "nullable": true,
+            "example": 0.05
+          },
+          "currency": {
+            "type": "string",
+            "description": "Currency code (optional, 3 characters)",
+            "minLength": 3,
+            "maxLength": 3,
+            "nullable": true,
+            "example": "USD"
+          },
+          "lead_time_days": {
+            "type": "integer",
+            "description": "Lead time in days (optional)",
+            "minimum": 0,
+            "nullable": true,
+            "example": 7
+          },
+          "is_preferred": {
+            "type": "boolean",
+            "description": "Whether this is the preferred supplier for this item",
+            "example": true
+          }
+        },
+        "required": [
+          "item_id",
+          "supplier_id"
+        ]
+      },
+      "ItemSupplierUpdateRequest": {
+        "type": "object",
+        "description": "Request payload for updating an existing item-supplier relationship",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Must be 'relationship' to update item-supplier relationship",
+            "enum": [
+              "relationship"
+            ],
+            "example": "relationship"
+          },
+          "supplier_part_number": {
+            "type": "string",
+            "description": "Supplier's part number for this item",
+            "maxLength": 100,
+            "nullable": true,
+            "example": "TC-RES-100K-V2"
+          },
+          "price": {
+            "type": "number",
+            "description": "Price from this supplier",
+            "minimum": 0,
+            "nullable": true,
+            "example": 0.06
+          },
+          "currency": {
+            "type": "string",
+            "description": "Currency code (3 characters)",
+            "minLength": 3,
+            "maxLength": 3,
+            "nullable": true,
+            "example": "USD"
+          },
+          "lead_time_days": {
+            "type": "integer",
+            "description": "Lead time in days",
+            "minimum": 0,
+            "nullable": true,
+            "example": 5
+          },
+          "is_preferred": {
+            "type": "boolean",
+            "description": "Whether this is the preferred supplier for this item",
+            "example": false
+          }
+        }
+      },
       "User": {
         "type": "object",
         "properties": {
@@ -1413,6 +2832,1439 @@
         }
       }
     },
+    "/api/categories": {
+      "get": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Get all categories",
+        "description": "Retrieve all categories with advanced filtering. Supports searching by name and parent relationships. Returns categories in their natural hierarchical structure with nested children.",
+        "operationId": "getCategories",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "description": "Filter by category name (partial match, case-insensitive)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Electronics"
+          },
+          {
+            "name": "parent_id",
+            "in": "query",
+            "description": "Filter by parent category ID. Use 'null' to get root categories (no parent).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "CAT-0001"
+          },
+          {
+            "name": "with",
+            "in": "query",
+            "description": "Include related data (comma-separated). Available: parent, children, childrenRecursive, organization, items",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "parent,children,organization,items"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Categories retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CategoryHierarchical"
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "hierarchical": {
+                    "summary": "Hierarchical categories with nested children",
+                    "value": {
+                      "status": "success",
+                      "message": "Categories retrieved successfully",
+                      "data": [
+                        {
+                          "id": "CAT-0001",
+                          "name": "Electronics",
+                          "parent_id": null,
+                          "path": "/CAT-0001/",
+                          "org_id": "org_xyz789",
+                          "created_at": "2024-01-15T10:30:00Z",
+                          "updated_at": "2024-01-15T10:30:00Z",
+                          "children": [
+                            {
+                              "id": "CAT-0002",
+                              "name": "Computers",
+                              "parent_id": "CAT-0001",
+                              "path": "/CAT-0001/CAT-0002/",
+                              "org_id": "org_xyz789",
+                              "created_at": "2024-01-15T11:00:00Z",
+                              "updated_at": "2024-01-15T11:00:00Z",
+                              "children": [
+                                {
+                                  "id": "CAT-0003",
+                                  "name": "Laptops",
+                                  "parent_id": "CAT-0002",
+                                  "path": "/CAT-0001/CAT-0002/CAT-0003/",
+                                  "org_id": "org_xyz789",
+                                  "created_at": "2024-01-15T11:30:00Z",
+                                  "updated_at": "2024-01-15T11:30:00Z",
+                                  "children": []
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "flat": {
+                    "summary": "Flat list of categories (hierarchy=false)",
+                    "value": {
+                      "status": "success",
+                      "message": "Categories retrieved successfully",
+                      "data": [
+                        {
+                          "id": "CAT-0001",
+                          "name": "Electronics",
+                          "parent_id": null,
+                          "path": "/CAT-0001/",
+                          "org_id": "org_xyz789",
+                          "created_at": "2024-01-15T10:30:00Z",
+                          "updated_at": "2024-01-15T10:30:00Z"
+                        },
+                        {
+                          "id": "CAT-0002",
+                          "name": "Computers",
+                          "parent_id": "CAT-0001",
+                          "path": "/CAT-0001/CAT-0002/",
+                          "org_id": "org_xyz789",
+                          "created_at": "2024-01-15T11:00:00Z",
+                          "updated_at": "2024-01-15T11:00:00Z"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid query parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Unknown query parameter: invalid_param",
+                  "code": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing authentication token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "error"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Unauthorized"
+                    },
+                    "data": {
+                      "type": "null",
+                      "example": null
+                    }
+                  }
+                },
+                "example": {
+                  "message": "Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - User must belong to an organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "User must belong to an organization",
+                  "code": 400
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Create a new category",
+        "description": "Create a new category in the organization. Supports hierarchical structure by specifying parent_id. The system automatically generates the path based on the hierarchy.",
+        "operationId": "createCategory",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryInput"
+              },
+              "examples": {
+                "root_category": {
+                  "summary": "Create a root category",
+                  "value": {
+                    "name": "Electronics",
+                    "parent_id": null
+                  }
+                },
+                "child_category": {
+                  "summary": "Create a child category",
+                  "value": {
+                    "name": "Computers",
+                    "parent_id": "CAT-0001"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Category created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Resource created successfully"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Category"
+                    }
+                  }
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Resource created successfully",
+                  "data": {
+                    "id": "CAT-0004",
+                    "name": "Computers",
+                    "parent_id": "CAT-0001",
+                    "path": "/CAT-0001/CAT-0004/",
+                    "org_id": "org_xyz789",
+                    "created_at": "2024-01-16T14:20:00Z",
+                    "updated_at": "2024-01-16T14:20:00Z"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Empty data or invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Data cannot be empty",
+                  "code": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing authentication token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryErrorResponse"
+                },
+                "example": {
+                  "message": "Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - User must belong to an organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "User must belong to an organization",
+                  "code": 400
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict - Category with this name already exists under the same parent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Resource already exists",
+                  "code": 409
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error - Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryValidationErrorResponse"
+                },
+                "example": {
+                  "message": "The given data was invalid.",
+                  "errors": {
+                    "name": [
+                      "The category name is required and cannot be empty"
+                    ],
+                    "parent_id": [
+                      "The selected parent category does not exist in your organization"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/categories/{id}": {
+      "get": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Get category by ID",
+        "description": "Retrieve a specific category by its public ID with optional related data.",
+        "operationId": "getCategoryById",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Public ID of the category to retrieve",
+            "schema": {
+              "type": "string"
+            },
+            "example": "CAT-0001"
+          },
+          {
+            "name": "with",
+            "in": "query",
+            "description": "Include related data (comma-separated). Available: parent, children, childrenRecursive, organization, items",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "parent,children,organization"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Category retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Category"
+                    }
+                  }
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Success",
+                  "data": {
+                    "id": "CAT-0001",
+                    "name": "Electronics",
+                    "parent_id": null,
+                    "path": "/CAT-0001/",
+                    "org_id": "org_xyz789",
+                    "created_at": "2024-01-15T10:30:00Z",
+                    "updated_at": "2024-01-15T10:30:00Z",
+                    "parent": null,
+                    "children": [
+                      {
+                        "id": "CAT-0002",
+                        "name": "Computers",
+                        "parent_id": "CAT-0001",
+                        "path": "/CAT-0001/CAT-0002/",
+                        "org_id": "org_xyz789",
+                        "created_at": "2024-01-15T11:00:00Z",
+                        "updated_at": "2024-01-15T11:00:00Z"
+                      }
+                    ],
+                    "organization": {
+                      "id": "org_xyz789",
+                      "name": "ACME Corporation"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing authentication token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryErrorResponse"
+                },
+                "example": {
+                  "message": "Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - User must belong to an organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "User must belong to an organization",
+                  "code": 400
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Category does not exist or does not belong to user's organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Resource not found",
+                  "code": 404
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Update category",
+        "description": "Update an existing category. When changing parent_id, the path is automatically recalculated. Moving a category will also update paths for all its descendants.",
+        "operationId": "updateCategory",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Public ID of the category to update",
+            "schema": {
+              "type": "string"
+            },
+            "example": "CAT-0001"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryInput"
+              },
+              "examples": {
+                "rename_category": {
+                  "summary": "Rename a category",
+                  "value": {
+                    "name": "Consumer Electronics"
+                  }
+                },
+                "move_category": {
+                  "summary": "Move category to different parent",
+                  "value": {
+                    "name": "Electronics",
+                    "parent_id": "CAT-0005"
+                  }
+                },
+                "make_root_category": {
+                  "summary": "Make category a root category",
+                  "value": {
+                    "name": "Electronics",
+                    "parent_id": null
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Category updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Resource updated successfully"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Category"
+                    }
+                  }
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Resource updated successfully",
+                  "data": {
+                    "id": "CAT-0001",
+                    "name": "Consumer Electronics",
+                    "parent_id": "CAT-0005",
+                    "path": "/CAT-0005/CAT-0001/",
+                    "org_id": "org_xyz789",
+                    "created_at": "2024-01-15T10:30:00Z",
+                    "updated_at": "2024-01-16T14:25:00Z"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Empty data, circular reference, or invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Unknown query parameter: invalid_param",
+                  "code": 400
+                },
+                "examples": {
+                  "empty_data": {
+                    "summary": "Empty request data",
+                    "value": {
+                      "status": "error",
+                      "message": "Data cannot be empty",
+                      "code": 400
+                    }
+                  },
+                  "circular_reference": {
+                    "summary": "Circular reference detected",
+                    "value": {
+                      "status": "error",
+                      "message": "Cannot set a category as its own parent or descendant",
+                      "code": 400
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing authentication token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryErrorResponse"
+                },
+                "example": {
+                  "message": "Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - User must belong to an organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "User must belong to an organization",
+                  "code": 400
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Category does not exist or does not belong to user's organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Resource not found",
+                  "code": 404
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict - Category with this name already exists under the same parent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Resource already exists",
+                  "code": 409
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error - Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryValidationErrorResponse"
+                },
+                "example": {
+                  "message": "The given data was invalid.",
+                  "errors": {
+                    "name": [
+                      "The category name cannot exceed 100 characters"
+                    ],
+                    "parent_id": [
+                      "The selected parent category does not exist in your organization"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Delete category",
+        "description": "Delete a category from the system. Important: If the category has child categories, they will automatically become top-level categories (orphaned). Items in this category will become unassigned and may need to be recategorized.",
+        "operationId": "deleteCategory",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Public ID of the category to delete",
+            "schema": {
+              "type": "string"
+            },
+            "example": "CAT-0001"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Category deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Resource deleted successfully"
+                    },
+                    "data": {
+                      "type": "null",
+                      "example": null
+                    }
+                  }
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Resource deleted successfully",
+                  "code": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing authentication token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryErrorResponse"
+                },
+                "example": {
+                  "message": "Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - User must belong to an organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "User must belong to an organization",
+                  "code": 400
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Category does not exist or does not belong to user's organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Resource not found",
+                  "code": 404
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/item-locations": {
+      "get": {
+        "tags": [
+          "Item Locations"
+        ],
+        "summary": "Get all item locations",
+        "description": "Retrieve all item locations with advanced filtering options. Supports filtering by location, item, date, and quantity status. Includes related item and location data.",
+        "operationId": "getItemLocations",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "location_id",
+            "in": "query",
+            "description": "Filter by location ID to show only items in a specific location",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "LOC-0001"
+          },
+          {
+            "name": "item_id",
+            "in": "query",
+            "description": "Filter by item ID to show all locations for a specific item",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "ITM-0001"
+          },
+          {
+            "name": "moved_date",
+            "in": "query",
+            "description": "Filter by moved date (YYYY-MM-DD format)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "example": "2024-01-15"
+          },
+          {
+            "name": "positive_quantity",
+            "in": "query",
+            "description": "Filter to show only item locations with positive quantities (true/false)",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "example": true
+          },
+          {
+            "name": "with",
+            "in": "query",
+            "description": "Include related data (comma-separated). Available: item, item.category, item.status, item.unitOfMeasure, location, organization",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "item,location,item.category"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Item locations retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Item locations retrieved successfully"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ItemLocation"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Item locations retrieved successfully",
+                  "data": [
+                    {
+                      "id": "IL-0001",
+                      "quantity": 25.5,
+                      "moved_date": "2024-01-15",
+                      "notes": "Items stored on shelf B3, handle with care",
+                      "created_at": "2024-01-15T10:30:00Z",
+                      "updated_at": "2024-01-15T10:30:00Z",
+                      "organization": {
+                        "id": "org_xyz789",
+                        "name": "ACME Corporation"
+                      },
+                      "item": {
+                        "id": "ITM-0001",
+                        "name": "Laptop Computer",
+                        "sku": "LAP-2024-001",
+                        "category": {
+                          "id": "CAT-0001",
+                          "name": "Electronics"
+                        }
+                      },
+                      "location": {
+                        "id": "LOC-0001",
+                        "name": "Warehouse A",
+                        "code": "WH-A"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid query parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemLocationErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Unknown query parameter: invalid_param",
+                  "code": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing authentication token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemLocationErrorResponse"
+                },
+                "example": {
+                  "message": "Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - User must belong to an organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemLocationErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "User must belong to an organization",
+                  "code": 400
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Item Locations"
+        ],
+        "summary": "Create a new item location",
+        "description": "Assign an item to a location with a specific quantity. This tracks the distribution of items across multiple storage locations. When an item is first assigned to a location, its tracking mode may change from 'abstract' to 'bulk'.",
+        "operationId": "createItemLocation",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemLocationInput"
+              },
+              "examples": {
+                "basic_assignment": {
+                  "summary": "Basic item location assignment",
+                  "value": {
+                    "org_id": "org_xyz789",
+                    "item_id": "ITM-0001",
+                    "location_id": "LOC-0001",
+                    "quantity": 25.5,
+                    "moved_date": "2024-01-15",
+                    "notes": "Initial stock placement"
+                  }
+                },
+                "minimal_assignment": {
+                  "summary": "Minimal required fields",
+                  "value": {
+                    "org_id": "org_xyz789",
+                    "item_id": "ITM-0002",
+                    "location_id": "LOC-0002",
+                    "quantity": 10
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Item location created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Resource created successfully"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ItemLocation"
+                    }
+                  }
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Resource created successfully",
+                  "data": {
+                    "id": "IL-0001",
+                    "quantity": 25.5,
+                    "moved_date": "2024-01-15",
+                    "notes": "Initial stock placement",
+                    "created_at": "2024-01-15T10:30:00Z",
+                    "updated_at": "2024-01-15T10:30:00Z",
+                    "organization": {
+                      "id": "org_xyz789",
+                      "name": "ACME Corporation"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Empty data or invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemLocationErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Data cannot be empty",
+                  "code": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing authentication token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemLocationErrorResponse"
+                },
+                "example": {
+                  "message": "Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - User must belong to an organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemLocationErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "User must belong to an organization",
+                  "code": 400
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict - Item already assigned to this location",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemLocationErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "This item is already assigned to this location for the organization",
+                  "code": 400
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error - Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemLocationValidationErrorResponse"
+                },
+                "example": {
+                  "message": "The given data was invalid.",
+                  "errors": {
+                    "item_id": [
+                      "The selected item is invalid"
+                    ],
+                    "location_id": [
+                      "The selected location is invalid"
+                    ],
+                    "quantity": [
+                      "The quantity cannot be negative"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/item-locations/{id}": {
+      "get": {
+        "tags": [
+          "Item Locations"
+        ],
+        "summary": "Get item location by ID",
+        "description": "Retrieve a specific item location by its public ID with optional related data.",
+        "operationId": "getItemLocationById",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Public ID of the item location to retrieve",
+            "schema": {
+              "type": "string"
+            },
+            "example": "IL-0001"
+          },
+          {
+            "name": "with",
+            "in": "query",
+            "description": "Include related data (comma-separated). Available: item, item.category, item.status, item.unitOfMeasure, location, organization",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "item,location,item.category"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Item location retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Item location retrieved successfully"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ItemLocation"
+                    }
+                  }
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Item location retrieved successfully",
+                  "data": {
+                    "id": "IL-0001",
+                    "quantity": 25.5,
+                    "moved_date": "2024-01-15",
+                    "notes": "Items stored on shelf B3, handle with care",
+                    "created_at": "2024-01-15T10:30:00Z",
+                    "updated_at": "2024-01-15T10:30:00Z",
+                    "organization": {
+                      "id": "org_xyz789",
+                      "name": "ACME Corporation"
+                    },
+                    "item": {
+                      "id": "ITM-0001",
+                      "name": "Laptop Computer",
+                      "sku": "LAP-2024-001"
+                    },
+                    "location": {
+                      "id": "LOC-0001",
+                      "name": "Warehouse A",
+                      "code": "WH-A"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing authentication token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemLocationErrorResponse"
+                },
+                "example": {
+                  "message": "Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - User must belong to an organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemLocationErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "User must belong to an organization",
+                  "code": 400
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Item location does not exist or does not belong to user's organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemLocationErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Resource not found",
+                  "code": 404
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/item-locations/move": {
+      "post": {
+        "tags": [
+          "Item Locations"
+        ],
+        "summary": "Move items between locations",
+        "description": "Move a specified quantity of an item from one location to another. This operation handles partial moves and automatically manages quantities at both source and destination locations. If the entire quantity is moved from the source, the source item location record is deleted.",
+        "operationId": "moveItemBetweenLocations",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemMoveRequest"
+              },
+              "examples": {
+                "partial_move": {
+                  "summary": "Move part of item quantity",
+                  "value": {
+                    "org_id": "org_xyz789",
+                    "item_id": "ITM-0001",
+                    "from_location_id": "LOC-0001",
+                    "to_location_id": "LOC-0002",
+                    "quantity": 10,
+                    "moved_date": "2024-01-16",
+                    "notes": "Moved for maintenance purposes"
+                  }
+                },
+                "full_move": {
+                  "summary": "Move entire quantity to new location",
+                  "value": {
+                    "org_id": "org_xyz789",
+                    "item_id": "ITM-0002",
+                    "from_location_id": "LOC-0003",
+                    "to_location_id": "LOC-0004",
+                    "quantity": 50
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Items moved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Item moved successfully"
+                    },
+                    "data": {
+                      "type": "null",
+                      "example": null
+                    }
+                  }
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Item moved successfully",
+                  "code": 400
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Insufficient quantity or invalid operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemLocationErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Unknown query parameter: invalid_param",
+                  "code": 400
+                },
+                "examples": {
+                  "insufficient_quantity": {
+                    "summary": "Not enough quantity available",
+                    "value": {
+                      "status": "error",
+                      "message": "Not enough quantity available at the source location",
+                      "code": 400
+                    }
+                  },
+                  "negative_quantity": {
+                    "summary": "Negative quantity provided",
+                    "value": {
+                      "status": "error",
+                      "message": "Quantity cannot be negative",
+                      "code": 400
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing authentication token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemLocationErrorResponse"
+                },
+                "example": {
+                  "message": "Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - User must belong to an organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemLocationErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "User must belong to an organization",
+                  "code": 400
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error - Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemLocationValidationErrorResponse"
+                },
+                "example": {
+                  "message": "The given data was invalid.",
+                  "errors": {
+                    "from_location_id": [
+                      "The selected source location is invalid"
+                    ],
+                    "to_location_id": [
+                      "The destination location must be different from the source location"
+                    ],
+                    "quantity": [
+                      "The quantity is required"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/items": {
       "get": {
         "tags": [
@@ -1571,6 +4423,9 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "message": "Unauthorized"
                 }
               }
             }
@@ -1617,6 +4472,9 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "message": "Unauthorized"
                 }
               }
             }
@@ -1687,6 +4545,9 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "message": "Unauthorized"
                 }
               }
             }
@@ -1697,6 +4558,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Resource not found",
+                  "code": 404
                 }
               }
             }
@@ -1755,6 +4621,9 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "message": "Unauthorized"
                 }
               }
             }
@@ -1765,6 +4634,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Resource not found",
+                  "code": 404
                 }
               }
             }
@@ -1815,6 +4689,9 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "message": "Unauthorized"
                 }
               }
             }
@@ -1825,6 +4702,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Resource not found",
+                  "code": 404
                 }
               }
             }
@@ -1885,6 +4767,9 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "message": "Unauthorized"
                 }
               }
             }
@@ -1895,6 +4780,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Resource not found",
+                  "code": 404
                 }
               }
             }
@@ -2122,7 +5012,7 @@
                 "example": {
                   "status": "error",
                   "message": "Unknown query parameter: invalid_param",
-                  "data": null
+                  "code": 400
                 }
               }
             }
@@ -2149,9 +5039,7 @@
                   }
                 },
                 "example": {
-                  "status": "error",
-                  "message": "Unauthorized",
-                  "data": null
+                  "message": "Unauthorized"
                 }
               }
             }
@@ -2180,7 +5068,7 @@
                 "example": {
                   "status": "error",
                   "message": "User must belong to an organization",
-                  "data": null
+                  "code": 400
                 }
               }
             }
@@ -2319,7 +5207,7 @@
                 "example": {
                   "status": "error",
                   "message": "Data cannot be empty",
-                  "data": null
+                  "code": 400
                 }
               }
             }
@@ -2346,9 +5234,7 @@
                   }
                 },
                 "example": {
-                  "status": "error",
-                  "message": "Unauthorized",
-                  "data": null
+                  "message": "Unauthorized"
                 }
               }
             }
@@ -2377,7 +5263,7 @@
                 "example": {
                   "status": "error",
                   "message": "User must belong to an organization",
-                  "data": null
+                  "code": 400
                 }
               }
             }
@@ -2559,9 +5445,7 @@
                   }
                 },
                 "example": {
-                  "status": "error",
-                  "message": "Unauthorized",
-                  "data": null
+                  "message": "Unauthorized"
                 }
               }
             }
@@ -2590,7 +5474,7 @@
                 "example": {
                   "status": "error",
                   "message": "Trying to access other organization resources is not allowed, this action has been logged for security purposes",
-                  "data": null
+                  "code": 400
                 }
               }
             }
@@ -2619,7 +5503,7 @@
                 "example": {
                   "status": "error",
                   "message": "Resource not found",
-                  "data": null
+                  "code": 404
                 }
               }
             }
@@ -2743,7 +5627,7 @@
                 "example": {
                   "status": "error",
                   "message": "Data cannot be empty",
-                  "data": null
+                  "code": 400
                 }
               }
             }
@@ -2770,9 +5654,7 @@
                   }
                 },
                 "example": {
-                  "status": "error",
-                  "message": "Unauthorized",
-                  "data": null
+                  "message": "Unauthorized"
                 }
               }
             }
@@ -2801,7 +5683,7 @@
                 "example": {
                   "status": "error",
                   "message": "Trying to access other organization resources is not allowed, this action has been logged for security purposes",
-                  "data": null
+                  "code": 400
                 }
               }
             }
@@ -2830,7 +5712,7 @@
                 "example": {
                   "status": "error",
                   "message": "Resource not found",
-                  "data": null
+                  "code": 404
                 }
               }
             }
@@ -2988,9 +5870,7 @@
                   }
                 },
                 "example": {
-                  "status": "error",
-                  "message": "Unauthorized",
-                  "data": null
+                  "message": "Unauthorized"
                 }
               }
             }
@@ -3019,7 +5899,7 @@
                 "example": {
                   "status": "error",
                   "message": "Trying to access other organization resources is not allowed, this action has been logged for security purposes",
-                  "data": null
+                  "code": 400
                 }
               }
             }
@@ -3048,7 +5928,7 @@
                 "example": {
                   "status": "error",
                   "message": "Resource not found",
-                  "data": null
+                  "code": 404
                 }
               }
             }
@@ -3077,7 +5957,7 @@
                 "example": {
                   "status": "error",
                   "message": "Cannot delete resource as it is currently in use",
-                  "data": null
+                  "code": 400
                 }
               }
             }
@@ -3476,6 +6356,789 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/suppliers": {
+      "get": {
+        "tags": [
+          "Suppliers"
+        ],
+        "summary": "Get all suppliers",
+        "description": "Retrieve a list of suppliers with optional filtering. Use 'type=relationships' to get item-supplier relationships instead.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Type of data to retrieve (relationships for item-supplier relationships)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "relationships"
+              ]
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "description": "Filter by supplier name (partial match, suppliers only)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Tech Components"
+          },
+          {
+            "name": "code",
+            "in": "query",
+            "description": "Filter by supplier code (partial match, suppliers only)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "TCL"
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "description": "Filter by supplier email (partial match, suppliers only)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "contact@techcomponents.com"
+          },
+          {
+            "name": "city",
+            "in": "query",
+            "description": "Filter by supplier city (partial match, suppliers only)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "New York"
+          },
+          {
+            "name": "country",
+            "in": "query",
+            "description": "Filter by supplier country (partial match, suppliers only)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "United States"
+          },
+          {
+            "name": "is_active",
+            "in": "query",
+            "description": "Filter by active status (suppliers only)",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "item_id",
+            "in": "query",
+            "description": "Filter by item ID (relationships only)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "ITM-0001"
+          },
+          {
+            "name": "supplier_id",
+            "in": "query",
+            "description": "Filter by supplier ID (relationships only)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "SUP-0001"
+          },
+          {
+            "name": "is_preferred",
+            "in": "query",
+            "description": "Filter by preferred status (relationships only)",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "min_price",
+            "in": "query",
+            "description": "Minimum price filter (relationships only)",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "minimum": 0
+            },
+            "example": 10
+          },
+          {
+            "name": "max_price",
+            "in": "query",
+            "description": "Maximum price filter (relationships only)",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "minimum": 0
+            },
+            "example": 100
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "description": "Filter by currency code (relationships only)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 3
+            },
+            "example": "USD"
+          },
+          {
+            "name": "with",
+            "in": "query",
+            "description": "Include related models (comma-separated). For suppliers: items, itemSuppliers, stocks. For relationships: organization, item, supplier",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "items,itemSuppliers"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Suppliers or relationships retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Resource retrieved successfully"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "oneOf": [
+                          {
+                            "$ref": "#/components/schemas/Supplier"
+                          },
+                          {
+                            "$ref": "#/components/schemas/ItemSupplier"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "message": "Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Organization access required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Trying to access other organization resources is not allowed, this action has been logged for security purposes",
+                  "code": 403
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Suppliers"
+        ],
+        "summary": "Create new supplier",
+        "description": "Create a new supplier or establish a relationship between an item and a supplier.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/SupplierCreateRequest"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ItemSupplierCreateRequest"
+                  }
+                ]
+              },
+              "examples": {
+                "create_supplier": {
+                  "summary": "Create new supplier",
+                  "value": {
+                    "name": "Tech Components Ltd",
+                    "code": "TCL-001",
+                    "contact_name": "John Smith",
+                    "email": "contact@techcomponents.com",
+                    "phone": "+1-555-123-4567",
+                    "address": "123 Tech Street",
+                    "city": "New York",
+                    "state": "NY",
+                    "postal_code": "10001",
+                    "country": "United States",
+                    "website": "https://techcomponents.com",
+                    "tax_id": "123456789",
+                    "notes": "Preferred supplier for electronic components",
+                    "is_active": true
+                  }
+                },
+                "create_item_supplier_relationship": {
+                  "summary": "Create item-supplier relationship",
+                  "value": {
+                    "type": "relationship",
+                    "item_id": "ITM-0001",
+                    "supplier_id": "SUP-0001",
+                    "supplier_part_number": "TC-RES-100K",
+                    "price": 0.05,
+                    "currency": "USD",
+                    "lead_time_days": 7,
+                    "is_preferred": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Supplier or relationship created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Resource created successfully"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "$ref": "#/components/schemas/Supplier"
+                        },
+                        {
+                          "$ref": "#/components/schemas/ItemSupplier"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "message": "The given data was invalid.",
+                  "errors": {
+                    "name": [
+                      "The supplier name is required"
+                    ],
+                    "email": [
+                      "Please enter a valid email address"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "message": "Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Organization access required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Trying to access other organization resources is not allowed, this action has been logged for security purposes",
+                  "code": 403
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict - Relationship already exists or duplicate constraint violation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Resource already exists",
+                  "code": 409
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/suppliers/{id}": {
+      "get": {
+        "tags": [
+          "Suppliers"
+        ],
+        "summary": "Get supplier by ID",
+        "description": "Retrieve details of a specific supplier or item-supplier relationship by ID.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Supplier ID (e.g., SUP-0001) or ItemSupplier relationship ID (e.g., IS-0001)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "SUP-0001"
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Type of resource (relationship for item-supplier relationships)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "relationship"
+              ]
+            }
+          },
+          {
+            "name": "with",
+            "in": "query",
+            "description": "Include related models (comma-separated). For suppliers: items, itemSuppliers, stocks. For relationships: organization, item, supplier",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "items,itemSuppliers"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Supplier or relationship retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Resource retrieved successfully"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "$ref": "#/components/schemas/Supplier"
+                        },
+                        {
+                          "$ref": "#/components/schemas/ItemSupplier"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "message": "Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Organization access required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Trying to access other organization resources is not allowed, this action has been logged for security purposes",
+                  "code": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Supplier or relationship not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Resource not found",
+                  "code": 404
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "An internal server error occurred",
+                  "code": 400
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Suppliers"
+        ],
+        "summary": "Update supplier",
+        "description": "Update an existing supplier's information or modify an item-supplier relationship.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Supplier ID (e.g., SUP-0001) or ItemSupplier relationship ID (e.g., IS-0001)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "SUP-0001"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/SupplierUpdateRequest"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ItemSupplierUpdateRequest"
+                  }
+                ]
+              },
+              "examples": {
+                "update_supplier": {
+                  "summary": "Update supplier information",
+                  "value": {
+                    "name": "Tech Components Ltd - Updated",
+                    "contact_name": "Jane Doe",
+                    "email": "newcontact@techcomponents.com",
+                    "phone": "+1-555-987-6543",
+                    "is_active": true
+                  }
+                },
+                "update_item_supplier_relationship": {
+                  "summary": "Update item-supplier relationship",
+                  "value": {
+                    "type": "relationship",
+                    "price": 0.06,
+                    "lead_time_days": 5,
+                    "is_preferred": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Supplier or relationship updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Resource updated successfully"
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "$ref": "#/components/schemas/Supplier"
+                        },
+                        {
+                          "$ref": "#/components/schemas/ItemSupplier"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "message": "The given data was invalid.",
+                  "errors": {
+                    "email": [
+                      "Please enter a valid email address"
+                    ],
+                    "price": [
+                      "The price cannot be negative"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "message": "Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Organization access required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Trying to access other organization resources is not allowed, this action has been logged for security purposes",
+                  "code": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Supplier or relationship not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Resource not found",
+                  "code": 404
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Suppliers"
+        ],
+        "summary": "Delete supplier",
+        "description": "Delete a supplier or remove an item-supplier relationship.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Supplier ID (e.g., SUP-0001) or ItemSupplier relationship ID (e.g., IS-0001)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "SUP-0001"
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Type of resource to delete (relationship for item-supplier relationships)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "relationship"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Supplier or relationship deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Resource deleted successfully"
+                    },
+                    "data": {
+                      "type": "null",
+                      "example": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "message": "Unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Organization access required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Trying to access other organization resources is not allowed, this action has been logged for security purposes",
+                  "code": 403
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Supplier or relationship not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Resource not found",
+                  "code": 404
                 }
               }
             }

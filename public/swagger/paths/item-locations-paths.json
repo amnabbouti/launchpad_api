@@ -132,7 +132,7 @@
               "example": {
                 "status": "error",
                 "message": "Unknown query parameter: invalid_param",
-                "data": null
+                "code": 400
               }
             }
           }
@@ -145,9 +145,7 @@
                 "$ref": "#/components/schemas/ItemLocationErrorResponse"
               },
               "example": {
-                "status": "error",
-                "message": "Unauthorized",
-                "data": null
+                "message": "Unauthorized"
               }
             }
           }
@@ -162,7 +160,7 @@
               "example": {
                 "status": "error",
                 "message": "User must belong to an organization",
-                "data": null
+                "code": 400
               }
             }
           }
@@ -261,7 +259,7 @@
               "example": {
                 "status": "error",
                 "message": "Data cannot be empty",
-                "data": null
+                "code": 400
               }
             }
           }
@@ -274,9 +272,7 @@
                 "$ref": "#/components/schemas/ItemLocationErrorResponse"
               },
               "example": {
-                "status": "error",
-                "message": "Unauthorized",
-                "data": null
+                "message": "Unauthorized"
               }
             }
           }
@@ -291,7 +287,7 @@
               "example": {
                 "status": "error",
                 "message": "User must belong to an organization",
-                "data": null
+                "code": 400
               }
             }
           }
@@ -306,7 +302,7 @@
               "example": {
                 "status": "error",
                 "message": "This item is already assigned to this location for the organization",
-                "data": null
+                "code": 400
               }
             }
           }
@@ -423,9 +419,7 @@
                 "$ref": "#/components/schemas/ItemLocationErrorResponse"
               },
               "example": {
-                "status": "error",
-                "message": "Unauthorized",
-                "data": null
+                "message": "Unauthorized"
               }
             }
           }
@@ -440,7 +434,7 @@
               "example": {
                 "status": "error",
                 "message": "User must belong to an organization",
-                "data": null
+                "code": 400
               }
             }
           }
@@ -455,7 +449,7 @@
               "example": {
                 "status": "error",
                 "message": "Resource not found",
-                "data": null
+                "code": 404
               }
             }
           }
@@ -533,7 +527,7 @@
               "example": {
                 "status": "success",
                 "message": "Item moved successfully",
-                "data": null
+                "code": 400
               }
             }
           }
@@ -545,13 +539,18 @@
               "schema": {
                 "$ref": "#/components/schemas/ItemLocationErrorResponse"
               },
+              "example": {
+                "status": "error",
+                "message": "Unknown query parameter: invalid_param",
+                "code": 400
+              },
               "examples": {
                 "insufficient_quantity": {
                   "summary": "Not enough quantity available",
                   "value": {
                     "status": "error",
                     "message": "Not enough quantity available at the source location",
-                    "data": null
+                    "code": 400
                   }
                 },
                 "negative_quantity": {
@@ -559,7 +558,7 @@
                   "value": {
                     "status": "error",
                     "message": "Quantity cannot be negative",
-                    "data": null
+                    "code": 400
                   }
                 }
               }
@@ -574,9 +573,7 @@
                 "$ref": "#/components/schemas/ItemLocationErrorResponse"
               },
               "example": {
-                "status": "error",
-                "message": "Unauthorized",
-                "data": null
+                "message": "Unauthorized"
               }
             }
           }
@@ -591,7 +588,7 @@
               "example": {
                 "status": "error",
                 "message": "User must belong to an organization",
-                "data": null
+                "code": 400
               }
             }
           }
