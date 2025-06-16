@@ -1,0 +1,624 @@
+{
+  "/api/item-locations": {
+    "get": {
+      "tags": ["Item Locations"],
+      "summary": "Get all item locations",
+      "description": "Retrieve all item locations with advanced filtering options. Supports filtering by location, item, date, and quantity status. Includes related item and location data.",
+      "operationId": "getItemLocations",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "location_id",
+          "in": "query",
+          "description": "Filter by location ID to show only items in a specific location",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "LOC-0001"
+        },
+        {
+          "name": "item_id",
+          "in": "query",
+          "description": "Filter by item ID to show all locations for a specific item",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "ITM-0001"
+        },
+        {
+          "name": "moved_date",
+          "in": "query",
+          "description": "Filter by moved date (YYYY-MM-DD format)",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "format": "date"
+          },
+          "example": "2024-01-15"
+        },
+        {
+          "name": "positive_quantity",
+          "in": "query",
+          "description": "Filter to show only item locations with positive quantities (true/false)",
+          "required": false,
+          "schema": {
+            "type": "boolean"
+          },
+          "example": true
+        },
+        {
+          "name": "with",
+          "in": "query",
+          "description": "Include related data (comma-separated). Available: item, item.category, item.status, item.unitOfMeasure, location, organization",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "item,location,item.category"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Item locations retrieved successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "success"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Item locations retrieved successfully"
+                  },
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/ItemLocation"
+                    }
+                  }
+                }
+              },
+              "example": {
+                "status": "success",
+                "message": "Item locations retrieved successfully",
+                "data": [
+                  {
+                    "id": "IL-0001",
+                    "quantity": 25.5,
+                    "moved_date": "2024-01-15",
+                    "notes": "Items stored on shelf B3, handle with care",
+                    "created_at": "2024-01-15T10:30:00Z",
+                    "updated_at": "2024-01-15T10:30:00Z",
+                    "organization": {
+                      "id": "org_xyz789",
+                      "name": "ACME Corporation"
+                    },
+                    "item": {
+                      "id": "ITM-0001",
+                      "name": "Laptop Computer",
+                      "sku": "LAP-2024-001",
+                      "category": {
+                        "id": "CAT-0001",
+                        "name": "Electronics"
+                      }
+                    },
+                    "location": {
+                      "id": "LOC-0001",
+                      "name": "Warehouse A",
+                      "code": "WH-A"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Bad Request - Invalid query parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemLocationErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "Unknown query parameter: invalid_param",
+                "data": null
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized - Invalid or missing authentication token",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemLocationErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "Unauthorized",
+                "data": null
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden - User must belong to an organization",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemLocationErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "User must belong to an organization",
+                "data": null
+              }
+            }
+          }
+        }
+      }
+    },
+    "post": {
+      "tags": ["Item Locations"],
+      "summary": "Create a new item location",
+      "description": "Assign an item to a location with a specific quantity. This tracks the distribution of items across multiple storage locations. When an item is first assigned to a location, its tracking mode may change from 'abstract' to 'bulk'.",
+      "operationId": "createItemLocation",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ItemLocationInput"
+            },
+            "examples": {
+              "basic_assignment": {
+                "summary": "Basic item location assignment",
+                "value": {
+                  "org_id": "org_xyz789",
+                  "item_id": "ITM-0001",
+                  "location_id": "LOC-0001",
+                  "quantity": 25.5,
+                  "moved_date": "2024-01-15",
+                  "notes": "Initial stock placement"
+                }
+              },
+              "minimal_assignment": {
+                "summary": "Minimal required fields",
+                "value": {
+                  "org_id": "org_xyz789",
+                  "item_id": "ITM-0002",
+                  "location_id": "LOC-0002",
+                  "quantity": 10
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Item location created successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "success"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Resource created successfully"
+                  },
+                  "data": {
+                    "$ref": "#/components/schemas/ItemLocation"
+                  }
+                }
+              },
+              "example": {
+                "status": "success",
+                "message": "Resource created successfully",
+                "data": {
+                  "id": "IL-0001",
+                  "quantity": 25.5,
+                  "moved_date": "2024-01-15",
+                  "notes": "Initial stock placement",
+                  "created_at": "2024-01-15T10:30:00Z",
+                  "updated_at": "2024-01-15T10:30:00Z",
+                  "organization": {
+                    "id": "org_xyz789",
+                    "name": "ACME Corporation"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Bad Request - Empty data or invalid input",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemLocationErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "Data cannot be empty",
+                "data": null
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized - Invalid or missing authentication token",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemLocationErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "Unauthorized",
+                "data": null
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden - User must belong to an organization",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemLocationErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "User must belong to an organization",
+                "data": null
+              }
+            }
+          }
+        },
+        "409": {
+          "description": "Conflict - Item already assigned to this location",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemLocationErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "This item is already assigned to this location for the organization",
+                "data": null
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error - Invalid input data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemLocationValidationErrorResponse"
+              },
+              "example": {
+                "message": "The given data was invalid.",
+                "errors": {
+                  "item_id": ["The selected item is invalid"],
+                  "location_id": ["The selected location is invalid"],
+                  "quantity": ["The quantity cannot be negative"]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/item-locations/{id}": {
+    "get": {
+      "tags": ["Item Locations"],
+      "summary": "Get item location by ID",
+      "description": "Retrieve a specific item location by its public ID with optional related data.",
+      "operationId": "getItemLocationById",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "Public ID of the item location to retrieve",
+          "schema": {
+            "type": "string"
+          },
+          "example": "IL-0001"
+        },
+        {
+          "name": "with",
+          "in": "query",
+          "description": "Include related data (comma-separated). Available: item, item.category, item.status, item.unitOfMeasure, location, organization",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "item,location,item.category"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Item location retrieved successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "success"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Item location retrieved successfully"
+                  },
+                  "data": {
+                    "$ref": "#/components/schemas/ItemLocation"
+                  }
+                }
+              },
+              "example": {
+                "status": "success",
+                "message": "Item location retrieved successfully",
+                "data": {
+                  "id": "IL-0001",
+                  "quantity": 25.5,
+                  "moved_date": "2024-01-15",
+                  "notes": "Items stored on shelf B3, handle with care",
+                  "created_at": "2024-01-15T10:30:00Z",
+                  "updated_at": "2024-01-15T10:30:00Z",
+                  "organization": {
+                    "id": "org_xyz789",
+                    "name": "ACME Corporation"
+                  },
+                  "item": {
+                    "id": "ITM-0001",
+                    "name": "Laptop Computer",
+                    "sku": "LAP-2024-001"
+                  },
+                  "location": {
+                    "id": "LOC-0001",
+                    "name": "Warehouse A",
+                    "code": "WH-A"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized - Invalid or missing authentication token",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemLocationErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "Unauthorized",
+                "data": null
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden - User must belong to an organization",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemLocationErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "User must belong to an organization",
+                "data": null
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Not Found - Item location does not exist or does not belong to user's organization",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemLocationErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "Resource not found",
+                "data": null
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/item-locations/move": {
+    "post": {
+      "tags": ["Item Locations"],
+      "summary": "Move items between locations",
+      "description": "Move a specified quantity of an item from one location to another. This operation handles partial moves and automatically manages quantities at both source and destination locations. If the entire quantity is moved from the source, the source item location record is deleted.",
+      "operationId": "moveItemBetweenLocations",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ItemMoveRequest"
+            },
+            "examples": {
+              "partial_move": {
+                "summary": "Move part of item quantity",
+                "value": {
+                  "org_id": "org_xyz789",
+                  "item_id": "ITM-0001",
+                  "from_location_id": "LOC-0001",
+                  "to_location_id": "LOC-0002",
+                  "quantity": 10.0,
+                  "moved_date": "2024-01-16",
+                  "notes": "Moved for maintenance purposes"
+                }
+              },
+              "full_move": {
+                "summary": "Move entire quantity to new location",
+                "value": {
+                  "org_id": "org_xyz789",
+                  "item_id": "ITM-0002",
+                  "from_location_id": "LOC-0003",
+                  "to_location_id": "LOC-0004",
+                  "quantity": 50.0
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Items moved successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "success"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Item moved successfully"
+                  },
+                  "data": {
+                    "type": "null",
+                    "example": null
+                  }
+                }
+              },
+              "example": {
+                "status": "success",
+                "message": "Item moved successfully",
+                "data": null
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Bad Request - Insufficient quantity or invalid operation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemLocationErrorResponse"
+              },
+              "examples": {
+                "insufficient_quantity": {
+                  "summary": "Not enough quantity available",
+                  "value": {
+                    "status": "error",
+                    "message": "Not enough quantity available at the source location",
+                    "data": null
+                  }
+                },
+                "negative_quantity": {
+                  "summary": "Negative quantity provided",
+                  "value": {
+                    "status": "error",
+                    "message": "Quantity cannot be negative",
+                    "data": null
+                  }
+                }
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized - Invalid or missing authentication token",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemLocationErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "Unauthorized",
+                "data": null
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden - User must belong to an organization",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemLocationErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "User must belong to an organization",
+                "data": null
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error - Invalid input data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemLocationValidationErrorResponse"
+              },
+              "example": {
+                "message": "The given data was invalid.",
+                "errors": {
+                  "from_location_id": [
+                    "The selected source location is invalid"
+                  ],
+                  "to_location_id": [
+                    "The destination location must be different from the source location"
+                  ],
+                  "quantity": ["The quantity is required"]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

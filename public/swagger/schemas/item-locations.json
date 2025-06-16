@@ -1,0 +1,283 @@
+{
+  "ItemLocation": {
+    "type": "object",
+    "description": "An item location represents the assignment of a specific quantity of an item to a particular location. This enables tracking of item distribution across multiple storage locations.",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Unique public identifier for the item location (e.g., 'IL-0001')",
+        "example": "IL-0001"
+      },
+      "quantity": {
+        "type": "number",
+        "format": "decimal",
+        "description": "Quantity of the item stored at this location",
+        "minimum": 0,
+        "example": 25.5
+      },
+      "moved_date": {
+        "type": "string",
+        "format": "date",
+        "description": "Date when the item was moved to this location (ISO 8601 date format)",
+        "nullable": true,
+        "example": "2024-01-15"
+      },
+      "notes": {
+        "type": "string",
+        "description": "Additional notes about this item location assignment",
+        "nullable": true,
+        "maxLength": 65535,
+        "example": "Items stored on shelf B3, handle with care"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "ISO 8601 timestamp when the item location was created",
+        "example": "2024-01-15T10:30:00Z"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "ISO 8601 timestamp when the item location was last updated",
+        "example": "2024-01-16T14:20:00Z"
+      },
+      "organization": {
+        "type": "object",
+        "description": "Organization information",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Organization identifier",
+            "example": "org_xyz789"
+          },
+          "name": {
+            "type": "string",
+            "description": "Organization name",
+            "example": "ACME Corporation"
+          }
+        }
+      },
+      "item": {
+        "$ref": "#/components/schemas/Item",
+        "description": "Item details (included when 'item' is requested in 'with' parameter)"
+      },
+      "location": {
+        "$ref": "#/components/schemas/Location",
+        "description": "Location details (included when 'location' is requested in 'with' parameter)"
+      }
+    },
+    "required": ["id", "quantity", "created_at", "updated_at", "organization"]
+  },
+  "ItemLocationInput": {
+    "type": "object",
+    "description": "Input schema for creating or updating an item location",
+    "properties": {
+      "org_id": {
+        "type": "string",
+        "description": "Organization ID (required)",
+        "example": "org_xyz789"
+      },
+      "item_id": {
+        "type": "string",
+        "description": "Item ID that will be assigned to the location (required)",
+        "example": "ITM-0001"
+      },
+      "location_id": {
+        "type": "string",
+        "description": "Location ID where the item will be stored (required)",
+        "example": "LOC-0001"
+      },
+      "quantity": {
+        "type": "number",
+        "format": "decimal",
+        "description": "Quantity of the item to assign to this location (required, must be >= 0)",
+        "minimum": 0,
+        "example": 25.5
+      },
+      "moved_date": {
+        "type": "string",
+        "format": "date",
+        "description": "Date when the item was moved to this location (optional, YYYY-MM-DD format)",
+        "nullable": true,
+        "example": "2024-01-15"
+      },
+      "notes": {
+        "type": "string",
+        "description": "Additional notes about this item location assignment (optional, max 65535 characters)",
+        "nullable": true,
+        "maxLength": 65535,
+        "example": "Items stored on shelf B3, handle with care"
+      }
+    },
+    "required": ["org_id", "item_id", "location_id", "quantity"]
+  },
+  "ItemMoveRequest": {
+    "type": "object",
+    "description": "Input schema for moving items between locations",
+    "properties": {
+      "org_id": {
+        "type": "string",
+        "description": "Organization ID (required)",
+        "example": "org_xyz789"
+      },
+      "item_id": {
+        "type": "string",
+        "description": "Item ID to move (required)",
+        "example": "ITM-0001"
+      },
+      "from_location_id": {
+        "type": "string",
+        "description": "Source location ID (required)",
+        "example": "LOC-0001"
+      },
+      "to_location_id": {
+        "type": "string",
+        "description": "Destination location ID (required, must be different from source)",
+        "example": "LOC-0002"
+      },
+      "quantity": {
+        "type": "number",
+        "format": "decimal",
+        "description": "Quantity to move (required, must be >= 0 and <= available quantity)",
+        "minimum": 0,
+        "example": 10.0
+      },
+      "moved_date": {
+        "type": "string",
+        "format": "date",
+        "description": "Date of the move operation (optional, YYYY-MM-DD format)",
+        "nullable": true,
+        "example": "2024-01-16"
+      },
+      "notes": {
+        "type": "string",
+        "description": "Notes about the move operation (optional, max 65535 characters)",
+        "nullable": true,
+        "maxLength": 65535,
+        "example": "Moved for maintenance purposes"
+      }
+    },
+    "required": [
+      "org_id",
+      "item_id",
+      "from_location_id",
+      "to_location_id",
+      "quantity"
+    ]
+  },
+  "ItemLocationResponse": {
+    "type": "object",
+    "description": "Standard API response wrapper for item location data",
+    "properties": {
+      "status": {
+        "type": "string",
+        "description": "Response status indicator",
+        "example": "success"
+      },
+      "message": {
+        "type": "string",
+        "description": "Human-readable response message",
+        "example": "Item locations retrieved successfully"
+      },
+      "data": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ItemLocation"
+          },
+          {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemLocation"
+            }
+          }
+        ],
+        "description": "Item location data - single item location or array of item locations"
+      }
+    },
+    "required": ["status", "message", "data"]
+  },
+  "ItemLocationErrorResponse": {
+    "type": "object",
+    "description": "Standard API error response for item location operations",
+    "properties": {
+      "status": {
+        "type": "string",
+        "description": "Error status indicator",
+        "example": "error"
+      },
+      "message": {
+        "type": "string",
+        "description": "Error message describing what went wrong",
+        "example": "Resource not found"
+      },
+      "data": {
+        "type": "null",
+        "description": "Always null for error responses",
+        "example": null
+      }
+    },
+    "required": ["status", "message", "data"]
+  },
+  "ItemLocationValidationErrorResponse": {
+    "type": "object",
+    "description": "Validation error response for item location operations",
+    "properties": {
+      "message": {
+        "type": "string",
+        "description": "General validation error message",
+        "example": "The given data was invalid."
+      },
+      "errors": {
+        "type": "object",
+        "description": "Field-specific validation errors",
+        "properties": {
+          "item_id": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Item ID field validation errors",
+            "example": ["The selected item is invalid"]
+          },
+          "location_id": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Location ID field validation errors",
+            "example": [
+              "This item is already assigned to this location for the organization"
+            ]
+          },
+          "quantity": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Quantity field validation errors",
+            "example": ["The quantity cannot be negative"]
+          },
+          "from_location_id": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Source location field validation errors (for move operations)",
+            "example": ["The selected source location is invalid"]
+          },
+          "to_location_id": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Destination location field validation errors (for move operations)",
+            "example": [
+              "The destination location must be different from the source location"
+            ]
+          }
+        }
+      }
+    },
+    "required": ["message", "errors"]
+  }
+}
