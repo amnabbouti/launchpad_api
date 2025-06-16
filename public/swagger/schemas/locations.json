@@ -1,0 +1,363 @@
+{
+  "Location": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Unique location identifier",
+        "example": "loc_abc123"
+      },
+      "name": {
+        "type": "string",
+        "description": "Location name",
+        "example": "Main Warehouse"
+      },
+      "code": {
+        "type": "string",
+        "description": "Location code for easy identification and sorting",
+        "example": "WH-MAIN"
+      },
+      "description": {
+        "type": "string",
+        "nullable": true,
+        "description": "Detailed location description",
+        "example": "Primary storage facility for all products and components"
+      },
+      "path": {
+        "type": "string",
+        "description": "Hierarchical path showing the location's position in the tree structure",
+        "example": "/loc_abc123/loc_def456/"
+      },
+      "is_active": {
+        "type": "boolean",
+        "description": "Whether the location is currently active and available for use",
+        "example": true
+      },
+      "parent_id": {
+        "type": "string",
+        "nullable": true,
+        "description": "Parent location ID (null for root/top-level locations)",
+        "example": "loc_parent123"
+      },
+      "organization": {
+        "type": "object",
+        "description": "Organization this location belongs to",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "org_xyz789"
+          },
+          "name": {
+            "type": "string",
+            "example": "ACME Corporation"
+          }
+        }
+      },
+      "parent": {
+        "type": "object",
+        "nullable": true,
+        "description": "Parent location details (null for root locations)",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "loc_parent123"
+          },
+          "name": {
+            "type": "string",
+            "example": "Main Building"
+          },
+          "code": {
+            "type": "string",
+            "example": "MB-01"
+          },
+          "path": {
+            "type": "string",
+            "example": "/loc_parent123/"
+          }
+        }
+      },
+      "children": {
+        "type": "array",
+        "description": "Direct child locations (first level only)",
+        "items": {
+          "$ref": "#/components/schemas/LocationSummary"
+        }
+      },
+      "childrenRecursive": {
+        "type": "array",
+        "description": "All nested child locations recursively (complete hierarchy)",
+        "items": {
+          "$ref": "#/components/schemas/Location"
+        }
+      },
+      "items": {
+        "type": "array",
+        "description": "Items stored in this location (when included with ?with=items)",
+        "items": {
+          "$ref": "#/components/schemas/ItemSummary"
+        }
+      },
+      "items_count": {
+        "type": "integer",
+        "description": "Total number of items stored in this location",
+        "example": 45
+      },
+      "attachments": {
+        "type": "array",
+        "description": "Files and documents attached to this location",
+        "items": {
+          "$ref": "#/components/schemas/Attachment"
+        }
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "Location creation timestamp",
+        "example": "2024-01-15T10:30:00Z"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "Last modification timestamp",
+        "example": "2024-01-15T10:30:00Z"
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "code",
+      "path",
+      "is_active",
+      "created_at",
+      "updated_at"
+    ]
+  },
+  "LocationWithHierarchy": {
+    "type": "object",
+    "description": "Location with complete hierarchical children structure",
+    "allOf": [
+      {
+        "$ref": "#/components/schemas/Location"
+      },
+      {
+        "type": "object",
+        "properties": {
+          "childrenRecursive": {
+            "type": "array",
+            "description": "Complete nested hierarchy of all child locations",
+            "items": {
+              "$ref": "#/components/schemas/LocationWithHierarchy"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "LocationCreateRequest": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "Location name (must be unique within the organization)",
+        "minLength": 1,
+        "maxLength": 255,
+        "example": "Main Warehouse"
+      },
+      "code": {
+        "type": "string",
+        "description": "Location code for identification (must be unique within the organization)",
+        "minLength": 1,
+        "maxLength": 50,
+        "pattern": "^[A-Z0-9_-]+$",
+        "example": "WH-MAIN"
+      },
+      "description": {
+        "type": "string",
+        "nullable": true,
+        "description": "Optional detailed description of the location",
+        "maxLength": 1000,
+        "example": "Primary storage facility for all products and electronic components"
+      },
+      "parent_id": {
+        "type": "string",
+        "nullable": true,
+        "description": "Parent location ID (null for root/top-level locations). Must be an existing location ID.",
+        "example": "loc_parent123"
+      },
+      "is_active": {
+        "type": "boolean",
+        "description": "Whether the location should be active upon creation",
+        "default": true,
+        "example": true
+      }
+    },
+    "required": ["name", "code"],
+    "example": {
+      "name": "Electronics Section",
+      "code": "WH-MAIN-ELEC",
+      "description": "Dedicated area for electronic components and devices",
+      "parent_id": "loc_abc123",
+      "is_active": true
+    }
+  },
+  "LocationUpdateRequest": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "Updated location name (must be unique within the organization)",
+        "minLength": 1,
+        "maxLength": 255,
+        "example": "Renovated Main Warehouse"
+      },
+      "code": {
+        "type": "string",
+        "description": "Updated location code (must be unique within the organization)",
+        "minLength": 1,
+        "maxLength": 50,
+        "pattern": "^[A-Z0-9_-]+$",
+        "example": "WH-MAIN-RENOVATED"
+      },
+      "description": {
+        "type": "string",
+        "nullable": true,
+        "description": "Updated location description",
+        "maxLength": 1000,
+        "example": "Newly renovated and expanded primary storage facility"
+      },
+      "parent_id": {
+        "type": "string",
+        "nullable": true,
+        "description": "New parent location ID (null to make it a root location). Changing this will recalculate the hierarchical path.",
+        "example": "loc_new_parent456"
+      },
+      "is_active": {
+        "type": "boolean",
+        "description": "Whether the location should be active. Deactivating a location may affect item accessibility.",
+        "example": true
+      }
+    },
+    "example": {
+      "name": "Expanded Electronics Warehouse",
+      "description": "Newly expanded warehouse dedicated to electronic components",
+      "is_active": true
+    }
+  },
+  "LocationSummary": {
+    "type": "object",
+    "description": "Simplified location information for references and listings",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Location identifier",
+        "example": "loc_abc123"
+      },
+      "name": {
+        "type": "string",
+        "description": "Location name",
+        "example": "Main Warehouse"
+      },
+      "code": {
+        "type": "string",
+        "description": "Location code",
+        "example": "WH-MAIN"
+      },
+      "path": {
+        "type": "string",
+        "description": "Hierarchical path",
+        "example": "/loc_abc123/"
+      },
+      "is_active": {
+        "type": "boolean",
+        "description": "Whether the location is active",
+        "example": true
+      },
+      "items_count": {
+        "type": "integer",
+        "description": "Number of items in this location",
+        "example": 25
+      }
+    },
+    "required": ["id", "name", "code", "path", "is_active"]
+  },
+  "LocationHierarchyFlat": {
+    "type": "object",
+    "description": "Flattened location data without nested children",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Location identifier",
+        "example": "loc_abc123"
+      },
+      "name": {
+        "type": "string",
+        "description": "Location name",
+        "example": "Main Warehouse"
+      },
+      "code": {
+        "type": "string",
+        "description": "Location code",
+        "example": "WH-MAIN"
+      },
+      "description": {
+        "type": "string",
+        "nullable": true,
+        "description": "Location description",
+        "example": "Primary storage facility"
+      },
+      "path": {
+        "type": "string",
+        "description": "Hierarchical path",
+        "example": "/loc_abc123/"
+      },
+      "is_active": {
+        "type": "boolean",
+        "description": "Whether the location is active",
+        "example": true
+      },
+      "parent_id": {
+        "type": "string",
+        "nullable": true,
+        "description": "Parent location ID",
+        "example": "loc_parent123"
+      },
+      "level": {
+        "type": "integer",
+        "description": "Hierarchy level (0 for root, 1 for first level children, etc.)",
+        "example": 1
+      },
+      "items_count": {
+        "type": "integer",
+        "description": "Number of items in this location",
+        "example": 45
+      },
+      "children_count": {
+        "type": "integer",
+        "description": "Number of direct child locations",
+        "example": 3
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "Creation timestamp",
+        "example": "2024-01-15T10:30:00Z"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "Last update timestamp",
+        "example": "2024-01-15T10:30:00Z"
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "code",
+      "path",
+      "is_active",
+      "level",
+      "items_count",
+      "children_count"
+    ]
+  }
+}

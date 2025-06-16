@@ -1,5 +1,11 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 const schemasDir = path.join(__dirname, 'schemas');
 const pathsDir = path.join(__dirname, 'paths');
 const outputFile = path.join(__dirname, 'openapi.json');

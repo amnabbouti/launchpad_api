@@ -28,6 +28,10 @@
       "description": "Item management endpoints with optional filtering, search, and maintenance operations"
     },
     {
+      "name": "Locations",
+      "description": "Location management endpoints for organizing items in hierarchical storage structures"
+    },
+    {
       "name": "Organizations",
       "description": "Organization management endpoints for creating, accessing, and managing organizational data"
     },

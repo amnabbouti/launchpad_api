@@ -1,0 +1,1163 @@
+{
+  "/api/locations": {
+    "get": {
+      "tags": ["Locations"],
+      "summary": "Get all locations",
+      "description": "Retrieve all locations with advanced filtering and optional hierarchical view. Supports searching by name, code, description, active status, and parent relationships. By default returns hierarchical structure with nested children.",
+      "operationId": "getLocations",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "hierarchy",
+          "in": "query",
+          "description": "Return locations in hierarchical structure (true) or flat list (false). Hierarchical view shows nested parent-child relationships.",
+          "required": false,
+          "schema": {
+            "type": "boolean",
+            "default": true
+          },
+          "example": true
+        },
+        {
+          "name": "name",
+          "in": "query",
+          "description": "Filter by location name (partial match, case-insensitive)",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "Warehouse"
+        },
+        {
+          "name": "code",
+          "in": "query",
+          "description": "Filter by location code (partial match, case-insensitive)",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "WH-"
+        },
+        {
+          "name": "description",
+          "in": "query",
+          "description": "Filter by location description (partial match, case-insensitive)",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "storage"
+        },
+        {
+          "name": "is_active",
+          "in": "query",
+          "description": "Filter by active status. Use 'true' for active, 'false' for inactive locations.",
+          "required": false,
+          "schema": {
+            "type": "boolean"
+          },
+          "example": true
+        },
+        {
+          "name": "parent_id",
+          "in": "query",
+          "description": "Filter by parent location ID. Use 'null' to get root locations (no parent).",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "loc_abc123"
+        },
+        {
+          "name": "with",
+          "in": "query",
+          "description": "Include related data (comma-separated). Available: parent, children, childrenRecursive, organization, items, attachments",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "parent,children,organization,items"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Locations retrieved successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "success"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Success"
+                  },
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/Location"
+                    }
+                  }
+                }
+              },
+              "examples": {
+                "hierarchical": {
+                  "summary": "Hierarchical locations with nested children",
+                  "value": {
+                    "status": "success",
+                    "message": "Success",
+                    "data": [
+                      {
+                        "id": "loc_abc123",
+                        "name": "Main Warehouse",
+                        "code": "WH-MAIN",
+                        "description": "Primary storage facility for all products",
+                        "path": "/loc_abc123/",
+                        "is_active": true,
+                        "parent_id": null,
+                        "organization": {
+                          "id": "org_xyz789",
+                          "name": "ACME Corporation"
+                        },
+                        "childrenRecursive": [
+                          {
+                            "id": "loc_def456",
+                            "name": "Electronics Section",
+                            "code": "WH-MAIN-ELEC",
+                            "description": "Dedicated area for electronic components",
+                            "path": "/loc_abc123/loc_def456/",
+                            "is_active": true,
+                            "parent_id": "loc_abc123",
+                            "childrenRecursive": [
+                              {
+                                "id": "loc_ghi789",
+                                "name": "Shelf A1",
+                                "code": "WH-MAIN-ELEC-A1",
+                                "description": "Top shelf for small electronics",
+                                "path": "/loc_abc123/loc_def456/loc_ghi789/",
+                                "is_active": true,
+                                "parent_id": "loc_def456",
+                                "childrenRecursive": [],
+                                "items_count": 25
+                              }
+                            ],
+                            "items_count": 45
+                          }
+                        ],
+                        "items_count": 120,
+                        "created_at": "2024-01-15T10:30:00Z",
+                        "updated_at": "2024-01-15T10:30:00Z"
+                      }
+                    ]
+                  }
+                },
+                "filtered": {
+                  "summary": "Filtered locations by active status",
+                  "value": {
+                    "status": "success",
+                    "message": "Success",
+                    "data": [
+                      {
+                        "id": "loc_abc123",
+                        "name": "Main Warehouse",
+                        "code": "WH-MAIN",
+                        "description": "Primary storage facility",
+                        "path": "/loc_abc123/",
+                        "is_active": true,
+                        "parent_id": null,
+                        "items_count": 120,
+                        "created_at": "2024-01-15T10:30:00Z",
+                        "updated_at": "2024-01-15T10:30:00Z"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Bad Request - Invalid query parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "error"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Unknown query parameter: invalid_param"
+                  },
+                  "data": {
+                    "type": "null",
+                    "example": null
+                  }
+                }
+              },
+              "example": {
+                "status": "error",
+                "message": "Unknown query parameter: invalid_param",
+                "data": null
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized - Invalid or missing authentication token",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "error"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Unauthorized"
+                  },
+                  "data": {
+                    "type": "null",
+                    "example": null
+                  }
+                }
+              },
+              "example": {
+                "status": "error",
+                "message": "Unauthorized",
+                "data": null
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden - User must belong to an organization or insufficient permissions",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "error"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "User must belong to an organization"
+                  },
+                  "data": {
+                    "type": "null",
+                    "example": null
+                  }
+                }
+              },
+              "example": {
+                "status": "error",
+                "message": "User must belong to an organization",
+                "data": null
+              }
+            }
+          }
+        }
+      }
+    },
+    "post": {
+      "tags": ["Locations"],
+      "summary": "Create a new location",
+      "description": "Create a new location in the organization. Supports hierarchical structure by specifying parent_id. The system automatically generates the path based on the hierarchy.",
+      "operationId": "createLocation",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/LocationCreateRequest"
+            },
+            "examples": {
+              "root_location": {
+                "summary": "Root level warehouse",
+                "value": {
+                  "name": "Main Warehouse",
+                  "code": "WH-MAIN",
+                  "description": "Primary storage facility for all products",
+                  "parent_id": null,
+                  "is_active": true
+                }
+              },
+              "child_location": {
+                "summary": "Child location within warehouse",
+                "value": {
+                  "name": "Electronics Section",
+                  "code": "WH-MAIN-ELEC",
+                  "description": "Dedicated area for electronic components and devices",
+                  "parent_id": "loc_abc123",
+                  "is_active": true
+                }
+              },
+              "nested_location": {
+                "summary": "Deeply nested storage location",
+                "value": {
+                  "name": "Shelf A1",
+                  "code": "WH-MAIN-ELEC-A1",
+                  "description": "Top shelf for small electronic components",
+                  "parent_id": "loc_def456",
+                  "is_active": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Location created successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "success"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Resource created successfully"
+                  },
+                  "data": {
+                    "$ref": "#/components/schemas/Location"
+                  }
+                }
+              },
+              "examples": {
+                "created_location": {
+                  "summary": "Newly created location",
+                  "value": {
+                    "status": "success",
+                    "message": "Resource created successfully",
+                    "data": {
+                      "id": "loc_new123",
+                      "name": "Electronics Section",
+                      "code": "WH-MAIN-ELEC",
+                      "description": "Dedicated area for electronic components",
+                      "path": "/loc_abc123/loc_new123/",
+                      "is_active": true,
+                      "parent_id": "loc_abc123",
+                      "parent": {
+                        "id": "loc_abc123",
+                        "name": "Main Warehouse",
+                        "code": "WH-MAIN"
+                      },
+                      "organization": {
+                        "id": "org_xyz789",
+                        "name": "ACME Corporation"
+                      },
+                      "items_count": 0,
+                      "created_at": "2024-01-16T14:20:00Z",
+                      "updated_at": "2024-01-16T14:20:00Z"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Bad Request - Empty data or invalid input",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "error"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Data cannot be empty"
+                  },
+                  "data": {
+                    "type": "null",
+                    "example": null
+                  }
+                }
+              },
+              "example": {
+                "status": "error",
+                "message": "Data cannot be empty",
+                "data": null
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized - Invalid or missing authentication token",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "error"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Unauthorized"
+                  },
+                  "data": {
+                    "type": "null",
+                    "example": null
+                  }
+                }
+              },
+              "example": {
+                "status": "error",
+                "message": "Unauthorized",
+                "data": null
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden - User must belong to an organization or insufficient permissions",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "error"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "User must belong to an organization"
+                  },
+                  "data": {
+                    "type": "null",
+                    "example": null
+                  }
+                }
+              },
+              "example": {
+                "status": "error",
+                "message": "User must belong to an organization",
+                "data": null
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error - Invalid input data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "example": "The given data was invalid."
+                  },
+                  "errors": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "example": [
+                          "The location name is required and cannot be empty"
+                        ]
+                      },
+                      "code": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "example": [
+                          "This location code already exists in your organization"
+                        ]
+                      },
+                      "parent_id": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "example": [
+                          "The selected parent location does not exist in your organization"
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              "example": {
+                "message": "The given data was invalid."
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/locations/{id}": {
+    "get": {
+      "tags": ["Locations"],
+      "summary": "Get location by ID",
+      "description": "Retrieve a specific location with its details and hierarchical children. Automatically loads the complete hierarchy including all nested children.",
+      "operationId": "getLocationById",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Location ID",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "loc_abc123"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Location retrieved successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "success"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Resource retrieved successfully"
+                  },
+                  "data": {
+                    "$ref": "#/components/schemas/LocationWithHierarchy"
+                  }
+                }
+              },
+              "examples": {
+                "location_with_hierarchy": {
+                  "summary": "Location with complete hierarchy",
+                  "value": {
+                    "status": "success",
+                    "message": "Resource retrieved successfully",
+                    "data": {
+                      "id": "loc_abc123",
+                      "name": "Main Warehouse",
+                      "code": "WH-MAIN",
+                      "description": "Primary storage facility for all products",
+                      "path": "/loc_abc123/",
+                      "is_active": true,
+                      "parent_id": null,
+                      "organization": {
+                        "id": "org_xyz789",
+                        "name": "ACME Corporation"
+                      },
+                      "parent": null,
+                      "childrenRecursive": [
+                        {
+                          "id": "loc_def456",
+                          "name": "Electronics Section",
+                          "code": "WH-MAIN-ELEC",
+                          "description": "Electronic components area",
+                          "path": "/loc_abc123/loc_def456/",
+                          "is_active": true,
+                          "parent_id": "loc_abc123",
+                          "childrenRecursive": [
+                            {
+                              "id": "loc_ghi789",
+                              "name": "Shelf A1",
+                              "code": "WH-MAIN-ELEC-A1",
+                              "description": "Top shelf for small electronics",
+                              "path": "/loc_abc123/loc_def456/loc_ghi789/",
+                              "is_active": true,
+                              "parent_id": "loc_def456",
+                              "childrenRecursive": [],
+                              "items_count": 25
+                            }
+                          ],
+                          "items_count": 45
+                        }
+                      ],
+                      "items_count": 120,
+                      "attachments": [],
+                      "created_at": "2024-01-15T10:30:00Z",
+                      "updated_at": "2024-01-15T10:30:00Z"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized - Invalid or missing authentication token",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "error"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Unauthorized"
+                  },
+                  "data": {
+                    "type": "null",
+                    "example": null
+                  }
+                }
+              },
+              "example": {
+                "status": "error",
+                "message": "Unauthorized",
+                "data": null
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden - User must belong to an organization or trying to access other organization's resources",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "error"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Trying to access other organization resources is not allowed, this action has been logged for security purposes"
+                  },
+                  "data": {
+                    "type": "null",
+                    "example": null
+                  }
+                }
+              },
+              "example": {
+                "status": "error",
+                "message": "Trying to access other organization resources is not allowed, this action has been logged for security purposes",
+                "data": null
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Not Found - Location does not exist",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "error"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Resource not found"
+                  },
+                  "data": {
+                    "type": "null",
+                    "example": null
+                  }
+                }
+              },
+              "example": {
+                "status": "error",
+                "message": "Resource not found",
+                "data": null
+              }
+            }
+          }
+        }
+      }
+    },
+    "patch": {
+      "tags": ["Locations"],
+      "summary": "Update location",
+      "description": "Update an existing location's information. Supports partial updates. When changing parent_id, the system automatically recalculates the hierarchical path.",
+      "operationId": "updateLocation",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Location ID",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "loc_abc123"
+        }
+      ],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/LocationUpdateRequest"
+            },
+            "examples": {
+              "name_update": {
+                "summary": "Update location name only",
+                "value": {
+                  "name": "Renovated Main Warehouse"
+                }
+              },
+              "deactivate": {
+                "summary": "Deactivate location",
+                "value": {
+                  "is_active": false
+                }
+              },
+              "move_location": {
+                "summary": "Move location to different parent",
+                "value": {
+                  "parent_id": "loc_new_parent456"
+                }
+              },
+              "promote_to_root": {
+                "summary": "Make location a root location",
+                "value": {
+                  "parent_id": null
+                }
+              },
+              "full_update": {
+                "summary": "Update multiple fields",
+                "value": {
+                  "name": "Expanded Electronics Warehouse",
+                  "code": "WH-ELEC-EXP",
+                  "description": "Expanded warehouse dedicated to electronic components and devices",
+                  "is_active": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Location updated successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "success"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Resource updated successfully"
+                  },
+                  "data": {
+                    "$ref": "#/components/schemas/Location"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Bad Request - Empty data or invalid input",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "error"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Data cannot be empty"
+                  },
+                  "data": {
+                    "type": "null",
+                    "example": null
+                  }
+                }
+              },
+              "example": {
+                "status": "error",
+                "message": "Data cannot be empty",
+                "data": null
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized - Invalid or missing authentication token",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "error"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Unauthorized"
+                  },
+                  "data": {
+                    "type": "null",
+                    "example": null
+                  }
+                }
+              },
+              "example": {
+                "status": "error",
+                "message": "Unauthorized",
+                "data": null
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden - User must belong to an organization or trying to access other organization's resources",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "error"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Trying to access other organization resources is not allowed, this action has been logged for security purposes"
+                  },
+                  "data": {
+                    "type": "null",
+                    "example": null
+                  }
+                }
+              },
+              "example": {
+                "status": "error",
+                "message": "Trying to access other organization resources is not allowed, this action has been logged for security purposes",
+                "data": null
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Not Found - Location does not exist",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "error"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Resource not found"
+                  },
+                  "data": {
+                    "type": "null",
+                    "example": null
+                  }
+                }
+              },
+              "example": {
+                "status": "error",
+                "message": "Resource not found",
+                "data": null
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error - Invalid input data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "example": "The given data was invalid."
+                  },
+                  "errors": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "example": [
+                          "The location name cannot exceed 255 characters"
+                        ]
+                      },
+                      "code": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "example": [
+                          "This location code already exists in your organization"
+                        ]
+                      },
+                      "parent_id": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "example": [
+                          "The selected parent location does not exist in your organization"
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              "example": {
+                "message": "The given data was invalid.",
+                "errors": {
+                  "name": ["The location name is required and cannot be empty"],
+                  "code": [
+                    "This location code already exists in your organization"
+                  ],
+                  "parent_id": [
+                    "The selected parent location does not exist in your organization"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "delete": {
+      "tags": ["Locations"],
+      "summary": "Delete location",
+      "description": "Delete a location from the system. Important: If the location has child locations, they will automatically become top-level locations (orphaned). Items in this location will become unassigned and may need to be relocated.",
+      "operationId": "deleteLocation",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Location ID",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "loc_abc123"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Location deleted successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "success": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Resource deleted successfully"
+                  },
+                  "warning": {
+                    "type": "string",
+                    "description": "Warning message if location had children",
+                    "example": "Warning: Deleting a location with child locations. Child locations will become top-level locations."
+                  }
+                }
+              },
+              "examples": {
+                "simple_delete": {
+                  "summary": "Delete location without children",
+                  "value": {
+                    "success": true,
+                    "message": "Resource deleted successfully"
+                  }
+                },
+                "delete_with_children": {
+                  "summary": "Delete location with child locations",
+                  "value": {
+                    "success": true,
+                    "message": "Resource deleted successfully",
+                    "warning": "Warning: Deleting a location with child locations. Child locations will become top-level locations."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized - Invalid or missing authentication token",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "error"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Unauthorized"
+                  },
+                  "data": {
+                    "type": "null",
+                    "example": null
+                  }
+                }
+              },
+              "example": {
+                "status": "error",
+                "message": "Unauthorized",
+                "data": null
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden - User must belong to an organization or trying to access other organization's resources",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "error"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Trying to access other organization resources is not allowed, this action has been logged for security purposes"
+                  },
+                  "data": {
+                    "type": "null",
+                    "example": null
+                  }
+                }
+              },
+              "example": {
+                "status": "error",
+                "message": "Trying to access other organization resources is not allowed, this action has been logged for security purposes",
+                "data": null
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Not Found - Location does not exist",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "error"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Resource not found"
+                  },
+                  "data": {
+                    "type": "null",
+                    "example": null
+                  }
+                }
+              },
+              "example": {
+                "status": "error",
+                "message": "Resource not found",
+                "data": null
+              }
+            }
+          }
+        },
+        "409": {
+          "description": "Conflict - Location cannot be deleted due to dependencies",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "error"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Cannot delete resource as it is currently in use"
+                  },
+                  "data": {
+                    "type": "null",
+                    "example": null
+                  }
+                }
+              },
+              "example": {
+                "status": "error",
+                "message": "Cannot delete resource as it is currently in use",
+                "data": null
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
