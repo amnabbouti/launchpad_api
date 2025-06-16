@@ -8,16 +8,16 @@ class AIService {
     };
     this.rateLimitedUntil = 0;
     this.rateLimitBackoffPeriod = 10 * 60 * 1000;
-    
+
     this.isInFallbackMode = true;
     this.apiKey = '';
     this.loadApiKey();
-    
-    // Swagger data 
+
+    // Swagger data
     this.swaggerData = null;
     this.hasLoadedSwagger = false;
     this.loadSwaggerData();
-    
+
     // Base system message
     this.systemMessage = `You are an API assistant for the Inventory Management System. You have comprehensive knowledge of all API endpoints, authentication mechanisms, and usage patterns.
 
@@ -150,10 +150,10 @@ Quick Replies:
       console.error('Error loading API key:', error);
     }
   }
-  
+
   async loadSwaggerData() {
     try {
-      const response = await fetch('/swagger/openapi.yaml');
+      const response = await fetch('/swagger/openapi.json');
       if (response.ok) {
         const yamlText = await response.text();
         this.swaggerData = this.extractApiInfo(yamlText);
@@ -164,68 +164,73 @@ Quick Replies:
       console.error('Error loading Swagger data:', error);
     }
   }
-  
+
   extractApiInfo(yamlText) {
     try {
       const titleMatch = yamlText.match(/title:\s*([^\n]+)/);
-      const descriptionMatch = yamlText.match(/description:\s*\|([^#]+?)\n\s*version:/s);
-      
+      const descriptionMatch = yamlText.match(
+        /description:\s*\|([^#]+?)\n\s*version:/s,
+      );
+
       const info = {
         title: titleMatch ? titleMatch[1].trim() : 'Inventory Management API',
-        description: descriptionMatch 
-          ? descriptionMatch[1].trim().replace(/\n\s{2,}/g, '\n') 
+        description: descriptionMatch
+          ? descriptionMatch[1].trim().replace(/\n\s{2,}/g, '\n')
           : 'REST API for managing inventory items',
-        endpoints: {}
+        endpoints: {},
       };
-      
+
       const pathRegex = /\/([^:\s]+):([\s\S]*?)(?=^\/|\s*$)/gm;
       let pathMatch;
-      
+
       while ((pathMatch = pathRegex.exec(yamlText)) !== null) {
         const path = '/' + pathMatch[1].trim();
         const pathContent = pathMatch[2];
-        
+
         const methods = {};
-        const methodRegex = /(get|post|put|delete|patch):([\s\S]*?)(?=^\s{2,}(get|post|put|delete|patch):|$)/gmi;
+        const methodRegex =
+          /(get|post|put|delete|patch):([\s\S]*?)(?=^\s{2,}(get|post|put|delete|patch):|$)/gim;
         let methodMatch;
-        
+
         while ((methodMatch = methodRegex.exec(pathContent)) !== null) {
           const method = methodMatch[1].toUpperCase();
           const methodContent = methodMatch[2];
-          
-          const summary = (methodContent.match(/summary:\s*([^\n]+)/) || [])[1] || '';
-          const description = (methodContent.match(/description:\s*([^\n]+)/) || [])[1] || '';
-          
-          methods[method] = { 
+
+          const summary =
+            (methodContent.match(/summary:\s*([^\n]+)/) || [])[1] || '';
+          const description =
+            (methodContent.match(/description:\s*([^\n]+)/) || [])[1] || '';
+
+          methods[method] = {
             summary: summary.trim(),
-            description: description.trim()
+            description: description.trim(),
           };
         }
-        
+
         if (Object.keys(methods).length > 0) {
           info.endpoints[path] = { methods };
         }
       }
-      
+
       return info;
     } catch (error) {
       console.warn('Error parsing API info:', error);
       return {
         title: 'Inventory Management API',
         description: 'REST API for managing inventory',
-        endpoints: {}
+        endpoints: {},
       };
     }
   }
-  
+
   enhanceSystemMessage() {
     if (!this.swaggerData) return;
-    
+
     let apiInfo = `\n\nABOUT THE API:\nTitle: ${this.swaggerData.title}\nDescription: ${this.swaggerData.description}\n\nAVAILABLE ENDPOINTS:`;
-    
+
     for (const path in this.swaggerData.endpoints) {
       apiInfo += `\n${path}`;
-      
+
       const endpoint = this.swaggerData.endpoints[path];
       for (const method in endpoint.methods) {
         const info = endpoint.methods[method];
@@ -237,32 +242,31 @@ Quick Replies:
   formatResponse(aiResponse, userMessage) {
     let cleanedResponse = aiResponse;
     let quickReplies = [];
-    
-    const quickRepliesPattern = /(?:Quick Replies:|Suggested Questions:|You could ask:|Try asking about:)[\s]*((?:\s*-\s*[^\n]+\s*)+)$/i;
+
+    const quickRepliesPattern =
+      /(?:Quick Replies:|Suggested Questions:|You could ask:|Try asking about:)[\s]*((?:\s*-\s*[^\n]+\s*)+)$/i;
     const suggestionsMatch = aiResponse.match(quickRepliesPattern);
-    
+
     if (suggestionsMatch && suggestionsMatch[1]) {
       quickReplies = suggestionsMatch[1]
         .split(/\s*-\s*/)
-        .map(s => s.trim())
-        .filter(s => s && s.length > 0 && s.length < 100)
-        .slice(0, 4); 
-        
+        .map((s) => s.trim())
+        .filter((s) => s && s.length > 0 && s.length < 100)
+        .slice(0, 4);
+
       cleanedResponse = aiResponse.replace(quickRepliesPattern, '').trim();
     }
-    
+
     return {
       response: cleanedResponse,
       sentiment: 'neutral',
-      quickReplies: quickReplies
+      quickReplies: quickReplies,
     };
   }
-  
+
   prepareHistory(chatHistory) {
-    const messages = [
-      { role: 'system', content: this.systemMessage }
-    ];
-    
+    const messages = [{ role: 'system', content: this.systemMessage }];
+
     for (const message of chatHistory) {
       if (message.sender === 'user') {
         messages.push({ role: 'user', content: message.text });
@@ -270,58 +274,63 @@ Quick Replies:
         messages.push({ role: 'assistant', content: message.text });
       }
     }
-    
+
     return messages;
   }
-  
+
   async getResponse(userMessage, chatHistory = []) {
     try {
-      if ((this.isInFallbackMode && !this.apiKey) || Date.now() < this.rateLimitedUntil) {
+      if (
+        (this.isInFallbackMode && !this.apiKey) ||
+        Date.now() < this.rateLimitedUntil
+      ) {
         return {
-          response: "I'm sorry, but I've reached my query limit. Please try again later or check our documentation for information about the API.",
+          response:
+            "I'm sorry, but I've reached my query limit. Please try again later or check our documentation for information about the API.",
           sentiment: 'neutral',
-          quickReplies: []
+          quickReplies: [],
         };
       }
-      
+
       const chatHistoryCopy = [...chatHistory];
       chatHistoryCopy.push({ sender: 'user', text: userMessage });
       const messages = this.prepareHistory(chatHistoryCopy);
-      
+
       const relevantInfo = this.findRelevantApiInfo(userMessage);
       if (relevantInfo) {
         messages.push({
           role: 'system',
-          content: `Here is information about endpoints relevant to the query: ${relevantInfo}`
+          content: `Here is information about endpoints relevant to the query: ${relevantInfo}`,
         });
       }
-      
+
       const response = await this.makeApiRequest({
         model: this.model,
         messages: messages,
         max_tokens: 500,
-        temperature: 0.7
+        temperature: 0.7,
       });
-      
+
       this.isInFallbackMode = false;
       return this.formatResponse(response, userMessage);
     } catch (error) {
       console.error('Error getting AI response:', error);
-      
+
       this.isInFallbackMode = true;
-      
+
       if (this.isRateLimitError(error)) {
         this.rateLimitedUntil = Date.now() + this.rateLimitBackoffPeriod;
       }
-      
+
       return {
-        response: "I'm sorry, but I've reached my query limit. Please try again later or check our documentation for information about the API.",
+        response:
+          "I'm sorry, but I've reached my query limit. Please try again later or check our documentation for information about the API.",
         sentiment: 'neutral',
-        quickReplies: []
+        quickReplies: [],
       };
     }
   }
-  
+
   findRelevantApiInfo(userMessage) {
     if (!this.swaggerData || !this.swaggerData.endpoints) return null;
     const userQuery = userMessage.toLowerCase();
@@ -342,30 +351,33 @@ Quick Replies:
       }
     }
     if (relevantPaths.length === 0) return null;
-    return relevantPaths.slice(0, 3).map(({ path, endpoint }) => {
-      const methods = Object.entries(endpoint.methods)
-        .map(([method, info]) => `\`${method} ${path}\` - ${info.summary}`)
-        .join('\n');
-      return `${path}\n${methods}`;
-    }).join('\n\n');
+    return relevantPaths
+      .slice(0, 3)
+      .map(({ path, endpoint }) => {
+        const methods = Object.entries(endpoint.methods)
+          .map(([method, info]) => `\`${method} ${path}\` - ${info.summary}`)
+          .join('\n');
+        return `${path}\n${methods}`;
+      })
+      .join('\n\n');
   }
-  
+
   async makeApiRequest(payload) {
     if (!this.apiKey) {
       throw new Error('API key missing');
     }
-    
+
     const response = await fetch(`${this.baseUrl}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.apiKey}`,
+        Authorization: `Bearer ${this.apiKey}`,
         'HTTP-Referer': this.siteInfo.referer,
-        'X-Title': this.siteInfo.title
+        'X-Title': this.siteInfo.title,
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
-    
+
     if (!response.ok) {
       if (response.status === 429) {
         throw new Error('Rate limited');
@@ -374,36 +386,42 @@ Quick Replies:
       }
       throw new Error(`API error: ${response.status}`);
     }
-    
+
     const completion = await response.json();
-    
+
     if (completion.error) {
-      if (completion.error.code === 429 || completion.error.message?.includes('Rate limit')) {
+      if (
+        completion.error.code === 429 ||
+        completion.error.message?.includes('Rate limit')
+      ) {
         throw new Error('Rate limited');
       }
       throw new Error('API returned an error');
     }
-    
+
     if (completion.choices?.[0]?.message?.content) {
       return completion.choices[0].message.content;
     } else if (completion.choices?.[0]?.text) {
       return completion.choices[0].text;
     } else if (completion.output) {
-      return typeof completion.output === 'string' ? completion.output : JSON.stringify(completion.output);
+      return typeof completion.output === 'string'
+        ? completion.output
+        : JSON.stringify(completion.output);
     }
-    
+
     throw new Error('Invalid response format');
   }
-  
+
   isRateLimitError(error) {
-    return error.message && (
-      error.message.includes('Rate limit') ||
-      error.message.includes('rate limit') ||
-      error.message.includes('429') ||
-      error.message.includes('too many requests') ||
-      error.message.includes('quota exceeded') ||
-      error.message.includes('exceeded') ||
-      error.message.includes('throttl')
+    return (
+      error.message &&
+      (error.message.includes('Rate limit') ||
+        error.message.includes('rate limit') ||
+        error.message.includes('429') ||
+        error.message.includes('too many requests') ||
+        error.message.includes('quota exceeded') ||
+        error.message.includes('exceeded') ||
+        error.message.includes('throttl'))
     );
   }
 }
