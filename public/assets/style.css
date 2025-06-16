@@ -5,7 +5,7 @@
   --scalar-font-size-2: 16px;
 }
 
-.light-mode {
+/* .light-mode {
   --scalar-color-1: #121212;
   --scalar-color-2: rgba(0, 0, 0, 0.6);
   --scalar-color-3: rgba(0, 0, 0, 0.4);
@@ -27,11 +27,11 @@
   --scalar-background-3: #333333;
   --scalar-background-accent: rgba(0, 255, 163, 0.1);
   --scalar-border-color: rgba(255, 255, 255, 0.1);
-}
+} */
 
 .light-mode .sidebar,
 .dark-mode .sidebar {
-  --scalar-sidebar-background-1: rgba(32, 32, 32, 0.9);
+  /* --scalar-sidebar-background-1: rgba(32, 32, 32, 0.9);
   --scalar-sidebar-item-hover-color: #00ffa3;
   --scalar-sidebar-item-hover-background: rgba(0, 255, 163, 0.1);
   --scalar-sidebar-item-active-background: rgba(0, 255, 163, 0.2);
@@ -42,18 +42,27 @@
   --scalar-sidebar-search-background: rgba(255, 255, 255, 0.05);
   --scalar-sidebar-search-border-color: rgba(255, 255, 255, 0.1);
   --scalar-sidebar-search-color: rgba(255, 255, 255, 0.282);
+  border-right: 2px solid transparent; */
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  border-right: 2px solid transparent;
   border-image: linear-gradient(180deg, #00ffa3, #dc1fff, #ff6b6b) 1;
   background-clip: padding-box;
+  background: linear-gradient(
+    100deg,
+    rgba(0, 255, 163, 0.02),
+    rgba(220, 31, 255, 0.02),
+    rgba(255, 107, 107, 0.02)
+  ) !important;
+
+  background-size: 100% 100% !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .custom-header {
   position: sticky;
   top: 0;
   z-index: 1000;
-  height: 50px;
+  height: 45px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -79,7 +88,7 @@
   display: flex;
   align-items: center;
   font-weight: 700;
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   gap: 8px;
   background: linear-gradient(90deg, #00ffa3, #dc1fff);
   -webkit-background-clip: text;
@@ -98,7 +107,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 28px;
+  padding: 15px 20px;
   background: rgba(0, 0, 0, 0.6);
   box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.5);
   border-top: 2px solid transparent;
@@ -108,6 +117,7 @@
   color: var(--scalar-color-1);
   font-size: 0.9rem;
   background-clip: padding-box;
+  font-family: var(--scalar-font, 'Roboto Mono', monospace);
 }
 
 .copyright {
@@ -194,4 +204,115 @@
     font-size: 0.9rem;
     white-space: normal;
   }
+}
+
+/* HTTP Method styling for sidebar - Swagger-like containers */
+.sidebar-heading-link-method [data-v-43724d28].sidebar-heading-type {
+  border-radius: 15px !important;
+  padding: 2px;
+  color: rgb(255, 255, 255) !important;
+  display: inline-flex !important;
+  justify-content: center !important;
+  font-weight: bold !important;
+}
+
+/* Override individual method colors with Scalar's color scheme */
+.sidebar-heading-link-method [data-v-43724d28].sidebar-heading-type--get {
+  background-color: var(--scalar-color-blue, #154188) !important;
+  --method-color: var(--scalar-color-blue, #154188) !important;
+}
+
+.sidebar-heading-link-method [data-v-43724d28].sidebar-heading-type--post {
+  background-color: var(--scalar-color-green, #045622) !important;
+  --method-color: var(--scalar-color-green, #096b2d) !important;
+}
+
+.sidebar-heading-link-method [data-v-43724d28].sidebar-heading-type--put {
+  background-color: var(--scalar-color-orange, #f97316) !important;
+  --method-color: var(--scalar-color-orange, #f97316) !important;
+}
+
+.sidebar-heading-link-method [data-v-43724d28].sidebar-heading-type--delete {
+  background-color: var(--scalar-color-red, #ef4444) !important;
+  --method-color: var(--scalar-color-red, #ef4444) !important;
+}
+
+.sidebar-heading-link-method [data-v-43724d28].sidebar-heading-type--patch {
+  background-color: var(--scalar-color-yellow, #eab308) !important;
+  --method-color: var(--scalar-color-yellow, #eab308) !important;
+}
+
+.sidebar-heading-link-method [data-v-43724d28].sidebar-heading-type--head {
+  background-color: var(--scalar-color-purple, #8b5cf6) !important;
+  --method-color: var(--scalar-color-purple, #8b5cf6) !important;
+}
+
+.sidebar-heading-link-method [data-v-43724d28].sidebar-heading-type--options {
+  background-color: var(--scalar-color-teal, #14b8a6) !important;
+  --method-color: var(--scalar-color-teal, #14b8a6) !important;
+}
+
+/* Additional selectors to precisely target the elements */
+/* .sidebar-heading-link-method {
+  display: flex !important;
+  align-items: center !important;
+} */
+
+/* Enhanced Sidebar Dropdown Buttons - Focused Styling */
+
+/* Enhanced chevron/dropdown buttons with smooth animations */
+.scalar-api-reference .toggle-nested-icon {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border-radius: 4px !important;
+}
+
+.scalar-api-reference .toggle-nested-icon svg {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1)) !important;
+}
+
+.scalar-api-reference .toggle-nested-icon:hover {
+  background: rgba(0, 255, 163, 0.1) !important;
+  transform: scale(1.05) !important;
+}
+
+.scalar-api-reference .toggle-nested-icon:hover svg {
+  filter: drop-shadow(0 2px 4px rgba(0, 255, 163, 0.3)) !important;
+  color: #00ffa3 !important;
+}
+
+/* Enhanced rotation for expanded state */
+.scalar-api-reference .toggle-nested-icon[aria-expanded='true'] {
+  background: rgba(0, 255, 163, 0.08) !important;
+}
+
+.scalar-api-reference .toggle-nested-icon[aria-expanded='true'] svg {
+  color: #00ffa3 !important;
+  filter: drop-shadow(0 2px 4px rgba(0, 255, 163, 0.2)) !important;
+}
+
+/* Enhanced sidebar navigation items - Fixed conflict */
+.scalar-api-reference .sidebar-group-item {
+  position: relative !important;
+  transition: all 0.3s ease !important;
+}
+
+/* Remove any pseudo-element dividers */
+.scalar-api-reference .sidebar-group-item::before,
+.scalar-api-reference .sidebar-group-item::after,
+.scalar-api-reference .sidebar-heading::before,
+.scalar-api-reference .sidebar-heading::after {
+  display: none !important;
+}
+
+.scalar-code-block {
+  position: relative !important;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 255, 163, 0.02),
+    rgba(220, 31, 255, 0.02),
+    rgba(255, 107, 107, 0.02)
+  ) !important;
+  background-size: 300% 300% !important;
+  animation: holographicShift 15s ease infinite !important;
 }
