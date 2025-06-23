@@ -1,0 +1,15 @@
+{
+  "name": "launchpad-api",
+  "version": "1.0.0",
+  "description": "Launchpad API documentation",
+  "scripts": {
+    "build:openapi": "node public/swagger/build-openapi.js",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "type": "module",
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}
