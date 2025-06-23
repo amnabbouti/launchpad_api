@@ -109,4 +109,20 @@ class MaintenanceService extends BaseService
             'organization'
         ]);
     }
+
+    /**
+     * Get valid relations for the maintenance model.
+     */
+    protected function getValidRelations(): array
+    {
+        return [
+            'maintainable',
+            'user',
+            'supplier',
+            'statusOut',
+            'statusIn',
+            'maintenanceDetails',
+            'organization'
+        ];
+    }
 }
