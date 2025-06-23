@@ -9,6 +9,8 @@ class ErrorMessages
     public const LOGIN_FAILED = 'Invalid credentials';
     public const TOKEN_EXPIRED = 'Token has expired';
     public const NOT_FOUND = 'Resource not found';
+    public const INVALID_CREDENTIALS = 'Invalid credentials provided';
+
 
     // Authorization
     public const FORBIDDEN = 'Trying to access other organization resources is not allowed, this action has been logged for security purposes';

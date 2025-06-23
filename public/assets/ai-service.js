@@ -1,7 +1,7 @@
 class AIService {
   constructor() {
     this.baseUrl = 'https://openrouter.ai/api/v1';
-    this.model = 'openai/gpt-3.5-turbo';
+    this.model = 'mistralai/devstral-small:free';
     this.siteInfo = {
       referer: window.location.origin,
       title: 'API Assistant',
@@ -27,7 +27,7 @@ PERSONALITY:
 - Be confident and direct in your answers - users need accurate API information
 - When a user seems frustrated, be extra helpful and solution-oriented
 - Speak knowledgeably but avoid unnecessary technical jargon
-- Use clear, concise language that is easy to understand
+- always mention only API endpoints that are in the j
 
 FORMATTING GUIDELINES:
 - Always format API endpoints with backticks: \`GET /api/items\`
@@ -67,7 +67,7 @@ Get details for a specific user
 \`GET /api/users/{id}\` 
 
 Update a user
-\`PUT /api/users/{id}\` 
+\`PATCH /api/users/{id}\` 
 
 Delete a user
 \`DELETE /api/users/{id}\` 

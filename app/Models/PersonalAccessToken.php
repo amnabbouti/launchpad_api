@@ -47,4 +47,20 @@ class PersonalAccessToken extends SanctumPersonalAccessToken
         'rate_limit_per_day' => 'integer',
         'rate_limit_per_month' => 'integer',
     ];
+
+    /**
+     * Get the usage logs for this token
+     */
+    public function usageLogs()
+    {
+        return $this->hasMany(ApiKeyUsage::class, 'token_id');
+    }
+
+    /**
+     * Get the organization that owns this token
+     */
+    public function organization()
+    {
+        return $this->belongsTo(Organization::class);
+    }
 }

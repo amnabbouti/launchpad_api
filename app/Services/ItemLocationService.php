@@ -50,9 +50,9 @@ class ItemLocationService extends BaseService
         $relationships = array_merge($defaultRelationships, $filters['with'] ?? []);
 
         return $this->getQuery()
-            ->with($relationships) 
-            ->when($filters['location_id'] ?? null, fn ($q, $id) => $q->where('location_id', $id))
-            ->when($filters['item_id'] ?? null, fn ($q, $id) => $q->where('item_id', $id))
+            ->with($relationships)
+            ->when($filters['location_id'] ?? null, fn($q, $id) => $q->where('location_id', $id))
+            ->when($filters['item_id'] ?? null, fn($q, $id) => $q->where('item_id', $id))
             ->when($filters['moved_date'] ?? null, function ($q, $date) {
                 try {
                     $parsedDate = Carbon::parse($date)->format('Y-m-d');
@@ -62,7 +62,7 @@ class ItemLocationService extends BaseService
                     throw new InvalidArgumentException(ErrorMessages::INVALID_DATE_FORMAT);
                 }
             })
-            ->when($filters['positive_quantity'] ?? null, fn ($q) => $q->where('quantity', '>', 0))
+            ->when($filters['positive_quantity'] ?? null, fn($q) => $q->where('quantity', '>', 0))
             ->orderBy('created_at', 'desc')
             ->get();
     }
@@ -73,13 +73,13 @@ class ItemLocationService extends BaseService
     public function createItemLocation(array $data): Model
     {
         $itemLocation = $this->create($data);
-        
+
         // Update tracking_mode
         $item = Item::find($data['item_id']);
         if ($item && $item->tracking_mode === Item::TRACKING_ABSTRACT) {
             $item->update(['tracking_mode' => Item::TRACKING_BULK]);
         }
-        
+
         return $itemLocation;
     }
 
@@ -112,7 +112,7 @@ class ItemLocationService extends BaseService
 
         return DB::transaction(function () use ($source, $destination, $itemId, $toLocationId, $quantity) {
             $source->quantity -= $quantity;
-            
+
             if ($source->quantity <= 0) {
                 $source->delete();
             } else {
@@ -125,6 +125,7 @@ class ItemLocationService extends BaseService
                 $destination->save();
             } else {
                 $this->create([
+                    'org_id' => $source->org_id,
                     'item_id' => $itemId,
                     'location_id' => $toLocationId,
                     'quantity' => $quantity,
@@ -144,7 +145,7 @@ class ItemLocationService extends BaseService
         $itemLocation = $this->findById($id, ['*'], ['item']);
         $item = $itemLocation->item;
         $deleted = $this->delete($id);
-        
+
         if ($deleted) {
             $item->refresh();
             $remainingLocations = $item->locations()->count();
@@ -152,7 +153,7 @@ class ItemLocationService extends BaseService
                 $item->update(['tracking_mode' => 'abstract']);
             }
         }
-        
+
         return $deleted;
     }
 
@@ -162,7 +163,10 @@ class ItemLocationService extends BaseService
     protected function getAllowedParams(): array
     {
         return array_merge(parent::getAllowedParams(), [
-            'location_id', 'item_id', 'moved_date', 'positive_quantity',
+            'location_id',
+            'item_id',
+            'moved_date',
+            'positive_quantity',
         ]);
     }
 
@@ -172,11 +176,11 @@ class ItemLocationService extends BaseService
     protected function getValidRelations(): array
     {
         return [
-            'item', 
-            'item.category', 
-            'item.status', 
+            'item',
+            'item.category',
+            'item.status',
             'item.unitOfMeasure',
-            'location', 
+            'location',
             'organization'
         ];
     }
@@ -187,14 +191,14 @@ class ItemLocationService extends BaseService
     public function getItemWithLocations(int $itemId, array $filters = []): array
     {
         $item = Item::findOrFail($itemId);
-        
+
         if ($item->isAbstract()) {
             throw new \InvalidArgumentException('Abstract items do not have physical locations');
         }
 
         // Get item locations with filtering
         $query = $item->locations();
-        
+
         // Apply filters if provided
         if (!empty($filters)) {
             foreach ($filters as $key => $value) {
@@ -203,9 +207,9 @@ class ItemLocationService extends BaseService
                 }
             }
         }
-        
+
         $locations = $query->withPivot('quantity', 'moved_date', 'notes')->get();
-        
+
         return [
             'item' => $item,
             'locations' => $locations,
@@ -248,7 +252,7 @@ class ItemLocationService extends BaseService
     public function getTotalQuantity(int $itemId): float
     {
         $item = Item::findOrFail($itemId);
-        
+
         if ($item->isAbstract()) {
             return 0;
         }
@@ -264,7 +268,7 @@ class ItemLocationService extends BaseService
         $defaultRelationships = [
             'organization',
             'item' => function ($query) {
-                $query->with(['category', 'status']); 
+                $query->with(['category', 'status']);
             },
             'location',
         ];

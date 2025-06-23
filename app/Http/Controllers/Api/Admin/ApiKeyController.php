@@ -22,11 +22,12 @@ class ApiKeyController extends BaseController
      */
     public function index(Request $request): JsonResponse
     {
-        $organizationId = $request->user()->org_id;
+        // Super admins automatically get all organizations, regular users get their org only
+        $organizationId = $request->user()->isSuperAdmin() ? null : $request->user()->org_id;
         $userId = $request->query('user_id');
-        
+
         $apiKeys = $this->apiKeyService->getApiKeys($organizationId, $userId);
-        
+
         $formattedKeys = $apiKeys->map(function ($token) {
             return [
                 'id' => $token->id,
@@ -67,7 +68,8 @@ class ApiKeyController extends BaseController
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
-            'user_id' => 'nullable|exists:users,id', // Make it optional
+            'user_id' => 'nullable|exists:users,id',
+            'organization_id' => 'nullable|exists:organizations,id', // Allow super admins to specify org
             'abilities' => 'nullable|array',
             'abilities.*' => 'string',
             'rate_limit_per_hour' => 'nullable|integer|min:1|max:10000',
@@ -82,9 +84,12 @@ class ApiKeyController extends BaseController
             'metadata' => 'nullable|array',
         ]);
 
-        $validated['organization_id'] = $request->user()->org_id;
-        
-        // If no user_id provided, use current authenticated user
+        if ($request->user()->isSuperAdmin()) {
+            $validated['organization_id'] = $validated['organization_id'] ?? null;
+        } else {
+            $validated['organization_id'] = $request->user()->org_id;
+        }
+
         if (!isset($validated['user_id'])) {
             $validated['user_id'] = $request->user()->id;
         }
@@ -100,9 +105,11 @@ class ApiKeyController extends BaseController
     /**
      * Display the specified API key
      */
-    public function show(int $id): JsonResponse
+    public function show(Request $request, int $id): JsonResponse
     {
-        $apiKeys = $this->apiKeyService->getApiKeys();
+        $organizationId = $request->user()->isSuperAdmin() ? null : $request->user()->org_id;
+
+        $apiKeys = $this->apiKeyService->getApiKeys($organizationId);
         $token = $apiKeys->firstWhere('id', $id);
 
         if (!$token) {
@@ -226,5 +233,16 @@ class ApiKeyController extends BaseController
         $stats = $this->apiKeyService->getApiKeyUsageStats($id, $validated);
 
         return $this->successResponse($stats);
+    }
+
+    /**
+     * Get basic API keys overview statistics
+     */
+    public function overview(Request $request): JsonResponse
+    {
+        $organizationId = $request->user()->isSuperAdmin() ? null : $request->user()->org_id;
+        $overview = $this->apiKeyService->getApiKeysOverview($organizationId);
+
+        return $this->successResponse($overview);
     }
 }

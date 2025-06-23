@@ -67,7 +67,7 @@ class Location extends Model
     // Items stored with quantities
     public function items(): BelongsToMany
     {
-        return $this->belongsToMany(Item::class, 'item_location', 'location_id', 'item_id')
+        return $this->belongsToMany(Item::class, 'item_locations', 'location_id', 'item_id')
             ->withPivot('quantity')
             ->withTimestamps();
     }

@@ -1,3 +1,7 @@
+# DDEV files
+.ddev/
+**/.ddev/**
+
 /node_modules
 /public/hot
 /public/storage
@@ -14,3 +18,17 @@ yarn-error.log
 /.idea
 /.vscode
 /.git
+
+# Additional exclusions
+/public/build
+storage/logs/
+storage/framework/cache/
+storage/framework/sessions/
+storage/framework/views/
+.phpunit.cache/
+tests/
+*.log
+.DS_Store
+Thumbs.db
+/.out
+.vemto_settings

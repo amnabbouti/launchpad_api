@@ -25,12 +25,14 @@ return Application::configure(basePath: dirname(__DIR__))
             'rate.limit' => \App\Http\Middleware\RateLimitMiddleware::class,
             'decrypt.token' => \App\Http\Middleware\DecryptToken::class,
             'org.verify' => \App\Http\Middleware\VerifyOrganizationAccess::class,
+            'log.usage' => \App\Http\Middleware\LogApiUsageMiddleware::class,
         ]);
 
-        // Prepend ForceJsonResponse and DecryptToken to API middleware
+        // Prepend ForceJsonResponse, DecryptToken, and LogApiUsage to API middleware
         $middleware->api(prepend: [
             \App\Http\Middleware\ForceJsonResponse::class,
             \App\Http\Middleware\DecryptToken::class,
+            \App\Http\Middleware\LogApiUsageMiddleware::class,
         ]);
 
         // Customize redirect for unauthenticated guests

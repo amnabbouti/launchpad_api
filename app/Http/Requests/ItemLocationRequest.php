@@ -2,8 +2,6 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Validation\Rule;
-
 class ItemLocationRequest extends BaseRequest
 {
     /**
@@ -19,9 +17,9 @@ class ItemLocationRequest extends BaseRequest
         if ($isMove) {
             return [
                 'org_id' => 'required|exists:organizations,id',
-                'item_id' => 'required|exists:items,id',
-                'from_location_id' => 'required|exists:locations,id',
-                'to_location_id' => 'required|exists:locations,id|different:from_location_id',
+                'item_id' => 'required|integer',
+                'from_location_id' => 'required|integer',
+                'to_location_id' => 'required|integer|different:from_location_id',
                 'quantity' => 'required|numeric|min:0',
                 'moved_date' => 'nullable|date',
                 'notes' => 'nullable|string|max:65535',
@@ -31,8 +29,8 @@ class ItemLocationRequest extends BaseRequest
         if ($isUpdateQuantity) {
             return [
                 'org_id' => 'required|exists:organizations,id',
-                'item_id' => 'required|exists:items,id',
-                'location_id' => 'required|exists:locations,id',
+                'item_id' => 'required|integer',
+                'location_id' => 'required|integer',
                 'quantity' => 'required|numeric|min:0',
                 'moved_date' => 'nullable|date',
                 'notes' => 'nullable|string|max:65535',
@@ -41,15 +39,8 @@ class ItemLocationRequest extends BaseRequest
 
         return [
             'org_id' => 'required|exists:organizations,id',
-            'item_id' => 'required|exists:items,id',
-            'location_id' => [
-                'required',
-                'exists:locations,id',
-                Rule::unique('item_locations')
-                    ->where('org_id', $orgId)
-                    ->where('item_id', $this->item_id)
-                    ->ignore($itemLocationId),
-            ],
+            'item_id' => 'required|string',
+            'location_id' => 'required|string',
             'quantity' => 'required|numeric|min:0',
             'moved_date' => 'nullable|date',
             'notes' => 'nullable|string|max:65535',

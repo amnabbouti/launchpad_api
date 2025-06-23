@@ -32,6 +32,11 @@ class ApiKeyUsage extends Model
         return $this->belongsTo(PersonalAccessToken::class, 'token_id');
     }
 
+    public function personalAccessToken(): BelongsTo
+    {
+        return $this->belongsTo(PersonalAccessToken::class, 'token_id');
+    }
+
     public static function logUsage(
         PersonalAccessToken $token,
         string $endpoint,

@@ -78,6 +78,27 @@ class ItemService extends BaseService
     }
 
     /**
+     * Create a new item and its locations.
+     */
+    public function create(array $data): Model
+    {
+        // Extract locations from data if present
+        $locations = $data['locations'] ?? null;
+        unset($data['locations']);
+
+        // Create the main item using parent method
+        $item = parent::create($data);
+
+        // Handle locations creation if provided
+        if ($locations !== null && is_array($locations)) {
+            $this->createItemLocations($item, $locations);
+        }
+
+        // Reload the item with fresh location data
+        return $item->fresh(['locations']);
+    }
+
+    /**
      * Update an item and its locations.
      */
     public function update($id, array $data): Model
@@ -96,6 +117,36 @@ class ItemService extends BaseService
 
         // Reload the item with fresh location data
         return $item->fresh(['locations']);
+    }
+
+    /**
+     * Create item locations for a new item.
+     */
+    private function createItemLocations(Model $item, array $locations): void
+    {
+        foreach ($locations as $locationData) {
+            if (isset($locationData['id']) && isset($locationData['quantity'])) {
+                $locationId = $locationData['id'];
+
+                // If it's a public ID (LOC-xxxx), resolve to internal ID
+                if (is_string($locationId) && !is_numeric($locationId)) {
+                    $location = \App\Models\Location::findByPublicId($locationId, $item->org_id);
+                    if (!$location) {
+                        continue; // Skip if location not found
+                    }
+                    $locationId = $location->id;
+                }
+
+                // Create the item-location record using the ItemLocation model
+                \App\Models\ItemLocation::create([
+                    'org_id' => $item->org_id,
+                    'item_id' => $item->id,
+                    'location_id' => $locationId,
+                    'quantity' => $locationData['quantity'],
+                    'moved_date' => now(),
+                ]);
+            }
+        }
     }
 
     /**

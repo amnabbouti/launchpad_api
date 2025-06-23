@@ -131,6 +131,8 @@ class BaseService
             'checkin_location_id' => \App\Models\Location::class,
             'checkin_user_id' => \App\Models\User::class,
             'status_id' => \App\Models\Status::class,
+            'status_out_id' => \App\Models\Status::class,
+            'status_in_id' => \App\Models\Status::class,
             'maintainable_id' => \App\Models\Item::class,
         ];
 

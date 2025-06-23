@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Attachment\AttachmentController;
 use App\Http\Controllers\Api\Auth\AuthController;
+use App\Http\Controllers\Api\Admin\AdminAuthController;
 use App\Http\Controllers\Api\Hierarchy\OrganizationController;
 use App\Http\Controllers\Api\Hierarchy\RoleController;
 use App\Http\Controllers\Api\Hierarchy\UserController;
@@ -21,6 +22,8 @@ use App\Http\Controllers\Api\Stock\UnitOfMeasureController;
 use App\Http\Middleware\VerifyOrganizationAccess;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Admin\ApiKeyController;
+use App\Http\Controllers\Api\Admin\ThreatDetectionController;
+
 
 // API key route
 Route::get('/get-env-key', fn() => response()->json([
@@ -28,7 +31,8 @@ Route::get('/get-env-key', fn() => response()->json([
 ]));
 
 // Public routes
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login']); // For regular app users
+Route::post('/admin/login', [AdminAuthController::class, 'login']); // For super admin dashboard
 Route::get('/test', fn() => response()->json(['message' => 'API is working']));
 
 // Organizations routes
@@ -102,6 +106,7 @@ Route::middleware(['auth:sanctum', VerifyOrganizationAccess::class])->prefix('ch
     Route::post('out/{itemLocationId}', [CheckInOutController::class, 'checkout'])->name('checks.out');
     Route::post('in/{itemLocationId}', [CheckInOutController::class, 'checkin'])->name('checks.in');
     Route::get('history/{itemLocationId}', [CheckInOutController::class, 'history'])->name('checks.history');
+    Route::get('availability/{itemLocationId}', [CheckInOutController::class, 'checkAvailability'])->name('checks.availability');
 });
 
 // Units of measure routes
@@ -135,13 +140,23 @@ Route::middleware(['auth:sanctum', VerifyOrganizationAccess::class])->prefix('ad
     Route::post('/{id}/revoke', [ApiKeyController::class, 'revoke']);
     Route::post('/{id}/regenerate', [ApiKeyController::class, 'regenerate']);
     Route::get('/{id}/usage', [ApiKeyController::class, 'usage']);
+    Route::get('/overview', [ApiKeyController::class, 'overview']);
+});
+
+Route::middleware(['auth:sanctum', VerifyOrganizationAccess::class])->prefix('admin/security')->group(function () {
+    Route::get('/threats', [ThreatDetectionController::class, 'overview']);
 });
 
 
-// Auth routes
-Route::middleware(['auth:sanctum'])->group(function () {
+
+Route::middleware(['decrypt.token', 'auth:sanctum'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
+});
+
+Route::middleware(['decrypt.token', 'auth:sanctum'])->prefix('admin')->group(function () {
+    Route::post('/logout', [AdminAuthController::class, 'logout']);
+    Route::get('/user', [AdminAuthController::class, 'user']);
 });
 
 // Fallback route

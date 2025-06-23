@@ -6,19 +6,20 @@ use App\Models\ApiKeyUsage;
 use App\Models\User;
 use App\Models\PersonalAccessToken;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class ApiKeyService
 {
     public function createApiKey(array $data): array
     {
         $user = User::findOrFail($data['user_id']);
-        
+
         // Generate a more secure token name if not provided
         $tokenName = $data['name'] ?? 'API Key ' . now()->format('Y-m-d H:i:s');
-        
+
         // Create the token
         $token = $user->createToken($tokenName, $data['abilities'] ?? ['*']);
-        
+
         // Update the token with additional metadata
         $personalAccessToken = $token->accessToken;
         $personalAccessToken->update([
@@ -45,7 +46,7 @@ class ApiKeyService
     public function revokeApiKey(int $tokenId): bool
     {
         $token = PersonalAccessToken::find($tokenId);
-        
+
         if (!$token) {
             return false;
         }
@@ -57,7 +58,7 @@ class ApiKeyService
     public function deleteApiKey(int $tokenId): bool
     {
         $token = PersonalAccessToken::find($tokenId);
-        
+
         if (!$token) {
             return false;
         }
@@ -76,17 +77,19 @@ class ApiKeyService
 
         if ($userId) {
             $query->where('tokenable_type', User::class)
-                  ->where('tokenable_id', $userId);
+                ->where('tokenable_id', $userId);
         }
 
         return $query->get();
-    }    public function getApiKeyUsageStats(int $tokenId, array $options = []): array
+    }
+
+    public function getApiKeyUsageStats(int $tokenId, array $options = []): array
     {
         $startDate = $options['start_date'] ?? now()->subDays(30);
         $endDate = $options['end_date'] ?? now();
         $groupBy = $options['group_by'] ?? 'day';
 
-        $baseQuery = function() use ($tokenId, $startDate, $endDate) {
+        $baseQuery = function () use ($tokenId, $startDate, $endDate) {
             return ApiKeyUsage::where('token_id', $tokenId)
                 ->whereBetween('created_at', [$startDate, $endDate]);
         };
@@ -133,17 +136,19 @@ class ApiKeyService
             'average_response_time' => round($avgResponseTime ?? 0, 2),
             'success_rate' => $totalRequests > 0 ? round((($statusCodeStats[200] ?? 0) / $totalRequests) * 100, 2) : 0,
         ];
-    }    public function updateApiKey(int $tokenId, array $data): bool
+    }
+
+    public function updateApiKey(int $tokenId, array $data): bool
     {
         $token = PersonalAccessToken::find($tokenId);
-        
+
         if (!$token) {
             return false;
         }
 
         // Don't filter out rate limit fields - we want to allow setting them to null
         $updateData = [];
-        
+
         // Handle regular fields (filter out nulls)
         if (isset($data['name'])) $updateData['name'] = $data['name'];
         if (isset($data['description'])) $updateData['description'] = $data['description'];
@@ -152,7 +157,7 @@ class ApiKeyService
         if (isset($data['expires_at'])) $updateData['expires_at'] = $data['expires_at'];
         if (isset($data['abilities'])) $updateData['abilities'] = $data['abilities'];
         if (isset($data['metadata'])) $updateData['metadata'] = $data['metadata'];
-        
+
         // Handle rate limits specially - allow null values to clear limits
         if (array_key_exists('rate_limit_per_hour', $data)) {
             $updateData['rate_limit_per_hour'] = $data['rate_limit_per_hour'];
@@ -170,20 +175,20 @@ class ApiKeyService
     public function regenerateApiKey(int $tokenId): ?array
     {
         $oldToken = PersonalAccessToken::find($tokenId);
-        
+
         if (!$oldToken) {
             return null;
         }
 
         $user = $oldToken->tokenable;
-          // Create new token with same settings
+        // Create new token with same settings
         $newTokenData = [
             'name' => $oldToken->name,
             'description' => $oldToken->description,
             'user_id' => $user->id,
             'organization_id' => $oldToken->organization_id,
-            'abilities' => is_array($oldToken->abilities) 
-                ? $oldToken->abilities 
+            'abilities' => is_array($oldToken->abilities)
+                ? $oldToken->abilities
                 : (json_decode($oldToken->abilities, true) ?? ['*']),
             'rate_limit_per_hour' => $oldToken->rate_limit_per_hour,
             'rate_limit_per_day' => $oldToken->rate_limit_per_day,
@@ -196,10 +201,41 @@ class ApiKeyService
         ];
 
         $newToken = $this->createApiKey($newTokenData);
-        
+
         // Revoke old token
         $oldToken->delete();
 
         return $newToken;
+    }
+
+    public function getApiKeysOverview(?int $organizationId = null): array
+    {
+        $query = PersonalAccessToken::query();
+
+        // Apply organization filter only if organizationId is not null
+        // This allows super admins to get data for all organizations
+        if ($organizationId !== null) {
+            if ($organizationId === 0) {
+                $query->whereNull('organization_id');
+            } else {
+                $query->where('organization_id', $organizationId);
+            }
+        }
+
+        $stats = $query
+            ->selectRaw('
+                COUNT(*) as total,
+                SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active,
+                SUM(CASE WHEN last_used_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR) THEN 1 ELSE 0 END) as used_today,
+                SUM(CASE WHEN expires_at IS NOT NULL AND expires_at < NOW() THEN 1 ELSE 0 END) as expired
+            ')
+            ->first();
+
+        return [
+            'total' => $stats->total ?? 0,
+            'active' => $stats->active ?? 0,
+            'used_today' => $stats->used_today ?? 0,
+            'expired' => $stats->expired ?? 0,
+        ];
     }
 }
