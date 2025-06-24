@@ -8,12 +8,14 @@ use App\Traits\HasPublicId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Organization extends Model
 {
     use HasAttachments;
-    use HasPublicId; 
+    use HasPublicId;
     use HasFactory;
+    use SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -22,6 +24,7 @@ class Organization extends Model
         'address',
         'remarks',
         'website',
+        'subscription_starts_at',
     ];
 
     protected static function getEntityType(): string
@@ -32,6 +35,9 @@ class Organization extends Model
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'subscription_starts_at' => 'datetime',
+        'subscription_ends_at' => 'datetime',
+        'settings' => 'array',
     ];
 
     public function users(): HasMany
@@ -71,7 +77,7 @@ class Organization extends Model
 
     public function statuses(): HasMany
     {
-        return $this->hasMany(ItemStatus::class, 'org_id');
+        return $this->hasMany(Status::class, 'org_id');
     }
 
     public function maintenanceCategories(): HasMany
