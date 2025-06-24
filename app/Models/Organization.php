@@ -21,10 +21,25 @@ class Organization extends Model
         'name',
         'email',
         'telephone',
-        'address',
+        'street',
+        'street_number',
+        'city',
+        'province',
+        'postal_code',
         'remarks',
         'website',
+        'logo',
+        'industry',
+        'tax_id',
+        'billing_address',
+        'country',
+        'timezone',
+        'status',
+        'plan_id',
         'subscription_starts_at',
+        'subscription_ends_at',
+        'settings',
+        'created_by',
     ];
 
     protected static function getEntityType(): string
@@ -38,7 +53,33 @@ class Organization extends Model
         'subscription_starts_at' => 'datetime',
         'subscription_ends_at' => 'datetime',
         'settings' => 'array',
+        'plan_id' => 'integer',
+        'created_by' => 'integer',
     ];
+
+    /**
+     * The plan this organization is assigned to (direct assignment).
+     */
+    public function plan()
+    {
+        return $this->belongsTo(Plan::class);
+    }
+
+    /**
+     * All licenses purchased by this organization.
+     */
+    public function licenses()
+    {
+        return $this->hasMany(License::class);
+    }
+
+    /**
+     * The user who created this organization (if tracked).
+     */
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
 
     public function users(): HasMany
     {
