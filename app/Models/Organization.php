@@ -140,4 +140,35 @@ class Organization extends Model
     {
         return $this->hasMany(Attachment::class, 'org_id');
     }
+
+    /**
+     * Total seats from active licenses (started, not expired)
+     */
+    public function activeLicenseSeatCount(): int
+    {
+        $now = now();
+        return $this->licenses()
+            ->where('status', 'active')
+            ->where('starts_at', '<=', $now)
+            ->where(function ($q) use ($now) {
+                $q->whereNull('ends_at')->orWhere('ends_at', '>', $now);
+            })
+            ->sum('seats');
+    }
+
+    /**
+     * Number of active users in org
+     */
+    public function activeUserCount(): int
+    {
+        return $this->users()->where('is_active', true)->count();
+    }
+
+    /**
+     * Can org add another user?
+     */
+    public function hasAvailableSeats(): bool
+    {
+        return $this->activeUserCount() < $this->activeLicenseSeatCount();
+    }
 }
