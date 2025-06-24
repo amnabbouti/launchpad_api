@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\ApiKeyUsage;
 use App\Models\PersonalAccessToken;
 use Laravel\Sanctum\PersonalAccessToken as SanctumPersonalAccessToken;
+use Laravel\Sanctum\TransientToken;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -35,9 +36,12 @@ class LogApiUsageMiddleware
         // Try to get the token from the request
         $token = $this->getTokenFromRequest($request);
 
+        // Only set token_id if it's a real PersonalAccessToken
+        $tokenId = ($token instanceof SanctumPersonalAccessToken) ? $token->id : null;
+
         // Log ALL API usage, with or without token
         $logData = [
-            'token_id' => $token?->id,
+            'token_id' => $tokenId,
             'endpoint' => $request->getPathInfo(),
             'method' => $request->method(),
             'ip_address' => $request->ip(),
@@ -50,7 +54,7 @@ class LogApiUsageMiddleware
         ApiKeyUsage::create($logData);
     }
 
-    private function getTokenFromRequest(Request $request): ?SanctumPersonalAccessToken
+    private function getTokenFromRequest(Request $request): SanctumPersonalAccessToken|TransientToken|null
     {
         // First try to get from API key middleware (if it was added to request)
         if ($request->has('api_token')) {
@@ -62,8 +66,8 @@ class LogApiUsageMiddleware
         if ($user && $user->currentAccessToken()) {
             $token = $user->currentAccessToken();
 
-            // If it's a basic Sanctum token, try to get the full PersonalAccessToken with custom fields
-            if ($token && $token->id) {
+            // Only return if it's a real PersonalAccessToken
+            if ($token instanceof SanctumPersonalAccessToken && $token->id) {
                 $fullToken = PersonalAccessToken::find($token->id);
                 return $fullToken ?: $token;
             }
@@ -104,7 +108,7 @@ class LogApiUsageMiddleware
         return false;
     }
 
-    private function getLoggableRequestData(Request $request, ?SanctumPersonalAccessToken $token = null): array
+    private function getLoggableRequestData(Request $request, SanctumPersonalAccessToken|TransientToken|null $token = null): array
     {
         $data = $request->except(['password', 'password_confirmation', 'token', 'api_key']);
 

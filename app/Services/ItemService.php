@@ -162,7 +162,7 @@ class ItemService extends BaseService
                 if (is_string($locationId) && !is_numeric($locationId)) {
                     $location = \App\Models\Location::findByPublicId($locationId, $item->org_id);
                     if (!$location) {
-                        continue; // Skip if location not found
+                        continue;
                     }
                     $locationId = $location->id;
                 }
@@ -177,7 +177,7 @@ class ItemService extends BaseService
     }
 
     /**
-     * Get allowed query parameters for filtering items.
+     * Get allowed query parameters
      */
     protected function getAllowedParams(): array
     {

@@ -2,6 +2,8 @@
 
 namespace App\Traits;
 
+use App\Models\User;
+use App\Models\Role;
 use App\Constants\ErrorMessages;
 use App\Exceptions\UnauthorizedAccessException;
 use Illuminate\Database\Eloquent\Builder;
@@ -219,7 +221,7 @@ trait HasOrganizationScope
     protected static function bootHasOrganizationScope()
     {
         // Skip all scoping and event listeners for User model to prevent authentication issues
-        if (static::class === \App\Models\User::class) {
+        if (static::class === User::class) {
             return;
         }
 
@@ -322,7 +324,7 @@ trait HasOrganizationScope
             return false;
         }
 
-        $role = \App\Models\Role::withoutGlobalScopes()->find($user->role_id);
+        $role = Role::withoutGlobalScopes()->find($user->role_id);
 
         return $role && $role->slug === 'super_admin';
     }

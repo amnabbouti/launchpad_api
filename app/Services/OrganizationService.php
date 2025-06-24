@@ -86,9 +86,19 @@ class OrganizationService extends BaseService
         // all available relationships
         if ($withParam === 'all') {
             return [
-                'users', 'items', 'categories', 'locations', 'suppliers',
-                'stocks', 'unitOfMeasures', 'statuses', 'itemStatuses',
-                'maintenanceCategories', 'maintenances', 'checkInOuts', 'attachments',
+                'users',
+                'items',
+                'categories',
+                'locations',
+                'suppliers',
+                'stocks',
+                'unitOfMeasures',
+                'statuses',
+                'itemStatuses',
+                'maintenanceCategories',
+                'maintenances',
+                'checkInOuts',
+                'attachments',
             ];
         }
 
@@ -99,12 +109,34 @@ class OrganizationService extends BaseService
 
         // Define allowed relationships
         $allowedRelations = [
-            'users', 'items', 'categories', 'locations', 'suppliers',
-            'stocks', 'unitOfMeasures', 'statuses', 'itemStatuses',
-            'maintenanceCategories', 'maintenances', 'checkInOuts', 'attachments',
+            'users',
+            'items',
+            'categories',
+            'locations',
+            'suppliers',
+            'stocks',
+            'unitOfMeasures',
+            'statuses',
+            'itemStatuses',
+            'maintenanceCategories',
+            'maintenances',
+            'checkInOuts',
+            'attachments',
         ];
 
         // Filter only allowed relationships
         return array_intersect(array_map('trim', $relations), $allowedRelations);
+    }
+
+    /**
+     * Create organization - restricted to super admins only
+     */
+    public function create(array $data): Model
+    {
+        $user = auth()->user();
+        if (! $user || ! $user->isSuperAdmin()) {
+            throw new AuthorizationException('Forbidden');
+        }
+        return parent::create($data);
     }
 }
