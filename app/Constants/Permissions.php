@@ -49,12 +49,23 @@ class Permissions
         'maintenanceconditions.create' => 'Create maintenance conditions',
         'maintenanceconditions.update' => 'Update maintenance conditions',
         'maintenanceconditions.delete' => 'Delete maintenance conditions',
+
+        // Check-in/out Operations
         'checkinouts.view' => 'View check-ins/outs',
         'checkinouts.create' => 'Create check-ins/outs',
         'checkinouts.update' => 'Update check-ins/outs',
         'checkinouts.delete' => 'Delete check-ins/outs',
+
+        // Limited User Management
         'users.view' => 'View users in organization',
         'users.update.self' => 'Update own profile',
+
+        // Reporting & Analytics
+        'reports.view' => 'View reports',
+        'reports.generate' => 'Generate reports',
+        'analytics.view' => 'View analytics',
+
+        // Plan Management
         'plans.view' => 'View available plans',
         'licenses.view' => 'View organization licenses',
     ];
