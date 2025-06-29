@@ -5,16 +5,10 @@ namespace App\Http\Requests;
 class MaintenanceRequest extends BaseRequest
 {
     /**
-     * validation rules.
+     * Validation rules
      */
-    public function rules(): array
+    protected function getValidationRules(): array
     {
-        // For GET requests (like index with query parameters), no validation needed
-        if ($this->isMethod('GET')) {
-            return [];
-        }
-
-        // For POST/PUT requests, apply full validation
         return [
             'remarks' => 'nullable|string',
             'invoice_nbr' => 'nullable|string|max:255',

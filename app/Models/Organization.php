@@ -161,7 +161,7 @@ class Organization extends Model
      */
     public function activeUserCount(): int
     {
-        return $this->users()->where('is_active', true)->count();
+        return $this->users()->count();
     }
 
     /**

@@ -7,7 +7,7 @@ class MaintenanceDetailRequest extends BaseRequest
     /**
      * validation rules.
      */
-    public function rules(): array
+    protected function getValidationRules(): array
     {
         $detailId = $this->route('maintenance_detail')?->id ?? null;
 

@@ -72,6 +72,9 @@ class ItemLocationService extends BaseService
      */
     public function createItemLocation(array $data): Model
     {
+        $data = $this->applyItemLocationBusinessRules($data);
+        $this->validateItemLocationBusinessRules($data);
+
         $itemLocation = $this->create($data);
 
         // Update tracking_mode
@@ -84,11 +87,47 @@ class ItemLocationService extends BaseService
     }
 
     /**
+     * Move items between locations with business rules.
+     */
+    public function moveItemWithRules(array $data): bool
+    {
+        $data = $this->applyMoveBusinessRules($data);
+        $this->validateMoveBusinessRules($data);
+
+        return $this->moveItem(
+            $data['item_id'],
+            $data['from_location_id'],
+            $data['to_location_id'],
+            $data['quantity']
+        );
+    }
+
+    /**
+     * Update quantity at location with business rules.
+     */
+    public function updateQuantityWithRules(array $data): Model
+    {
+        $data = $this->applyUpdateQuantityBusinessRules($data);
+        $this->validateUpdateQuantityBusinessRules($data);
+
+        $itemLocation = $this->getQuery()
+            ->where('item_id', $data['item_id'])
+            ->where('location_id', $data['location_id'])
+            ->first();
+
+        if (!$itemLocation) {
+            return $this->createItemLocation($data);
+        }
+
+        return $this->update($itemLocation->id, $data);
+    }
+
+    /**
      * Move items between locations.
      */
     public function moveItem(
         int $itemId,
-        int $fromLocationId,
+        ?int $fromLocationId,
         int $toLocationId,
         float $quantity,
     ): bool {
@@ -96,6 +135,12 @@ class ItemLocationService extends BaseService
             throw new InvalidArgumentException('Quantity cannot be negative');
         }
 
+        // Handle initial placement (when fromLocationId is null)
+        if ($fromLocationId === null) {
+            return $this->initialPlacement($itemId, $toLocationId, $quantity);
+        }
+
+        // Handle movement between existing locations
         $source = $this->getQuery()
             ->where('item_id', $itemId)
             ->where('location_id', $fromLocationId)
@@ -138,6 +183,41 @@ class ItemLocationService extends BaseService
     }
 
     /**
+     * Handle initial placement of item in a location.
+     */
+    private function initialPlacement(int $itemId, int $toLocationId, float $quantity): bool
+    {
+        // Get the item to determine org_id
+        $item = \App\Models\Item::findOrFail($itemId);
+        
+        // Check if item already exists in the destination location
+        $existing = $this->getQuery()
+            ->where('item_id', $itemId)
+            ->where('location_id', $toLocationId)
+            ->first();
+
+        return DB::transaction(function () use ($existing, $item, $itemId, $toLocationId, $quantity) {
+            if ($existing) {
+                // Add to existing quantity
+                $existing->quantity += $quantity;
+                $existing->moved_date = now();
+                $existing->save();
+            } else {
+                // Create new item location record
+                $this->create([
+                    'org_id' => $item->org_id,
+                    'item_id' => $itemId,
+                    'location_id' => $toLocationId,
+                    'quantity' => $quantity,
+                    'moved_date' => now(),
+                ]);
+            }
+
+            return true;
+        });
+    }
+
+    /**
      * Delete an item location and handle tracking_mode
      */
     public function deleteItemLocation(string $id): bool
@@ -163,10 +243,7 @@ class ItemLocationService extends BaseService
     protected function getAllowedParams(): array
     {
         return array_merge(parent::getAllowedParams(), [
-            'location_id',
-            'item_id',
-            'moved_date',
-            'positive_quantity',
+            'org_id', 'location_id', 'item_id', 'moved_date', 'positive_quantity',
         ]);
     }
 
@@ -276,5 +353,112 @@ class ItemLocationService extends BaseService
         $relationships = array_merge($defaultRelationships, $with);
 
         return parent::findById($id, $columns, $relationships, $appends);
+    }
+
+    /**
+     * Apply business rules for item location operations.
+     */
+    private function applyItemLocationBusinessRules(array $data, $itemLocationId = null): array
+    {
+        // Set moved_date if not provided
+        if (!isset($data['moved_date'])) {
+            $data['moved_date'] = now();
+        }
+
+        return $data;
+    }
+
+    /**
+     * Apply business rules for move operations.
+     */
+    private function applyMoveBusinessRules(array $data): array
+    {
+        // Set moved_date if not provided
+        if (!isset($data['moved_date'])) {
+            $data['moved_date'] = now();
+        }
+
+        return $data;
+    }
+
+    /**
+     * Apply business rules for update quantity operations.
+     */
+    private function applyUpdateQuantityBusinessRules(array $data): array
+    {
+        // Set moved_date if not provided
+        if (!isset($data['moved_date'])) {
+            $data['moved_date'] = now();
+        }
+
+        return $data;
+    }
+
+    /**
+     * Validate business rules for item location operations.
+     */
+    private function validateItemLocationBusinessRules(array $data, $itemLocationId = null): void
+    {
+        // Validate required fields
+        $requiredFields = ['org_id', 'item_id', 'location_id', 'quantity'];
+        
+        foreach ($requiredFields as $field) {
+            if (empty($data[$field])) {
+                $fieldName = str_replace('_', ' ', $field);
+                throw new \InvalidArgumentException("The {$fieldName} is required");
+            }
+        }
+
+        // Validate quantity is not negative
+        if (isset($data['quantity']) && $data['quantity'] < 0) {
+            throw new \InvalidArgumentException('The quantity cannot be negative');
+        }
+    }
+
+    /**
+     * Validate business rules for move operations.
+     */
+    private function validateMoveBusinessRules(array $data): void
+    {
+        // Validate required fields for move operation
+        $requiredFields = ['org_id', 'item_id', 'from_location_id', 'to_location_id', 'quantity'];
+        
+        foreach ($requiredFields as $field) {
+            if (empty($data[$field])) {
+                $fieldName = str_replace('_', ' ', $field);
+                throw new \InvalidArgumentException("The {$fieldName} is required");
+            }
+        }
+
+        // Validate locations are different
+        if ($data['from_location_id'] == $data['to_location_id']) {
+            throw new \InvalidArgumentException('The destination location must be different from the source location');
+        }
+
+        // Validate quantity is not negative
+        if ($data['quantity'] < 0) {
+            throw new \InvalidArgumentException('The quantity cannot be negative');
+        }
+    }
+
+    /**
+     * Validate business rules for update quantity operations.
+     */
+    private function validateUpdateQuantityBusinessRules(array $data): void
+    {
+        // Validate required fields for update quantity operation
+        $requiredFields = ['org_id', 'item_id', 'location_id', 'quantity'];
+        
+        foreach ($requiredFields as $field) {
+            if (empty($data[$field])) {
+                $fieldName = str_replace('_', ' ', $field);
+                throw new \InvalidArgumentException("The {$fieldName} is required");
+            }
+        }
+
+        // Validate quantity is not negative
+        if ($data['quantity'] < 0) {
+            throw new \InvalidArgumentException('The quantity cannot be negative');
+        }
     }
 }

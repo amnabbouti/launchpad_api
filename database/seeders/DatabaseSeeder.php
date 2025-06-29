@@ -25,20 +25,26 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Get the roles that were created in the migration
-        $superAdminRole = \App\Models\Role::where('slug', 'super_admin')->first();
-        $managerRole = \App\Models\Role::where('slug', 'manager')->first();
-        $employeeRole = \App\Models\Role::where('slug', 'employee')->first();
+        // Run the comprehensive enterprise system seeder first
+        $this->call(EnterpriseSystemSeeder::class);
+        
+        // Then continue with the existing inventory seeding for the first organization
+        $org = \App\Models\Organization::first();
 
-        $org = \App\Models\Organization::first() ?? \App\Models\Organization::factory()->create();
+        // Get system roles from database (created by migration)
+        $superAdminRole = \App\Models\Role::where('slug', 'super_admin')->where('is_system', true)->first();
+        $managerRole = \App\Models\Role::where('slug', 'manager')->where('is_system', true)->first();
+        $employeeRole = \App\Models\Role::where('slug', 'employee')->where('is_system', true)->first();
 
+        // Create users with system roles (now they have role_id for consistency)
         $admin = User::factory()->create([
             'first_name' => 'Admin',
             'last_name' => 'User',
             'email' => 'admin@example.be',
             'password' => Hash::make('admin123'),
-            'org_id' => null, 
-            'role_id' => $superAdminRole->id,
+            'org_id' => null,                // Super admin doesn't belong to any org
+            'org_role' => 'super_admin',     // Keep for backward compatibility
+            'role_id' => $superAdminRole->id, // Now has database role too
         ]);
 
         $testUser = User::factory()->create([
@@ -47,14 +53,65 @@ class DatabaseSeeder extends Seeder
             'email' => 'test@example.com',
             'password' => Hash::make('password'),
             'org_id' => $org->id,
-            'role_id' => $managerRole->id,
+            'org_role' => 'manager',      // Keep for backward compatibility
+            'role_id' => $managerRole->id, // Now has database role too
         ]);
 
-        $users = User::factory(8)->create([
+        // Create some employees with system role
+        $users = User::factory(6)->create([
             'org_id' => $org->id,
-            'role_id' => $employeeRole->id, 
+            'org_role' => 'employee',     // Keep for backward compatibility
+            'role_id' => $employeeRole->id, // Now has database role too
         ]);
-        $allUsers = collect([$admin, $testUser])->merge($users);
+
+        // Create a custom role to demonstrate the hybrid system
+        $warehouseSupervisorRole = \App\Models\Role::create([
+            'slug' => 'warehouse_supervisor',
+            'title' => 'Warehouse Supervisor',
+            'description' => 'Can manage warehouse operations and inventory',
+            'org_id' => $org->id,
+            'forbidden' => [
+                'users.create',           // Can't create users (inherited from employee)
+                'organizations.update',   // Can't update organization
+                // But can delete items (not in forbidden list, unlike regular employees)
+            ],
+        ]);
+
+        $maintenanceTechRole = \App\Models\Role::create([
+            'slug' => 'maintenance_tech',
+            'title' => 'Maintenance Technician',
+            'description' => 'Specializes in equipment maintenance and repairs',
+            'org_id' => $org->id,
+            'forbidden' => [
+                'users.create',
+                'items.delete',           // Can't delete items
+                'organizations.update',
+                // But can manage maintenance (not in forbidden list)
+            ],
+        ]);
+
+        // Create users with custom roles
+        $warehouseSupervisor = User::factory()->create([
+            'first_name' => 'John',
+            'last_name' => 'Supervisor',
+            'email' => 'supervisor@example.com',
+            'password' => Hash::make('password'),
+            'org_id' => $org->id,
+            'org_role' => null,                        // No system role
+            'role_id' => $warehouseSupervisorRole->id, // Custom role
+        ]);
+
+        $maintenanceTech = User::factory()->create([
+            'first_name' => 'Jane',
+            'last_name' => 'Tech',
+            'email' => 'tech@example.com',
+            'password' => Hash::make('password'),
+            'org_id' => $org->id,
+            'org_role' => null,                    // No system role
+            'role_id' => $maintenanceTechRole->id, // Custom role
+        ]);
+
+        $allUsers = collect([$admin, $testUser, $warehouseSupervisor, $maintenanceTech])->merge($users);
 
         // Create statuses first (needed by other models)
         $statusData = [
@@ -345,7 +402,7 @@ class DatabaseSeeder extends Seeder
                     if (! $item->locations()->where('location_id', $location->id)->exists()) {
                         // For bulk items, add a random quantity
                         $quantity = $item->isBulk() ? rand(1, 10) : 1;
-                        
+
                         $item->locations()->attach($location->id, [
                             'org_id' => $org->id,
                             'quantity' => $quantity,
@@ -365,7 +422,7 @@ class DatabaseSeeder extends Seeder
                     if (! $item->suppliers()->where('supplier_id', $supplier->id)->exists()) {
                         $item->suppliers()->attach($supplier->id, [
                             'org_id' => $org->id,
-                            'supplier_part_number' => 'SP'.rand(1000, 9999),
+                            'supplier_part_number' => 'SP' . rand(1000, 9999),
                             'price' => $item->price * (rand(80, 95) / 100),
                             'lead_time_days' => rand(1, 30),
                             'is_preferred' => rand(0, 1),
@@ -462,8 +519,8 @@ class DatabaseSeeder extends Seeder
                     $maintenanceRecord = Maintenance::create([
                         'org_id' => $org->id,
                         'is_repair' => $isRepair,
-                        'remarks' => $isRepair ? 'Repair needed for '.$item->name : 'Routine maintenance for '.$item->name,
-                        'invoice_nbr' => 'INV-'.rand(10000, 99999),
+                        'remarks' => $isRepair ? 'Repair needed for ' . $item->name : 'Routine maintenance for ' . $item->name,
+                        'invoice_nbr' => 'INV-' . rand(10000, 99999),
                         'cost' => rand(50, 500),
                         'date_expected_back_from_maintenance' => $expectedBackDate,
                         'date_back_from_maintenance' => $actualBackDate,
@@ -485,5 +542,32 @@ class DatabaseSeeder extends Seeder
                 }
             }
         }
+
+        // Seed at least one Plan
+        $plan = \App\Models\Plan::firstOrCreate([
+            'name' => 'Pro',
+        ], [
+            'name' => 'Pro',
+            'price' => 99.99,
+            'user_limit' => 25,
+            'features' => json_encode(['priority_support', 'advanced_reports', 'api_access']),
+            'interval' => 'monthly',
+            'is_active' => true,
+        ]);
+
+        // Seed at least one License for the org and plan
+        $license = \App\Models\License::firstOrCreate([
+            'organization_id' => $org->id,
+            'plan_id' => $plan->id,
+        ], [
+            'organization_id' => $org->id,
+            'plan_id' => $plan->id,
+            'seats' => 10,
+            'license_key' => strtoupper(uniqid('LIC-')),
+            'starts_at' => now()->subMonth(),
+            'ends_at' => now()->addYear(),
+            'status' => 'active',
+            'meta' => json_encode(['note' => 'Seeded license']),
+        ]);
     }
 }

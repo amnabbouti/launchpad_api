@@ -23,7 +23,7 @@ class BackfillPublicIds extends Command
     public function handle()
     {
         $modelType = $this->argument('model');
-        
+
         if ($modelType) {
             $this->backfillSingleModel($modelType);
         } else {
@@ -41,7 +41,7 @@ class BackfillPublicIds extends Command
             'maintenance' => \App\Models\Maintenance::class,
             'stock' => \App\Models\Stock::class,
             'check_in_out' => \App\Models\CheckInOut::class,
-            'item_status' => \App\Models\ItemStatus::class,
+            'status' => \App\Models\Status::class,
             'organization' => \App\Models\Organization::class,
             'role' => \App\Models\Role::class,
             'unit_of_measure' => \App\Models\UnitOfMeasure::class,
@@ -51,6 +51,8 @@ class BackfillPublicIds extends Command
             'maintenance_condition' => \App\Models\MaintenanceCondition::class,
             'maintenance_detail' => \App\Models\MaintenanceDetail::class,
             'attachment' => \App\Models\Attachment::class,
+            'user' => \App\Models\User::class,
+            'users' => \App\Models\User::class,
         ];
 
         foreach ($models as $type => $class) {
@@ -70,7 +72,7 @@ class BackfillPublicIds extends Command
             // 'stock_item' => \App\Models\StockItem::class, // Removed as we now use the consolidated Item model
             'stock' => \App\Models\Stock::class,
             'check_in_out' => \App\Models\CheckInOut::class,
-            'item_status' => \App\Models\ItemStatus::class,
+            'status' => \App\Models\Status::class,
             'organization' => \App\Models\Organization::class,
             'role' => \App\Models\Role::class,
             'unit_of_measure' => \App\Models\UnitOfMeasure::class,
@@ -80,6 +82,8 @@ class BackfillPublicIds extends Command
             'maintenance_condition' => \App\Models\MaintenanceCondition::class,
             'maintenance_detail' => \App\Models\MaintenanceDetail::class,
             'attachment' => \App\Models\Attachment::class,
+            'user' => \App\Models\User::class,
+            'users' => \App\Models\User::class,
         ];
 
         if (!isset($models[$modelType])) {
@@ -112,6 +116,12 @@ class BackfillPublicIds extends Command
         $failed = 0;
 
         foreach ($modelsWithoutPublicId as $model) {
+            // Skip if org_id is null (global/super admin roles, etc.)
+            if (!isset($model->org_id) || is_null($model->org_id)) {
+                $this->line("\n  Skipping {$entityType} ID {$model->id} (org_id is null)");
+                $bar->advance();
+                continue;
+            }
             try {
                 $this->entityIdService->generatePublicId(
                     $model->org_id,

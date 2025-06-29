@@ -27,6 +27,11 @@ yarn-error.log
 .env.prod
 .env.testing
 .env.local
-
+/docker
 
 .vemto_settings
+/.ddev
+package-lock.json
+composer.lock
+/tests
+/scripts

@@ -5,7 +5,28 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Services\PublicIdResolver;
 
+/**
+ * Base Request Class - CLEAN ARCHITECTURE PRINCIPLE
+ * 
+ * 🎯 REQUESTS SHOULD ONLY HANDLE VALIDATION
+ * ✅ Basic field validation (required, string, max, etc.)
+ * ✅ Simple format validation (email, date, etc.)
+ * ✅ Basic existence checks (exists:table,id)
+ * 
+ * ❌ NO BUSINESS LOGIC IN REQUESTS
+ * ❌ NO conditional validation based on business rules
+ * ❌ NO data transformation or manipulation
+ * ❌ NO complex uniqueness checks with context
+ * 
+ * 🔧 BUSINESS LOGIC BELONGS IN SERVICES
+ * - Complex validation rules
+ * - Conditional requirements
+ * - Data transformation
+ * - Uniqueness checks with organization context
+ * - Authorization logic
+ */
 abstract class BaseRequest extends FormRequest
 {
     /**
@@ -17,9 +38,22 @@ abstract class BaseRequest extends FormRequest
     }
 
     /**
-     * validation rules.
+     * Get validation rules - with global GET request handling.
      */
-    abstract public function rules(): array;
+    public function rules(): array
+    {
+        // Global rule: GET requests don't need validation
+        if ($this->isMethod('GET')) {
+            return [];
+        }
+
+        return $this->getValidationRules();
+    }
+
+    /**
+     * Get the actual validation rules (implemented by child classes).
+     */
+    abstract protected function getValidationRules(): array;
 
     /**
      * Get custom messages for validator errors.
@@ -54,56 +88,12 @@ abstract class BaseRequest extends FormRequest
      */
     protected function resolvePublicIds(): void
     {
-        $user = Auth::guard('api')->user();
-
-        if (!$user) {
-            $user = Auth::user();
-        }
-
-        if (!$user) {
-            return;
-        }
-
-        $orgId = $user->org_id;
-
         $data = $this->all();
-
-        $foreignKeyMappings = [
-            'item_id' => \App\Models\Item::class,
-            'supplier_id' => \App\Models\Supplier::class,
-            'parent_id' => \App\Models\Location::class,
-            'location_id' => \App\Models\Location::class,
-            'to_location_id' => \App\Models\Location::class,
-            'from_location_id' => \App\Models\Location::class,
-            'checkin_location_id' => \App\Models\Location::class,
-            'checkout_location_id' => \App\Models\Location::class,
-            'status_id' => \App\Models\Status::class,
-            'status_out_id' => \App\Models\Status::class,
-            'status_in_id' => \App\Models\Status::class,
-            'unit_id' => \App\Models\UnitOfMeasure::class,
-            'role_id' => \App\Models\Role::class,
-            'category_id' => \App\Models\Category::class,
-            'user_id' => \App\Models\User::class,
-            'parent_item_id' => \App\Models\Item::class,
-            'item_relation_id' => \App\Models\Item::class,
-        ];
-
-        $resolvedData = [];
-
-        foreach ($foreignKeyMappings as $field => $modelClass) {
-            if (isset($data[$field]) && is_string($data[$field]) && !is_numeric($data[$field])) {
-                // resolve public ID to internal ID
-                if (method_exists($modelClass, 'findByPublicId')) {
-                    $model = $modelClass::findByPublicId($data[$field], $orgId);
-                    if ($model) {
-                        $resolvedData[$field] = $model->id;
-                    }
-                }
-            }
-        }
-
-        if (!empty($resolvedData)) {
-            $this->merge($resolvedData);
+        $resolvedData = PublicIdResolver::resolve($data);
+        
+        // Only merge if there were changes
+        if ($resolvedData !== $data) {
+            $this->replace($resolvedData);
         }
     }
 }

@@ -32,7 +32,7 @@ class UserController extends BaseController
         $resourceType = 'users';
 
         if ($users->isEmpty()) {
-            $hasFilters = ! empty(array_filter($filters, fn ($value) => $value !== null && $value !== ''));
+            $hasFilters = ! empty(array_filter($filters, fn($value) => $value !== null && $value !== ''));
             if ($hasFilters) {
                 $message = str_replace('resources', $resourceType, ErrorMessages::NO_RESOURCES_FOUND);
             } else {
@@ -68,13 +68,9 @@ class UserController extends BaseController
     /**
      * Get a specific user by ID.
      */
-    public function show(int $id): JsonResponse
+    public function show($id): JsonResponse
     {
-        $user = $this->userService->findVisibleUser($id, ['*'], ['role', 'organization']);
-
-        if (! $user) {
-            return $this->errorResponse(ErrorMessages::NOT_FOUND, HttpStatus::HTTP_NOT_FOUND);
-        }
+        $user = $this->userService->findById($id, ['*'], ['role', 'organization']);
 
         return $this->successResponse(new UserResource($user));
     }

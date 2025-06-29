@@ -2,33 +2,24 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Validation\Rule;
-
 class StatusRequest extends BaseRequest
 {
     /**
-     * validation rules.
+     * Validation rules
      */
-    public function rules(): array
+    protected function getValidationRules(): array
     {
-        $statusId = $this->route('status')?->id ?? $this->status_id ?? null;
-
         return [
             'name' => 'required|string|max:255',
+            'code' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'is_active' => 'boolean',
+            'is_active' => 'nullable|boolean',
             'org_id' => 'required|exists:organizations,id',
-            'code' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('statuses')->ignore($statusId)->where(fn ($query) => $query->where('org_id', $this->org_id)),
-            ],
         ];
     }
 
     /**
-     * error messages.
+     * Error messages
      */
     public function messages(): array
     {
@@ -43,7 +34,6 @@ class StatusRequest extends BaseRequest
             'code.required' => 'The status code is required',
             'code.string' => 'The status code must be a string',
             'code.max' => 'The status code may not be greater than 255 characters',
-            'code.unique' => 'This status code already exists in your organization',
         ];
     }
 }

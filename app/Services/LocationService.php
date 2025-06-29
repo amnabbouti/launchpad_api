@@ -48,6 +48,10 @@ class LocationService extends BaseService
      */
     public function createLocation(array $data): Model
     {
+        // Apply business rules and validation
+        $data = $this->applyLocationBusinessRules($data);
+        $this->validateLocationBusinessRules($data);
+
         // Handle path for hierarchical locations
         if (! empty($data['parent_id'])) {
             $parent = $this->findById($data['parent_id']);
@@ -65,6 +69,10 @@ class LocationService extends BaseService
      */
     public function update($id, array $data): Model
     {
+        // Apply business rules and validation
+        $data = $this->applyLocationBusinessRules($data, $id);
+        $this->validateLocationBusinessRules($data, $id);
+
         $location = $this->findById($id);
 
         // Update the path for hierarchical locations if parent changed
@@ -143,7 +151,6 @@ class LocationService extends BaseService
 
     /**
      * Get root locations with full nested hierarchy.
-     * This returns only top-level locations with all their children nested.
      */
     public function getRootLocationsWithHierarchy(): Collection
     {
@@ -169,5 +176,78 @@ class LocationService extends BaseService
             'parent_id' => $this->toInt($params['parent_id'] ?? null),
             'with' => $this->processWithParameter($params['with'] ?? null),
         ];
+    }
+
+    /**
+     * Get allowed query parameters.
+     */
+    protected function getAllowedParams(): array
+    {
+        return array_merge(parent::getAllowedParams(), [
+            'org_id', 'name', 'code', 'description', 'is_active', 'parent_id',
+        ]);
+    }
+
+    /**
+     * Apply business rules for location operations.
+     */
+    private function applyLocationBusinessRules(array $data, $locationId = null): array
+    {
+        // Set default active status if not provided
+        if (!isset($data['is_active'])) {
+            $data['is_active'] = true;
+        }
+
+        return $data;
+    }
+
+    /**
+     * Validate business rules for location operations.
+     */
+    private function validateLocationBusinessRules(array $data, $locationId = null): void
+    {
+        // Validate required fields
+        if (empty($data['name'])) {
+            throw new \InvalidArgumentException('The location name is required and cannot be empty');
+        }
+
+        if (empty($data['code'])) {
+            throw new \InvalidArgumentException('The location code is required and cannot be empty');
+        }
+
+        if (empty($data['org_id'])) {
+            throw new \InvalidArgumentException('Organization ID is required');
+        }
+
+        // Validate organization exists
+        $organization = \App\Models\Organization::find($data['org_id']);
+        if (!$organization) {
+            throw new \InvalidArgumentException('The specified organization does not exist');
+        }
+
+        // Validate code uniqueness within organization
+        $query = Location::where('code', $data['code'])
+                         ->where('org_id', $data['org_id']);
+        
+        if ($locationId) {
+            $query->where('id', '!=', $locationId);
+        }
+        
+        if ($query->exists()) {
+            throw new \InvalidArgumentException('This location code already exists in your organization');
+        }
+
+        // Validate parent location exists if provided
+        if (isset($data['parent_id']) && !empty($data['parent_id'])) {
+            $parent = Location::find($data['parent_id']);
+            if (!$parent) {
+                throw new \InvalidArgumentException('The selected parent location does not exist in your organization');
+            }
+
+            // Prevent circular references
+            if ($locationId && $data['parent_id'] == $locationId) {
+                throw new \InvalidArgumentException('A location cannot be its own parent');
+            }
+        }
     }
 }

@@ -90,7 +90,7 @@ class ItemLocationController extends BaseController
         try {
             $success = $this->itemLocationService->moveItem(
                 $validated['item_id'],
-                $validated['from_location_id'],
+                $validated['from_location_id'] ?? null,
                 $validated['to_location_id'],
                 $validated['quantity'],
             );

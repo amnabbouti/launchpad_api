@@ -48,8 +48,7 @@ class CategoryService extends BaseService
         $query = $this->getQuery();
 
         // Apply filters
-        $query->when($filters['org_id'] ?? null, fn ($q, $value) => $q->where('org_id', $value))
-            ->when($filters['name'] ?? null, fn ($q, $value) => $q->where('name', 'like', "%{$value}%"))
+        $query->when($filters['name'] ?? null, fn ($q, $value) => $q->where('name', 'like', "%{$value}%"))
             ->when($filters['parent_id'] ?? null, fn ($q, $value) => $q->where('parent_id', $value))
             ->when(isset($filters['is_active']), fn ($q) => $q->where('is_active', $filters['is_active']))
             ->when($filters['with'] ?? null, fn ($q, $relations) => $q->with($relations));
@@ -62,6 +61,10 @@ class CategoryService extends BaseService
      */
     public function create(array $data): Model
     {
+        // Apply business rules and validation
+        $data = $this->applyCategoryBusinessRules($data);
+        $this->validateCategoryBusinessRules($data);
+
         // Handle path for hierarchical categories
         if (! empty($data['parent_id'])) {
             $parent = $this->findById($data['parent_id']);
@@ -76,6 +79,10 @@ class CategoryService extends BaseService
      */
     public function update($id, array $data): Model
     {
+        // Apply business rules and validation
+        $data = $this->applyCategoryBusinessRules($data, $id);
+        $this->validateCategoryBusinessRules($data, $id);
+
         if (isset($data['parent_id'])) {
             if (! empty($data['parent_id'])) {
                 $parent = $this->findById($data['parent_id']);
@@ -111,7 +118,6 @@ class CategoryService extends BaseService
      */
     public function processRequestParams(array $params): array
     {
-        // Validate parameters against whitelist for security
         $this->validateParams($params);
 
         return [
@@ -121,5 +127,54 @@ class CategoryService extends BaseService
             'is_active' => $this->toBool($params['is_active'] ?? null),
             'with' => $this->processWithParameter($params['with'] ?? null),
         ];
+    }
+
+    /**
+     * Apply business rules for category operations.
+     */
+    private function applyCategoryBusinessRules(array $data, $categoryId = null): array
+    {
+        // Set default active status if not provided
+        if (!isset($data['is_active'])) {
+            $data['is_active'] = true;
+        }
+
+        return $data;
+    }
+
+    /**
+     * Validate business rules for category operations.
+     */
+    private function validateCategoryBusinessRules(array $data, $categoryId = null): void
+    {
+        // Validate required fields
+        if (empty($data['name'])) {
+            throw new \InvalidArgumentException('The category name is required');
+        }
+
+        if (empty($data['org_id'])) {
+            throw new \InvalidArgumentException('The organization ID is required');
+        }
+
+        // Validate parent category exists if provided
+        if (isset($data['parent_id']) && !empty($data['parent_id'])) {
+            $parent = Category::find($data['parent_id']);
+            if (!$parent) {
+                throw new \InvalidArgumentException('The selected parent category does not exist');
+            }
+
+            // Prevent circular references
+            if ($categoryId && $data['parent_id'] == $categoryId) {
+                throw new \InvalidArgumentException('A category cannot be its own parent');
+            }
+        }
+
+        // Validate organization exists
+        if (isset($data['org_id'])) {
+            $organization = \App\Models\Organization::find($data['org_id']);
+            if (!$organization) {
+                throw new \InvalidArgumentException('The selected organization is invalid');
+            }
+        }
     }
 }

@@ -7,7 +7,7 @@ class ItemMoveRequest extends BaseRequest
     /**
      * Get validation rules
      */
-    public function rules(): array
+    protected function getValidationRules(): array
     {
         return [
             'to_location_id' => 'required|exists:locations,id',

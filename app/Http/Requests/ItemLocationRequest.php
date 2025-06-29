@@ -5,42 +5,16 @@ namespace App\Http\Requests;
 class ItemLocationRequest extends BaseRequest
 {
     /**
-     * validation rules.
+     * Validation rules
      */
-    public function rules(): array
+    protected function getValidationRules(): array
     {
-        $itemLocationId = $this->route('id') ?? null;
-        $isMove = $this->isMethod('post') && str_contains($this->path(), 'move');
-        $isUpdateQuantity = $this->isMethod('put') && str_contains($this->path(), 'update-quantity');
-        $orgId = auth()->user()->org_id;
-
-        if ($isMove) {
-            return [
-                'org_id' => 'required|exists:organizations,id',
-                'item_id' => 'required|integer',
-                'from_location_id' => 'required|integer',
-                'to_location_id' => 'required|integer|different:from_location_id',
-                'quantity' => 'required|numeric|min:0',
-                'moved_date' => 'nullable|date',
-                'notes' => 'nullable|string|max:65535',
-            ];
-        }
-
-        if ($isUpdateQuantity) {
-            return [
-                'org_id' => 'required|exists:organizations,id',
-                'item_id' => 'required|integer',
-                'location_id' => 'required|integer',
-                'quantity' => 'required|numeric|min:0',
-                'moved_date' => 'nullable|date',
-                'notes' => 'nullable|string|max:65535',
-            ];
-        }
-
         return [
             'org_id' => 'required|exists:organizations,id',
-            'item_id' => 'required|string',
-            'location_id' => 'required|string',
+            'item_id' => 'required|exists:items,id',
+            'location_id' => 'nullable|exists:locations,id',
+            'from_location_id' => 'nullable|exists:locations,id',
+            'to_location_id' => 'nullable|exists:locations,id',
             'quantity' => 'required|numeric|min:0',
             'moved_date' => 'nullable|date',
             'notes' => 'nullable|string|max:65535',
@@ -48,7 +22,7 @@ class ItemLocationRequest extends BaseRequest
     }
 
     /**
-     * error messages.
+     * Error messages
      */
     public function messages(): array
     {
@@ -59,14 +33,14 @@ class ItemLocationRequest extends BaseRequest
             'item_id.exists' => 'The selected item is invalid',
             'location_id.required' => 'The location is required',
             'location_id.exists' => 'The selected location is invalid',
-            'location_id.unique' => 'This item is already assigned to this location for the organization',
             'from_location_id.required' => 'The source location is required',
             'from_location_id.exists' => 'The selected source location is invalid',
             'to_location_id.required' => 'The destination location is required',
             'to_location_id.exists' => 'The selected destination location is invalid',
-            'to_location_id.different' => 'The destination location must be different from the source location',
             'quantity.required' => 'The quantity is required',
+            'quantity.numeric' => 'The quantity must be a number',
             'quantity.min' => 'The quantity cannot be negative',
+            'moved_date.date' => 'The moved date must be a valid date',
             'notes.max' => 'The notes field is too long',
         ];
     }

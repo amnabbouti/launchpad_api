@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Attachment;
+use App\Services\AuthorizationEngine;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
@@ -88,6 +89,9 @@ class AttachmentService extends BaseService
      */
     public function createAttachment(array $data): Model
     {
+        $data = $this->applyAttachmentBusinessRules($data);
+        $this->validateAttachmentBusinessRules($data);
+
         if (isset($data['file']) && $data['file'] instanceof UploadedFile) {
             $file = $data['file'];
             $path = $file->store('attachments/'.date('Y/m'), 'public');
@@ -140,6 +144,9 @@ class AttachmentService extends BaseService
      */
     public function updateAttachment(int $id, array $data): Model
     {
+        $data = $this->applyAttachmentBusinessRules($data, $id);
+        $this->validateAttachmentBusinessRules($data, $id);
+
         $attachment = $this->findById($id);
 
         if (isset($data['file']) && $data['file'] instanceof UploadedFile) {
@@ -179,7 +186,7 @@ class AttachmentService extends BaseService
     protected function getAllowedParams(): array
     {
         return array_merge(parent::getAllowedParams(), [
-            'category', 'file_type', 'description', 'filename', 'user_id', 
+            'org_id', 'category', 'file_type', 'description', 'filename', 'user_id', 
             'min_size', 'max_size', 'attachmentable_type', 'attachmentable_id',
         ]);
     }
@@ -274,5 +281,87 @@ class AttachmentService extends BaseService
             'App\\Models\\Category',
             'App\\Models\\ItemLocation'
         ];
+    }
+
+    /**
+     * Determine operation type from request method.
+     */
+    public function determineOperationType(string $method): string
+    {
+        return match($method) {
+            'PUT', 'PATCH' => 'update',
+            'POST' => 'create',
+            default => 'default'
+        };
+    }
+
+    /**
+     * Apply business rules for attachment operations.
+     */
+    private function applyAttachmentBusinessRules(array $data, $attachmentId = null): array
+    {
+        // Set user_id if not provided
+        if (!isset($data['user_id'])) {
+            $data['user_id'] = AuthorizationEngine::getCurrentUser()?->id;
+        }
+
+        return $data;
+    }
+
+    /**
+     * Validate business rules for attachment operations.
+     */
+    private function validateAttachmentBusinessRules(array $data, $attachmentId = null): void
+    {
+        // Validate required fields
+        $requiredFields = ['attachmentable_type', 'attachmentable_id', 'org_id'];
+        
+        foreach ($requiredFields as $field) {
+            if (empty($data[$field])) {
+                $fieldName = str_replace('_', ' ', $field);
+                throw new \InvalidArgumentException("The {$fieldName} is required");
+            }
+        }
+
+        // Validate file requirements based on operation type
+        // For create operations, file is required; for updates, it's optional
+        $isUpdate = $attachmentId !== null;
+        
+        if (!$isUpdate && !isset($data['file'])) {
+            throw new \InvalidArgumentException('A file is required for upload');
+        }
+
+        // Validate file if provided
+        if (isset($data['file'])) {
+            $file = $data['file'];
+            
+            if (!($file instanceof UploadedFile)) {
+                throw new \InvalidArgumentException('The uploaded file is not valid');
+            }
+
+            // Validate file size (max 10MB)
+            if ($file->getSize() > 10485760) {
+                throw new \InvalidArgumentException('The file size cannot exceed 10MB');
+            }
+
+            // Validate file type
+            $allowedMimes = [
+                'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                'text/plain', 'image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'image/svg+xml',
+                'application/zip', 'application/x-rar-compressed'
+            ];
+
+            if (!in_array($file->getMimeType(), $allowedMimes)) {
+                throw new \InvalidArgumentException('The file must be a valid type: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT, JPG, JPEG, PNG, GIF, BMP, SVG, ZIP, or RAR');
+            }
+        }
+
+        // Validate attachmentable type is supported
+        $supportedTypes = $this->getSupportedEntityTypes();
+        if (!in_array($data['attachmentable_type'], $supportedTypes)) {
+            throw new \InvalidArgumentException('You must specify what entity this attachment belongs to. Use GET /api/attachments/supported-types to see available options');
+        }
     }
 }

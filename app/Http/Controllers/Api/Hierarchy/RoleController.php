@@ -68,7 +68,7 @@ class RoleController extends BaseController
      */
     public function store(StoreRoleRequest $request): JsonResponse
     {
-        $role = $this->roleService->create($request->validated());
+        $role = $this->roleService->createCustomRole($request->validated());
 
         return $this->successResponse([new RoleResource($role)], SuccessMessages::RESOURCE_CREATED, HttpStatus::HTTP_CREATED);
     }
@@ -78,7 +78,7 @@ class RoleController extends BaseController
      */
     public function update(UpdateRoleRequest $request, int $id): JsonResponse
     {
-        $role = $this->roleService->update($id, $request->validated());
+        $role = $this->roleService->updateCustomRole($id, $request->validated());
 
         return $this->successResponse([new RoleResource($role)], SuccessMessages::RESOURCE_UPDATED);
     }
@@ -88,19 +88,19 @@ class RoleController extends BaseController
      */
     public function destroy(int $id): JsonResponse
     {
-        $this->roleService->delete($id);
+        $this->roleService->deleteCustomRole($id);
 
         return $this->successResponse([], SuccessMessages::RESOURCE_DELETED);
     }
 
     /**
-     * Get all available actions that can be forbidden.
+     * Get all available permissions that can be forbidden.
      */
     public function availableActions(): JsonResponse
     {
-        $actions = $this->roleService->getAvailableActions();
+        $permissions = $this->roleService->getAvailablePermissions();
 
-        return $this->successResponse([$actions]);
+        return $this->successResponse([$permissions]);
     }
 
     /**

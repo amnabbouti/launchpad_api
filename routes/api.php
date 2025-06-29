@@ -23,6 +23,9 @@ use App\Http\Middleware\VerifyOrganizationAccess;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Admin\ApiKeyController;
 use App\Http\Controllers\Api\Admin\ThreatDetectionController;
+use App\Http\Controllers\Api\Hierarchy\PlanController;
+use App\Http\Controllers\Api\Hierarchy\LicenseController;
+use App\Http\Controllers\Api\TranslationController;
 
 
 // API key route
@@ -34,6 +37,10 @@ Route::get('/get-env-key', fn() => response()->json([
 Route::post('/login', [AuthController::class, 'login']); // For regular app users
 Route::post('/admin/login', [AdminAuthController::class, 'login']); // For super admin dashboard
 Route::get('/test', fn() => response()->json(['message' => 'API is working']));
+
+// Translation routes (public for frontend access)
+Route::get('/translations/{locale?}', [TranslationController::class, 'getTranslations']);
+Route::get('/translations/{locale}/{key}', [TranslationController::class, 'getTranslation']);
 
 // Organizations routes
 Route::middleware(['auth:sanctum', VerifyOrganizationAccess::class])->prefix('organizations')->group(function () {
@@ -147,7 +154,18 @@ Route::middleware(['auth:sanctum', VerifyOrganizationAccess::class])->prefix('ad
     Route::get('/threats', [ThreatDetectionController::class, 'overview']);
 });
 
+// Plans routes
+Route::middleware(['auth:sanctum', VerifyOrganizationAccess::class])->prefix('plans')->group(function () {
+    Route::apiResource('/', PlanController::class, ['parameters' => ['' => 'plan']])->except(['put']);
+});
 
+// Licenses routes
+Route::middleware(['auth:sanctum', VerifyOrganizationAccess::class])->prefix('licenses')->group(function () {
+    Route::post('/{id}/activate', [LicenseController::class, 'activate']);
+    Route::post('/{id}/suspend', [LicenseController::class, 'suspend']);
+    Route::post('/{id}/expire', [LicenseController::class, 'expire']);
+    Route::apiResource('/', LicenseController::class, ['parameters' => ['' => 'license']])->except(['put']);
+});
 
 Route::middleware(['decrypt.token', 'auth:sanctum'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -158,6 +176,8 @@ Route::middleware(['decrypt.token', 'auth:sanctum'])->prefix('admin')->group(fun
     Route::post('/logout', [AdminAuthController::class, 'logout']);
     Route::get('/user', [AdminAuthController::class, 'user']);
 });
+
+
 
 // Fallback route
 Route::fallback(fn() => response()->json(['error' => 'API resource not found'], 404));

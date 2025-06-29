@@ -6,7 +6,6 @@ class ThreatDetectionRequest extends BaseRequest
 {
     /**
      * Determine if the user is authorized to make this request.
-     * Following your pattern - authorization is handled by middleware
      */
     public function authorize(): bool
     {
@@ -16,10 +15,10 @@ class ThreatDetectionRequest extends BaseRequest
     /**
      * Get the validation rules that apply to the request.
      */
-    public function rules(): array
+    protected function getValidationRules(): array
     {
         return [
-            'time_range' => 'nullable|integer|min:1|max:168', // Max 1 week (168 hours)
+            'time_range' => 'nullable|integer|min:1|max:168',
             'severity' => 'nullable|in:low,medium,high,critical',
             'ip_address' => 'nullable|ip',
             'threat_type' => 'nullable|in:brute_force,endpoint_scanning,high_error_rate,auth_failure_spike,rate_limit_exceeded',

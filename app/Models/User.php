@@ -79,26 +79,61 @@ class User extends Authenticatable
 
     public function isSuperAdmin(): bool
     {
-        return $this->role?->slug === 'super_admin';
+        return $this->getCurrentRoleSlug() === 'super_admin';
     }
 
     public function isManager(): bool
     {
-        return $this->role?->slug === 'manager';
+        return $this->getCurrentRoleSlug() === 'manager';
     }
 
     public function isEmployee(): bool
     {
-        return $this->role?->slug === 'employee';
+        return $this->getCurrentRoleSlug() === 'employee';
+    }
+
+    /**
+     * Get the current role slug (system role or custom role).
+     */
+    public function getCurrentRoleSlug(): ?string
+    {
+        // Always use the database role now (both system and custom roles are in DB)
+        if ($this->role_id && $this->role) {
+            return $this->role->slug;
+        }
+
+        // Fallback to org_role field for backward compatibility (should not happen after migration)
+        return $this->org_role ?? 'employee';
+    }
+
+    /**
+     * Get the current role title for display.
+     */
+    public function getCurrentRoleTitle(): ?string
+    {
+        // Always use the database role title (both system and custom roles are in DB)
+        return $this->role?->title ?? 'Employee';
     }
 
     public function hasPermission(string $action): bool
     {
-        if (! $this->role) {
+        $roleSlug = $this->getCurrentRoleSlug();
+        
+        if (!$roleSlug) {
             return false;
         }
 
-        return $this->role->allows($action);
+        // Parse action to extract resource and action parts
+        // e.g., "roles.create" -> resource="roles", action="create"
+        $parts = explode('.', $action, 2);
+        if (count($parts) !== 2) {
+            return false; // Invalid action format
+        }
+        
+        [$resource, $actionPart] = $parts;
+
+        // Use AuthorizationEngine to check permissions with correct resource
+        return !\App\Services\AuthorizationEngine::isForbidden($actionPart, $resource, $this);
     }
 
     public function lacksPermission(string $action): bool
@@ -116,6 +151,6 @@ class User extends Authenticatable
      */
     public function getName(): string
     {
-        return trim($this->first_name.' '.$this->last_name);
+        return trim($this->first_name . ' ' . $this->last_name);
     }
 }

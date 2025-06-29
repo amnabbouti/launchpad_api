@@ -198,15 +198,37 @@ class CheckInOutController extends BaseController
 
     public function checkAvailability($itemLocationId): JsonResponse
     {
-        $availability = $this->checkInOutService->getAvailabilityData($itemLocationId);
+        $itemLocationService = app(\App\Services\ItemLocationService::class);
+        
+        try {
+            $itemLocation = $itemLocationService->findById($itemLocationId);
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                'Item location not found',
+                HttpStatus::HTTP_NOT_FOUND
+            );
+        }
+
+        $availability = $this->checkInOutService->getAvailabilityData($itemLocation->id);
 
         return $this->successResponse($availability, 'Availability data retrieved');
     }
 
     public function history($itemLocationId): JsonResponse
     {
+        $itemLocationService = app(\App\Services\ItemLocationService::class);
+        
+        try {
+            $itemLocation = $itemLocationService->findById($itemLocationId);
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                'Item location not found',
+                HttpStatus::HTTP_NOT_FOUND
+            );
+        }
+
         $history = $this->checkInOutService->getFiltered([
-            'trackable_id' => $itemLocationId,
+            'trackable_id' => $itemLocation->id,
             'trackable_type' => \App\Models\ItemLocation::class,
             'with' => ['user', 'checkinUser', 'checkoutLocation', 'checkinLocation', 'statusOut', 'statusIn']
         ]);

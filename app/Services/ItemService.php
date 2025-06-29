@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\Item;
+use App\Services\AuthorizationEngine;
+use App\Services\PublicIdResolver;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -40,7 +42,6 @@ class ItemService extends BaseService
             ->when($filters['location_id'] ?? null, fn($q, $value) => $q->byLocation($value))
             ->when($filters['q'] ?? null, fn($q, $value) => $q->search($value))
             ->when(isset($filters['is_active']) && $filters['is_active'], fn($q) => $q->active())
-            ->when($filters['org_id'] ?? null, fn($q, $value) => $q->where('org_id', $value))
             ->when($filters['category_id'] ?? null, fn($q, $value) => $q->where('category_id', $value))
             ->when($filters['user_id'] ?? null, fn($q, $value) => $q->where('user_id', $value))
             ->when($filters['name'] ?? null, fn($q, $value) => $q->where('name', 'like', "%{$value}%"))
@@ -78,10 +79,14 @@ class ItemService extends BaseService
     }
 
     /**
-     * Create a new item and its locations.
+     * Create a new item with business logic validation.
      */
     public function create(array $data): Model
     {
+        // Apply business logic before creation
+        $data = $this->applyBusinessRules($data);
+        $this->validateBusinessRules($data);
+
         // Extract locations from data if present
         $locations = $data['locations'] ?? null;
         unset($data['locations']);
@@ -99,10 +104,14 @@ class ItemService extends BaseService
     }
 
     /**
-     * Update an item and its locations.
+     * Update an item with business logic validation.
      */
     public function update($id, array $data): Model
     {
+        // Apply business logic before update
+        $data = $this->applyBusinessRules($data, $id);
+        $this->validateBusinessRules($data, $id);
+
         // Extract locations from data if present
         $locations = $data['locations'] ?? null;
         unset($data['locations']);
@@ -126,16 +135,9 @@ class ItemService extends BaseService
     {
         foreach ($locations as $locationData) {
             if (isset($locationData['id']) && isset($locationData['quantity'])) {
-                $locationId = $locationData['id'];
-
-                // If it's a public ID (LOC-xxxx), resolve to internal ID
-                if (is_string($locationId) && !is_numeric($locationId)) {
-                    $location = \App\Models\Location::findByPublicId($locationId, $item->org_id);
-                    if (!$location) {
-                        continue; // Skip if location not found
-                    }
-                    $locationId = $location->id;
-                }
+                // Use universal public ID resolver
+                $resolvedData = PublicIdResolver::resolve(['location_id' => $locationData['id']]);
+                $locationId = $resolvedData['location_id'];
 
                 // Create the item-location record using the ItemLocation model
                 \App\Models\ItemLocation::create([
@@ -156,16 +158,9 @@ class ItemService extends BaseService
     {
         foreach ($locations as $locationData) {
             if (isset($locationData['id']) && isset($locationData['quantity'])) {
-                $locationId = $locationData['id'];
-
-                // If it's a public ID (LOC-xxxx), resolve to internal ID
-                if (is_string($locationId) && !is_numeric($locationId)) {
-                    $location = \App\Models\Location::findByPublicId($locationId, $item->org_id);
-                    if (!$location) {
-                        continue;
-                    }
-                    $locationId = $location->id;
-                }
+                // Use universal public ID resolver
+                $resolvedData = PublicIdResolver::resolve(['location_id' => $locationData['id']]);
+                $locationId = $resolvedData['location_id'];
 
                 // Update the quantity in the pivot table
                 $item->locations()->updateExistingPivot(
@@ -244,7 +239,7 @@ class ItemService extends BaseService
     public function toggleMaintenance($id, string $action, string $date, ?string $remarks = null, bool $isRepair = false): Model
     {
         $item = $this->findById($id);
-        $user = auth()->user();
+        $user = AuthorizationEngine::getCurrentUser();
         $orgId = $user->org_id ?? $item->org_id;
 
         if ($action === 'in') {
@@ -275,5 +270,76 @@ class ItemService extends BaseService
 
         // Return fresh item with updated maintenance status
         return $item->fresh(['maintenances']);
+    }
+
+    /**
+     * Apply business rules and constraints to item data.
+     */
+    private function applyBusinessRules(array $data, $itemId = null): array
+    {
+        // Apply tracking mode constraints
+        if (isset($data['tracking_mode'])) {
+            switch ($data['tracking_mode']) {
+                case 'abstract':
+                    // Abstract items don't have serial numbers, status, or notes
+                    $data['serial_number'] = null;
+                    $data['status_id'] = null;
+                    $data['notes'] = null;
+                    break;
+                case 'bulk':
+                    // Bulk items don't have serial numbers
+                    $data['serial_number'] = null;
+                    break;
+                case 'serialized':
+                    // Serialized items require serial numbers - validation handled below
+                    break;
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * Validate business rules for item data.
+     */
+    private function validateBusinessRules(array $data, $itemId = null): void
+    {
+        $user = AuthorizationEngine::getCurrentUser();
+        $orgId = $user->org_id;
+
+        // Validate tracking mode requirements
+        if (isset($data['tracking_mode']) && $data['tracking_mode'] === 'serialized') {
+            if (empty($data['serial_number'])) {
+                throw new \InvalidArgumentException('Serial number is required for serialized items');
+            }
+        }
+
+        // Validate code uniqueness within organization
+        if (isset($data['code'])) {
+            $query = \App\Models\Item::where('code', $data['code'])
+                ->where('org_id', $orgId);
+            
+            if ($itemId) {
+                $query->where('id', '!=', $itemId);
+            }
+            
+            if ($query->exists()) {
+                throw new \InvalidArgumentException('This item code is already used in your organization');
+            }
+        }
+
+        // Validate serial number uniqueness within organization
+        if (isset($data['serial_number']) && !empty($data['serial_number'])) {
+            $query = \App\Models\Item::where('serial_number', $data['serial_number'])
+                ->where('org_id', $orgId);
+            
+            if ($itemId) {
+                $query->where('id', '!=', $itemId);
+            }
+            
+            if ($query->exists()) {
+                throw new \InvalidArgumentException('This serial number already exists in your organization');
+            }
+        }
     }
 }

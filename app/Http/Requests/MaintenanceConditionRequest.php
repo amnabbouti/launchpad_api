@@ -7,7 +7,7 @@ class MaintenanceConditionRequest extends BaseRequest
     /**
      * validation rules.
      */
-    public function rules(): array
+    protected function getValidationRules(): array
     {
         return [
             'org_id' => 'required|exists:organizations,id',

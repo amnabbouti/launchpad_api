@@ -45,6 +45,9 @@ class StockService extends BaseService
      */
     public function createStock(array $data): Model
     {
+        $data = $this->applyStockBusinessRules($data);
+        $this->validateStockBusinessRules($data);
+
         return $this->create($data);
     }
 
@@ -53,6 +56,9 @@ class StockService extends BaseService
      */
     public function updateStock(int $id, array $data): Model
     {
+        $data = $this->applyStockBusinessRules($data, $id);
+        $this->validateStockBusinessRules($data, $id);
+
         return $this->update($id, $data);
     }
 
@@ -89,7 +95,7 @@ class StockService extends BaseService
     protected function getAllowedParams(): array
     {
         return array_merge(parent::getAllowedParams(), [
-            'supplier_id', 'batch_number', 'received_date', 'expiry_date', 
+            'org_id', 'supplier_id', 'batch_number', 'received_date', 'expiry_date', 
             'is_active', 'expired',
         ]);
     }
@@ -100,5 +106,65 @@ class StockService extends BaseService
     protected function getValidRelations(): array
     {
         return ['supplier', 'items'];
+    }
+
+    /**
+     * Apply business rules for stock operations.
+     */
+    private function applyStockBusinessRules(array $data, $stockId = null): array
+    {
+        // Set default active status if not provided
+        if (!isset($data['is_active'])) {
+            $data['is_active'] = true;
+        }
+
+        return $data;
+    }
+
+    /**
+     * Validate business rules for stock operations.
+     */
+    private function validateStockBusinessRules(array $data, $stockId = null): void
+    {
+        // Validate required fields
+        $requiredFields = ['org_id', 'item_id', 'supplier_id', 'quantity', 'batch_number', 'received_date', 'unit_cost'];
+        
+        foreach ($requiredFields as $field) {
+            if (empty($data[$field])) {
+                $fieldName = str_replace('_', ' ', $field);
+                throw new \InvalidArgumentException("The {$fieldName} is required");
+            }
+        }
+
+        // Validate numeric fields
+        if (isset($data['quantity']) && ($data['quantity'] <= 0)) {
+            throw new \InvalidArgumentException('The quantity must be greater than 0');
+        }
+
+        if (isset($data['unit_cost']) && ($data['unit_cost'] < 0)) {
+            throw new \InvalidArgumentException('The unit cost cannot be negative');
+        }
+
+        // Validate batch number uniqueness within organization
+        $query = Stock::where('batch_number', $data['batch_number'])
+                     ->where('org_id', $data['org_id']);
+        
+        if ($stockId) {
+            $query->where('id', '!=', $stockId);
+        }
+        
+        if ($query->exists()) {
+            throw new \InvalidArgumentException('This batch number already exists in your organization');
+        }
+
+        // Validate date relationships
+        if (isset($data['expiry_date']) && isset($data['received_date'])) {
+            $receivedDate = \Carbon\Carbon::parse($data['received_date']);
+            $expiryDate = \Carbon\Carbon::parse($data['expiry_date']);
+            
+            if ($expiryDate->isBefore($receivedDate)) {
+                throw new \InvalidArgumentException('The expiry date must be after the received date');
+            }
+        }
     }
 }

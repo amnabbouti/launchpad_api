@@ -7,7 +7,7 @@ class ItemScanRequest extends BaseRequest
     /**
      * Get validation rules for item scanning.
      */
-    public function rules(): array
+    protected function getValidationRules(): array
     {
         return [
             'code' => 'required|string|max:255',

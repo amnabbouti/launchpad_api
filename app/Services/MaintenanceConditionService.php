@@ -93,7 +93,7 @@ class MaintenanceConditionService extends BaseService
     protected function getAllowedParams(): array
     {
         return array_merge(parent::getAllowedParams(), [
-            'item_id', 'maintenance_category_id', 'unit_of_measure_id', 
+            'org_id', 'item_id', 'maintenance_category_id', 'unit_of_measure_id', 
             'is_active', 'due_for_warning', 'due_for_maintenance',
         ]);
     }

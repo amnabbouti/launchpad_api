@@ -20,17 +20,18 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->alias([
-            'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
             'api.key' => \App\Http\Middleware\ApiKeyMiddleware::class,
             'rate.limit' => \App\Http\Middleware\RateLimitMiddleware::class,
             'decrypt.token' => \App\Http\Middleware\DecryptToken::class,
             'org.verify' => \App\Http\Middleware\VerifyOrganizationAccess::class,
             'log.usage' => \App\Http\Middleware\LogApiUsageMiddleware::class,
+            'set.locale' => \App\Http\Middleware\SetLocaleMiddleware::class,
         ]);
 
-        // Prepend ForceJsonResponse, DecryptToken, and LogApiUsage to API middleware
+        // Prepend ForceJsonResponse, SetLocale, DecryptToken, and LogApiUsage to API middleware
         $middleware->api(prepend: [
             \App\Http\Middleware\ForceJsonResponse::class,
+            \App\Http\Middleware\SetLocaleMiddleware::class,
             \App\Http\Middleware\DecryptToken::class,
             \App\Http\Middleware\LogApiUsageMiddleware::class,
         ]);

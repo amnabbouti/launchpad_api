@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Constants\ErrorMessages;
 use App\Models\Item;
+use App\Services\PublicIdResolver;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -61,6 +62,9 @@ class ItemMovementService
      */
     public function moveItem(Item $item, array $data): array
     {
+        // Resolve public IDs to internal IDs
+        $data = PublicIdResolver::resolve($data);
+        
         $this->validateMovementData($item, $data);
         if ($item->isSerialized()) {
             $data['quantity'] = 1;

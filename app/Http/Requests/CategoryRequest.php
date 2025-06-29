@@ -5,16 +5,10 @@ namespace App\Http\Requests;
 class CategoryRequest extends BaseRequest
 {
     /**
-     * validation rules.
+     * Validation rules
      */
-    public function rules(): array
+    protected function getValidationRules(): array
     {
-        if ($this->isMethod('GET')) {
-            return [];
-        }
-
-        $categoryId = $this->route('category')?->id ?? $this->category_id ?? null;
-
         return [
             'name' => 'required|string|max:255',
             'parent_id' => 'nullable|exists:categories,id',
@@ -25,7 +19,7 @@ class CategoryRequest extends BaseRequest
     }
 
     /**
-     * error messages.
+     * Error messages
      */
     public function messages(): array
     {

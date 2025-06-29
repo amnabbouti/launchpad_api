@@ -40,8 +40,7 @@ class MaintenanceService extends BaseService
         $query = $this->getQuery();
 
         // Apply filters
-        $query->when($filters['org_id'] ?? null, fn($q, $value) => $q->where('org_id', $value))
-            ->when($filters['maintainable_id'] ?? null, fn($q, $value) => $q->where('maintainable_id', $value))
+        $query->when($filters['maintainable_id'] ?? null, fn($q, $value) => $q->where('maintainable_id', $value))
             ->when($filters['maintainable_type'] ?? null, fn($q, $value) => $q->where('maintainable_type', $value))
             ->when($filters['user_id'] ?? null, fn($q, $value) => $q->where('user_id', $value))
             ->when($filters['supplier_id'] ?? null, fn($q, $value) => $q->where('supplier_id', $value))

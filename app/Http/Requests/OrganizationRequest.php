@@ -5,17 +5,10 @@ namespace App\Http\Requests;
 class OrganizationRequest extends BaseRequest
 {
     /**
-     * Validation rules.
+     * Validation rules
      */
-    public function rules(): array
+    protected function getValidationRules(): array
     {
-        // For GET requests, no validation needed
-        if ($this->isMethod('GET')) {
-            return [];
-        }
-
-        $organizationId = $this->route('organization')?->id ?? $this->organization_id ?? null;
-
         return [
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
@@ -34,7 +27,7 @@ class OrganizationRequest extends BaseRequest
             'timezone' => 'nullable|string|max:100',
             'status' => 'nullable|string|max:50',
             'subscription_starts_at' => 'nullable|date',
-            'subscription_ends_at' => 'nullable|date|after_or_equal:subscription_starts_at',
+            'subscription_ends_at' => 'nullable|date',
             'settings' => 'nullable|array',
             'created_by' => 'nullable|integer|exists:users,id',
             'remarks' => 'nullable|string',
@@ -43,7 +36,7 @@ class OrganizationRequest extends BaseRequest
     }
 
     /**
-     * Custom error messages.
+     * Error messages
      */
     public function messages(): array
     {
@@ -88,7 +81,6 @@ class OrganizationRequest extends BaseRequest
             'status.max' => 'The status cannot exceed 50 characters',
             'subscription_starts_at.date' => 'The subscription start date is not a valid date',
             'subscription_ends_at.date' => 'The subscription end date is not a valid date',
-            'subscription_ends_at.after_or_equal' => 'The subscription end date must be after or equal to the subscription start date',
             'settings.array' => 'The settings must be an array',
             'created_by.integer' => 'The created by field must be an integer',
             'created_by.exists' => 'The selected creator is invalid',

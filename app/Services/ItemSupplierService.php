@@ -121,7 +121,7 @@ class ItemSupplierService extends BaseService
     protected function getAllowedParams(): array
     {
         return array_merge(parent::getAllowedParams(), [
-            'item_id', 'supplier_id', 'is_preferred',
+            'org_id', 'item_id', 'supplier_id', 'is_preferred',
         ]);
     }
 

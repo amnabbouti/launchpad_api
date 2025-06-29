@@ -6,6 +6,7 @@ use App\Traits\HasPublicId;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Role extends Model
@@ -16,7 +17,10 @@ class Role extends Model
     protected $fillable = [
         'slug',
         'title',
+        'description',
         'forbidden',
+        'org_id',
+        'is_system',
     ];
 
     protected static function getEntityType(): string
@@ -26,6 +30,7 @@ class Role extends Model
 
     protected $casts = [
         'forbidden' => 'array',
+        'is_system' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -68,5 +73,61 @@ class Role extends Model
         }
 
         return $forbidden ?? [];
+    }
+
+    /**
+     * Organization relationship.
+     */
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class, 'org_id');
+    }
+
+    /**
+     * Check if this is a system role.
+     */
+    public function isSystemRole(): bool
+    {
+        return $this->is_system === true;
+    }
+
+    /**
+     * Check if this is a custom organization role.
+     */
+    public function isCustomRole(): bool
+    {
+        return !$this->isSystemRole();
+    }
+
+    /**
+     * Get role type for display.
+     */
+    public function getTypeAttribute(): string
+    {
+        return $this->isSystemRole() ? 'System Role' : 'Custom Role';
+    }
+
+    /**
+     * Scope to get only system roles.
+     */
+    public function scopeSystemRoles($query)
+    {
+        return $query->where('is_system', true);
+    }
+
+    /**
+     * Scope to get only custom roles.
+     */
+    public function scopeCustomRoles($query)
+    {
+        return $query->where('is_system', false);
+    }
+
+    /**
+     * Scope to get roles for a specific organization.
+     */
+    public function scopeForOrganization($query, $orgId)
+    {
+        return $query->where('org_id', $orgId);
     }
 }

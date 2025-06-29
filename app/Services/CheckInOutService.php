@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Constants\ErrorMessages;
 use App\Models\CheckInOut;
 use App\Models\ItemLocation;
+use App\Services\AuthorizationEngine;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -19,6 +20,28 @@ class CheckInOutService extends BaseService
     }
 
     /**
+     * Create checkout record with business rules.
+     */
+    public function createCheckout(array $data): CheckInOut
+    {
+        $data = $this->applyCheckoutBusinessRules($data);
+        $this->validateCheckoutBusinessRules($data);
+
+        return $this->create($data);
+    }
+
+    /**
+     * Create checkin record with business rules.
+     */
+    public function createCheckin(array $data): CheckInOut
+    {
+        $data = $this->applyCheckinBusinessRules($data);
+        $this->validateCheckinBusinessRules($data);
+
+        return $this->create($data);
+    }
+
+    /**
      * Get filtered check-in/out records
      */
     public function getFiltered(array $filters = []): Collection
@@ -26,7 +49,7 @@ class CheckInOutService extends BaseService
         $query = $this->getQuery();
 
         // Apply filters
-        $query->when($filters['org_id'] ?? null, fn($q, $value) => $q->where('org_id', $value))
+        $query
             ->when($filters['user_id'] ?? null, fn($q, $value) => $q->where('user_id', $value))
             ->when($filters['trackable_id'] ?? null, fn($q, $value) => $q->where('trackable_id', $value))
             ->when($filters['trackable_type'] ?? null, fn($q, $value) => $q->where('trackable_type', $value))
@@ -185,5 +208,103 @@ class CheckInOutService extends BaseService
             'statusIn',
             'organization'
         ];
+    }
+
+    /**
+     * Determine operation type from route or context.
+     */
+    public function determineOperationType(string $routeName = null): string
+    {
+        if ($routeName === 'checks.out') {
+            return 'checkout';
+        }
+        
+        if ($routeName === 'checks.in') {
+            return 'checkin';
+        }
+
+        return 'default';
+    }
+
+    /**
+     * Apply business rules for checkout operations.
+     */
+    private function applyCheckoutBusinessRules(array $data): array
+    {
+        // Set checkout date if not provided
+        if (!isset($data['checkout_date'])) {
+            $data['checkout_date'] = now();
+        }
+
+        // Set current user if not provided
+        if (!isset($data['user_id'])) {
+            $data['user_id'] = AuthorizationEngine::getCurrentUser()?->id;
+        }
+
+        return $data;
+    }
+
+    /**
+     * Apply business rules for checkin operations.
+     */
+    private function applyCheckinBusinessRules(array $data): array
+    {
+        // Set checkin date if not provided
+        if (!isset($data['checkin_date'])) {
+            $data['checkin_date'] = now();
+        }
+
+        // Set checkin user if not provided
+        if (!isset($data['checkin_user_id'])) {
+            $data['checkin_user_id'] = AuthorizationEngine::getCurrentUser()?->id;
+        }
+
+        return $data;
+    }
+
+    /**
+     * Validate business rules for checkout operations.
+     */
+    private function validateCheckoutBusinessRules(array $data): void
+    {
+        // Required fields for checkout
+        if (empty($data['quantity'])) {
+            throw new InvalidArgumentException('The quantity field is required for checkout');
+        }
+
+        if ($data['quantity'] <= 0) {
+            throw new InvalidArgumentException('The quantity must be greater than 0');
+        }
+
+        if (empty($data['org_id'])) {
+            throw new InvalidArgumentException('The organization ID is required');
+        }
+
+        // Validate expected return date is in the future
+        if (isset($data['expected_return_date'])) {
+            $expectedDate = \Carbon\Carbon::parse($data['expected_return_date']);
+            if ($expectedDate->isPast()) {
+                throw new InvalidArgumentException('Expected return date must be in the future');
+            }
+        }
+    }
+
+    /**
+     * Validate business rules for checkin operations.
+     */
+    private function validateCheckinBusinessRules(array $data): void
+    {
+        // Required fields for checkin
+        if (empty($data['checkin_quantity'])) {
+            throw new InvalidArgumentException('The checkin quantity field is required');
+        }
+
+        if ($data['checkin_quantity'] <= 0) {
+            throw new InvalidArgumentException('The checkin quantity must be greater than 0');
+        }
+
+        if (empty($data['org_id'])) {
+            throw new InvalidArgumentException('The organization ID is required');
+        }
     }
 }

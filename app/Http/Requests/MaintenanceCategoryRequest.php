@@ -2,43 +2,35 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Validation\Rule;
-
 class MaintenanceCategoryRequest extends BaseRequest
 {
     /**
-     * validation rules.
+     * Validation rules
      */
-    public function rules(): array
+    protected function getValidationRules(): array
     {
-        $categoryId = $this->route('maintenance_category')?->id ?? $this->maintenance_category_id ?? null;
-
         return [
-            'name' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('maintenance_categories')
-                    ->where('org_id', $this->org_id)
-                    ->ignore($categoryId),
-            ],
+            'name' => 'required|string|max:255',
             'remarks' => 'nullable|string|max:65535',
-            'is_active' => 'boolean',
+            'is_active' => 'nullable|boolean',
             'org_id' => 'required|exists:organizations,id',
         ];
     }
 
     /**
-     * error messages.
+     * Error messages
      */
     public function messages(): array
     {
         return [
             'name.required' => 'The maintenance category name is required',
-            'name.unique' => 'This maintenance category name already exists for the organization',
+            'name.string' => 'The maintenance category name must be a string',
+            'name.max' => 'The maintenance category name cannot exceed 255 characters',
             'org_id.required' => 'The organization ID is required',
             'org_id.exists' => 'The selected organization is invalid',
+            'remarks.string' => 'The remarks must be a string',
             'remarks.max' => 'The remarks field is too long',
+            'is_active.boolean' => 'The active status must be true or false',
         ];
     }
 }

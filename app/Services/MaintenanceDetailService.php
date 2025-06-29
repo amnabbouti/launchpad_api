@@ -82,7 +82,7 @@ class MaintenanceDetailService extends BaseService
     protected function getAllowedParams(): array
     {
         return array_merge(parent::getAllowedParams(), [
-            'maintenance_id', 'maintenance_condition_id', 'value', 
+            'org_id', 'maintenance_id', 'maintenance_condition_id', 'value', 
             'created_at_from', 'created_at_to',
         ]);
     }

@@ -2,11 +2,10 @@
 
 namespace App\Http\Requests;
 
-use App\Services\RoleService;
-use Illuminate\Foundation\Http\FormRequest;
+use App\Constants\Permissions;
 use Illuminate\Validation\Rule;
 
-class StoreRoleRequest extends FormRequest
+class StoreRoleRequest extends BaseRequest
 {
     /**
      * Check authorization.
@@ -19,11 +18,8 @@ class StoreRoleRequest extends FormRequest
     /**
      * Get the validation rules.
      */
-    public function rules(): array
+    protected function getValidationRules(): array
     {
-        $roleService = app(RoleService::class);
-        $availableActions = $roleService->getAvailableActions();
-
         return [
             'slug' => [
                 'required',
@@ -33,8 +29,9 @@ class StoreRoleRequest extends FormRequest
                 'regex:/^[a-z0-9-_]+$/',
             ],
             'title' => 'required|string|max:100',
+            'description' => 'sometimes|string|max:255',
             'forbidden' => 'sometimes|array',
-            'forbidden.*' => ['string', Rule::in($availableActions)],
+            'forbidden.*' => ['string', Rule::in(Permissions::getAvailablePermissionKeys())],
         ];
     }
 
@@ -44,14 +41,16 @@ class StoreRoleRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'slug.required' => 'The role slug is required.',
             'slug.regex' => 'The slug field may only contain lowercase letters, numbers, hyphens, and underscores.',
             'slug.unique' => 'A role with this slug already exists.',
-            'forbidden.*.in' => 'Invalid action provided.',
+            'title.required' => 'The role title is required.',
+            'forbidden.*.in' => 'Invalid permission provided.',
         ];
     }
 }
 
-class UpdateRoleRequest extends FormRequest
+class UpdateRoleRequest extends BaseRequest
 {
     /**
      * Check authorization.
@@ -64,10 +63,8 @@ class UpdateRoleRequest extends FormRequest
     /**
      * Get the validation rules.
      */
-    public function rules(): array
+    protected function getValidationRules(): array
     {
-        $roleService = app(RoleService::class);
-        $availableActions = $roleService->getAvailableActions();
         $roleId = $this->route('role');
 
         return [
@@ -79,8 +76,9 @@ class UpdateRoleRequest extends FormRequest
                 'regex:/^[a-z0-9-_]+$/',
             ],
             'title' => 'sometimes|string|max:100',
+            'description' => 'sometimes|string|max:255',
             'forbidden' => 'sometimes|array',
-            'forbidden.*' => ['string', Rule::in($availableActions)],
+            'forbidden.*' => ['string', Rule::in(Permissions::getAvailablePermissionKeys())],
         ];
     }
 
@@ -92,7 +90,7 @@ class UpdateRoleRequest extends FormRequest
         return [
             'slug.regex' => 'The slug field may only contain lowercase letters, numbers, hyphens, and underscores.',
             'slug.unique' => 'A role with this slug already exists.',
-            'forbidden.*.in' => 'Invalid action provided.',
+            'forbidden.*.in' => 'Invalid permission provided.',
         ];
     }
 }

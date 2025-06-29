@@ -32,4 +32,18 @@ class SuccessMessages
 
     // Options & Config
     public const OPTIONS_RETRIEVED = 'Options retrieved successfully';
+
+    // Dynamic message helpers
+    public static function created($entity)
+    {
+        return __("$entity created successfully.");
+    }
+    public static function updated($entity)
+    {
+        return __("$entity updated successfully.");
+    }
+    public static function deleted($entity)
+    {
+        return __("$entity deleted successfully.");
+    }
 }
