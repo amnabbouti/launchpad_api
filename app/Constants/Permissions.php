@@ -8,70 +8,53 @@ class Permissions
      * All available permissions that managers can grant or forbid to users.
      */
     public const AVAILABLE_PERMISSIONS = [
-        // Inventory Management
         'items.view' => 'View items',
         'items.create' => 'Create items',
         'items.update' => 'Update items',
         'items.delete' => 'Delete items',
-
         'categories.view' => 'View categories',
         'categories.create' => 'Create categories',
         'categories.update' => 'Update categories',
         'categories.delete' => 'Delete categories',
-
         'locations.view' => 'View locations',
         'locations.create' => 'Create locations',
         'locations.update' => 'Update locations',
         'locations.delete' => 'Delete locations',
-
         'suppliers.view' => 'View suppliers',
         'suppliers.create' => 'Create suppliers',
         'suppliers.update' => 'Update suppliers',
         'suppliers.delete' => 'Delete suppliers',
-
         'stocks.view' => 'View stocks',
         'stocks.create' => 'Create stocks',
         'stocks.update' => 'Update stocks',
         'stocks.delete' => 'Delete stocks',
-
-        // Maintenance Operations
         'maintenances.view' => 'View maintenances',
         'maintenances.create' => 'Create maintenances',
         'maintenances.update' => 'Update maintenances',
         'maintenances.delete' => 'Delete maintenances',
-
         'maintenancecategories.view' => 'View maintenance categories',
         'maintenancecategories.create' => 'Create maintenance categories',
         'maintenancecategories.update' => 'Update maintenance categories',
         'maintenancecategories.delete' => 'Delete maintenance categories',
-
         'maintenanceconditions.view' => 'View maintenance conditions',
         'maintenanceconditions.create' => 'Create maintenance conditions',
         'maintenanceconditions.update' => 'Update maintenance conditions',
         'maintenanceconditions.delete' => 'Delete maintenance conditions',
-
-        // Check-in/out Operations
         'checkinouts.view' => 'View check-ins/outs',
         'checkinouts.create' => 'Create check-ins/outs',
         'checkinouts.update' => 'Update check-ins/outs',
         'checkinouts.delete' => 'Delete check-ins/outs',
-
-        // Limited User Management
         'users.view' => 'View users in organization',
         'users.update.self' => 'Update own profile',
-
-        // Reporting & Analytics
         'reports.view' => 'View reports',
         'reports.generate' => 'Generate reports',
         'analytics.view' => 'View analytics',
-
-        // Plan Management
         'plans.view' => 'View available plans',
         'licenses.view' => 'View organization licenses',
     ];
 
     /**
-     * Permissions that managers CANNOT grant (must always be forbidden in custom roles).
+     * Permissions that managers CANNOT grant to users.
      */
     public const MANAGER_FORBIDDEN_PERMISSIONS = [
         'users.delete.self' => 'Delete themselves',

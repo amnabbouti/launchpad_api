@@ -16,11 +16,11 @@ return new class extends Migration
     {
         // Get system roles from AuthorizationEngine for basic info
         $systemRoles = AuthorizationEngine::getSystemRoles();
-        
+
         foreach ($systemRoles as $slug => $roleData) {
             // Get actual forbidden permissions from Permissions constants
             $forbiddenPermissions = Permissions::getSystemRoleForbiddenPermissions($slug);
-            
+
             DB::table('roles')
                 ->where('slug', $slug)
                 ->update([
@@ -59,7 +59,7 @@ return new class extends Migration
                     'plans.update',
                     'plans.delete',
                     'licenses.create',
-                    'licenses.update', 
+                    'licenses.update',
                     'licenses.delete',
                 ],
                 'is_system' => true,
@@ -91,7 +91,7 @@ return new class extends Migration
                 'is_system' => true,
             ],
         ];
-        
+
         foreach ($basicRoles as $slug => $roleData) {
             DB::table('roles')
                 ->where('slug', $slug)
