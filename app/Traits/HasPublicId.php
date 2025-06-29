@@ -31,20 +31,29 @@ trait HasPublicId
             $entityIdService = app(EntityIdService::class);
 
             // For Organization model - use its own ID as org_id
-            $orgId = $entityType === 'organization' ? $model->id : $model->org_id;
-
-            // Skip public ID generation for super admin
-            if ($entityType === 'user' && $orgId === null) {
-                \Log::info('Skipping public ID generation for super admin user', [
-                    'user_id' => $model->id,
-                    'email' => $model->email ?? 'unknown'
-                ]);
-                return;
+            if ($entityType === 'organization') {
+                $orgId = $model->id;
+            }
+            // For global entities (plans, licenses) that don't have org_id - use 0
+            elseif (!isset($model->org_id) || $model->org_id === null) {
+                // Skip public ID generation for super admin users
+                if ($entityType === 'user') {
+                    \Log::info('Skipping public ID generation for super admin user', [
+                        'user_id' => $model->id,
+                        'email' => $model->email ?? 'unknown'
+                    ]);
+                    return;
+                }
+                // For other global entities like plans, use org_id = 0
+                $orgId = 0;
+            }
+            // For organization-scoped entities
+            else {
+                $orgId = $model->org_id;
             }
 
             $entityIdService->generatePublicId($orgId, $entityType, $model->id);
         } catch (\Exception $e) {
-
             \Log::warning('Failed to generate public ID', [
                 'model' => get_class($model),
                 'model_id' => $model->id,
