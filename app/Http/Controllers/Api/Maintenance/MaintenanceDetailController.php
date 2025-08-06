@@ -1,11 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api\Maintenance;
 
-use App\Constants\ErrorMessages;
-use App\Constants\HttpStatus;
-use App\Constants\SuccessMessages;
 use App\Http\Controllers\Api\BaseController;
+use App\Http\Middleware\ApiResponseMiddleware;
 use App\Http\Requests\MaintenanceDetailRequest;
 use App\Http\Resources\MaintenanceDetailResource;
 use App\Services\MaintenanceDetailService;
@@ -18,7 +18,7 @@ class MaintenanceDetailController extends BaseController
      * Create a new controller instance.
      */
     public function __construct(
-        private MaintenanceDetailService $maintenanceDetailService,
+        private readonly MaintenanceDetailService $maintenanceDetailService,
     ) {}
 
     /**
@@ -28,9 +28,16 @@ class MaintenanceDetailController extends BaseController
     {
         $params = $this->maintenanceDetailService->processRequestParams($request->query());
 
-        $maintenanceDetails = $this->maintenanceDetailService->getFiltered($params);
+        $maintenanceDetailsQuery = $this->maintenanceDetailService->getFiltered($params);
+        $totalCount = $maintenanceDetailsQuery->count();
 
-        return $this->successResponse(MaintenanceDetailResource::collection($maintenanceDetails));
+        $maintenanceDetails = $this->paginated($maintenanceDetailsQuery, $request);
+
+        return ApiResponseMiddleware::listResponse(
+            MaintenanceDetailResource::collection($maintenanceDetails),
+            'maintenance_detail',
+            $totalCount
+        );
     }
 
     /**
@@ -40,10 +47,10 @@ class MaintenanceDetailController extends BaseController
     {
         $maintenanceDetail = $this->maintenanceDetailService->createMaintenanceDetail($request->validated());
 
-        return $this->successResponse(
+        return ApiResponseMiddleware::createResponse(
             new MaintenanceDetailResource($maintenanceDetail),
-            SuccessMessages::RESOURCE_CREATED,
-            HttpStatus::HTTP_CREATED,
+            'maintenance_detail',
+            $maintenanceDetail->toArray()
         );
     }
 
@@ -54,13 +61,13 @@ class MaintenanceDetailController extends BaseController
     {
         $with = $request->query('with') ? explode(',', $request->query('with')) : ['maintenance', 'maintenanceCondition'];
 
-        $maintenanceDetail = $this->maintenanceDetailService->findById($id, $with);
+        $maintenanceDetail = $this->maintenanceDetailService->findById($id, ['*'], $with);
 
-        if (! $maintenanceDetail) {
-            return $this->errorResponse(ErrorMessages::NOT_FOUND, HttpStatus::HTTP_NOT_FOUND);
-        }
-
-        return $this->successResponse(new MaintenanceDetailResource($maintenanceDetail));
+        return ApiResponseMiddleware::showResponse(
+            new MaintenanceDetailResource($maintenanceDetail),
+            'maintenance_detail',
+            $maintenanceDetail->toArray()
+        );
     }
 
     /**
@@ -68,17 +75,12 @@ class MaintenanceDetailController extends BaseController
      */
     public function update(MaintenanceDetailRequest $request, int $id): JsonResponse
     {
-        $maintenanceDetail = $this->maintenanceDetailService->findById($id);
-
-        if (! $maintenanceDetail) {
-            return $this->errorResponse(ErrorMessages::NOT_FOUND, HttpStatus::HTTP_NOT_FOUND);
-        }
-
         $updatedMaintenanceDetail = $this->maintenanceDetailService->updateMaintenanceDetail($id, $request->validated());
 
-        return $this->successResponse(
+        return ApiResponseMiddleware::updateResponse(
             new MaintenanceDetailResource($updatedMaintenanceDetail),
-            SuccessMessages::RESOURCE_UPDATED,
+            'maintenance_detail',
+            $updatedMaintenanceDetail->toArray()
         );
     }
 
@@ -88,17 +90,11 @@ class MaintenanceDetailController extends BaseController
     public function destroy(int $id): JsonResponse
     {
         $maintenanceDetail = $this->maintenanceDetailService->findById($id);
-
-        if (! $maintenanceDetail) {
-            return $this->errorResponse(ErrorMessages::NOT_FOUND, HttpStatus::HTTP_NOT_FOUND);
-        }
-
         $this->maintenanceDetailService->delete($id);
 
-        return $this->successResponse(
-            null,
-            SuccessMessages::RESOURCE_DELETED,
-            HttpStatus::HTTP_NO_CONTENT,
+        return ApiResponseMiddleware::deleteResponse(
+            'maintenance_detail',
+            $maintenanceDetail->toArray()
         );
     }
 }

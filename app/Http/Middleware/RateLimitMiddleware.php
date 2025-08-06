@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
@@ -13,17 +14,17 @@ class RateLimitMiddleware
     public function handle(Request $request, Closure $next, string $windowType = 'hour'): Response
     {
         $token = $request->get('api_token');
-        
-        if (!$token instanceof PersonalAccessToken) {
+
+        if (! $token instanceof PersonalAccessToken) {
             return response()->json([
                 'error' => 'Authentication required',
-                'message' => 'This middleware requires authentication'
+                'message' => 'This middleware requires authentication',
             ], 401);
         }
 
         // Check rate limit
         $rateLimitInfo = ApiKeyRateLimit::checkRateLimit($token, $windowType);
-        
+
         if ($rateLimitInfo['exceeded']) {
             return response()->json([
                 'error' => 'Rate limit exceeded',
@@ -32,7 +33,7 @@ class RateLimitMiddleware
                     'current' => $rateLimitInfo['current'],
                     'limit' => $rateLimitInfo['limit'],
                     'reset_time' => $rateLimitInfo['reset_time']->toISOString(),
-                ]
+                ],
             ], 429);
         }
 

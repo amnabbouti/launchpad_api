@@ -2,9 +2,8 @@
 
 namespace App\Models;
 
-use App\Traits\HasPublicId;
-
 use App\Traits\HasOrganizationScope;
+use App\Traits\HasPublicId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,9 +11,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MaintenanceCondition extends Model
 {
-    use HasPublicId; // Add public_id support
     use HasFactory;
     use HasOrganizationScope;
+    use HasPublicId;
 
     protected $fillable = [
         'org_id',
@@ -66,12 +65,12 @@ class MaintenanceCondition extends Model
 
     public function statusWhenReturned(): BelongsTo
     {
-        return $this->belongsTo(ItemStatus::class, 'status_when_returned_id');
+        return $this->belongsTo(Status::class, 'status_when_returned_id');
     }
 
     public function statusWhenExceeded(): BelongsTo
     {
-        return $this->belongsTo(ItemStatus::class, 'status_when_exceeded_id');
+        return $this->belongsTo(Status::class, 'status_when_exceeded_id');
     }
 
     public function maintenanceCategory(): BelongsTo
@@ -89,7 +88,6 @@ class MaintenanceCondition extends Model
         return $this->hasMany(MaintenanceDetail::class, 'maintenance_condition_id');
     }
 
-    // Computed attributes
     public function getIsRecurringAttribute(): bool
     {
         return $this->recurrence_unit !== null && $this->maintenance_recurrence_quantity > 0;

@@ -1,33 +1,42 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api\Hierarchy;
 
-use App\Constants\SuccessMessages;
 use App\Http\Controllers\Api\BaseController;
+use App\Http\Middleware\ApiResponseMiddleware;
 use App\Http\Requests\OrganizationRequest;
 use App\Http\Resources\OrganizationResource;
 use App\Services\OrganizationService;
 use Illuminate\Http\JsonResponse;
-use App\Constants\HttpStatus;
+use Illuminate\Http\Request;
 
 class OrganizationController extends BaseController
 {
-    protected $organizationService;
-
-    public function __construct(OrganizationService $organizationService)
-    {
-        $this->organizationService = $organizationService;
-    }
+    /**
+     * Create a new controller instance.
+     */
+    public function __construct(
+        private readonly OrganizationService $organizationService,
+    ) {}
 
     /**
      * Display Organizations
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $relations = $this->organizationService->parseRelationships(request('with'));
-        $organizations = $this->organizationService->all(['*'], $relations);
+        $filters = $this->organizationService->processRequestParams($request->query());
+        $organizationsQuery = $this->organizationService->getFiltered($filters);
+        $totalCount = $organizationsQuery->count();
 
-        return $this->successResponse(OrganizationResource::collection($organizations));
+        $organizations = $this->paginated($organizationsQuery, $request);
+
+        return ApiResponseMiddleware::listResponse(
+            OrganizationResource::collection($organizations),
+            'organization',
+            $totalCount
+        );
     }
 
     /**
@@ -35,12 +44,12 @@ class OrganizationController extends BaseController
      */
     public function store(OrganizationRequest $request): JsonResponse
     {
-        $organization = $this->organizationService->create($request->validated());
+        $organization = $this->organizationService->createOrganization($request->validated());
 
-        return $this->successResponse(
+        return ApiResponseMiddleware::createResponse(
             new OrganizationResource($organization),
-            SuccessMessages::ORG_CREATED,
-            HttpStatus::HTTP_CREATED,
+            'organization',
+            $organization->toArray()
         );
     }
 
@@ -52,7 +61,11 @@ class OrganizationController extends BaseController
         $relations = $this->organizationService->parseRelationships(request('with'));
         $organization = $this->organizationService->findById($id, ['*'], $relations);
 
-        return $this->successResponse(new OrganizationResource($organization));
+        return ApiResponseMiddleware::showResponse(
+            new OrganizationResource($organization),
+            'organization',
+            $organization->toArray()
+        );
     }
 
     /**
@@ -60,11 +73,12 @@ class OrganizationController extends BaseController
      */
     public function update(OrganizationRequest $request, int $id): JsonResponse
     {
-        $updatedOrganization = $this->organizationService->update($id, $request->validated());
+        $updatedOrganization = $this->organizationService->updateOrganization($id, $request->validated());
 
-        return $this->successResponse(
+        return ApiResponseMiddleware::updateResponse(
             new OrganizationResource($updatedOrganization),
-            SuccessMessages::ORG_UPDATED,
+            'organization',
+            $updatedOrganization->toArray()
         );
     }
 
@@ -75,7 +89,7 @@ class OrganizationController extends BaseController
     {
         $this->organizationService->delete($id);
 
-        return $this->successResponse(null, SuccessMessages::RESOURCE_DELETED);
+        return ApiResponseMiddleware::deleteResponse('organization');
     }
 
     /**
@@ -84,7 +98,12 @@ class OrganizationController extends BaseController
     public function getActive(): JsonResponse
     {
         $organizations = $this->organizationService->getActive();
+        $totalCount = $organizations->count();
 
-        return $this->successResponse(OrganizationResource::collection($organizations));
+        return ApiResponseMiddleware::listResponse(
+            OrganizationResource::collection($organizations),
+            'organization',
+            $totalCount
+        );
     }
 }

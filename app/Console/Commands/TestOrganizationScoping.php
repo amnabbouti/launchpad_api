@@ -2,17 +2,18 @@
 
 namespace App\Console\Commands;
 
-use App\Services\AuthorizationEngine;
-use App\Models\User;
-use App\Models\Role;
-use App\Models\Organization;
 use App\Models\Item;
+use App\Models\Organization;
+use App\Models\Role;
+use App\Models\User;
+use App\Services\AuthorizationEngine;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Builder;
 
 class TestOrganizationScoping extends Command
 {
     protected $signature = 'test:organization-scoping';
+
     protected $description = 'Test organization scoping logic and authorization';
 
     public function handle()
@@ -26,7 +27,7 @@ class TestOrganizationScoping extends Command
 
             // Test resources that should NOT have org scoping
             $noScopeResources = ['users', 'roles', 'plans'];
-            $this->info('Resources without org scoping: ' . implode(', ', $noScopeResources));
+            $this->info('Resources without org scoping: '.implode(', ', $noScopeResources));
 
             // Test with a mock query builder
             $userQuery = User::query();
@@ -61,7 +62,7 @@ class TestOrganizationScoping extends Command
                 $originalItemSql = $itemQuery->toSql();
 
                 // Mock a user with organization
-                $mockUser = new User();
+                $mockUser = new User;
                 $mockUser->id = 1;
                 $mockUser->org_id = 123;
                 $mockUser->role = new Role(['slug' => 'manager']);
@@ -107,8 +108,9 @@ class TestOrganizationScoping extends Command
             $this->info('  - Manual scoping + permissions for users/roles');
             $this->info('  - Proper validation of manager permissions');
         } catch (\Exception $e) {
-            $this->error('Error during analysis: ' . $e->getMessage());
-            $this->error('Stack trace: ' . $e->getTraceAsString());
+            $this->error('Error during analysis: '.$e->getMessage());
+            $this->error('Stack trace: '.$e->getTraceAsString());
+
             return 1;
         }
 
@@ -128,12 +130,12 @@ class TestOrganizationScoping extends Command
             $results = [];
             foreach ($testCases as $userType => $description) {
                 // We can't easily create test users here, so we'll just describe the logic
-                $results[] = "$userType: " . $this->describeRoleAssignmentLogic($roleSlug, $userType);
+                $results[] = "$userType: ".$this->describeRoleAssignmentLogic($roleSlug, $userType);
             }
 
             return implode(', ', $results);
         } catch (\Exception $e) {
-            return "Error testing role assignment: " . $e->getMessage();
+            return 'Error testing role assignment: '.$e->getMessage();
         }
     }
 
@@ -146,6 +148,7 @@ class TestOrganizationScoping extends Command
                 if ($roleSlug === 'super_admin' || $roleSlug === 'manager') {
                     return 'Cannot assign';
                 }
+
                 return 'Can assign';
             case 'employee':
                 return 'Cannot assign';
@@ -166,7 +169,7 @@ class TestOrganizationScoping extends Command
                 return 'Allowed for custom roles (correct)';
             }
         } catch (\Exception $e) {
-            return "Error validating permission: " . $e->getMessage();
+            return 'Error validating permission: '.$e->getMessage();
         }
     }
 }

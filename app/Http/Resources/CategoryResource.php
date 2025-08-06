@@ -16,16 +16,9 @@ class CategoryResource extends BaseResource
             'org_id' => $this->org_id,
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
-
-            'organization' => $this->whenLoaded('organization', fn() => new OrganizationResource($this->organization)),
-
-            'parent' => $this->whenLoaded('parent', fn() => new CategoryResource($this->parent)),
-
-            'children' => $this->whenLoaded('children', fn() => CategoryResource::collection($this->children)),
-
-            'children_recursive' => $this->whenLoaded('childrenRecursive', fn() => CategoryResource::collection($this->childrenRecursive)),
-
-            'items' => $this->whenLoaded('items', fn() => ItemResource::collection($this->items)),
+            'organization' => $this->whenLoaded('organization', fn () => new OrganizationResource($this->organization)),
+            'children' => $this->whenLoaded('childrenRecursive', fn () => CategoryResource::collection($this->childrenRecursive)),
+            'items' => $this->whenLoaded('items', fn () => ItemResource::collection($this->items)),
         ];
 
         return $this->addCommonData($data, $request);

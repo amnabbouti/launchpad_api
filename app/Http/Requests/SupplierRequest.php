@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Constants\AppConstants;
+
 class SupplierRequest extends BaseRequest
 {
     /**
@@ -15,19 +17,19 @@ class SupplierRequest extends BaseRequest
             'name' => 'required|string|max:255',
             'code' => 'nullable|string|max:50',
             'contact_name' => 'nullable|string|max:255',
-            'email' => 'nullable|email|max:255',
+            'email' => 'nullable|email|max:'.AppConstants::EMAIL_MAX_LENGTH,
             'phone' => 'nullable|string|max:50',
             'address' => 'nullable|string|max:255',
             'city' => 'nullable|string|max:100',
             'state' => 'nullable|string|max:100',
-            'postal_code' => 'nullable|string|max:20',
+            'postal_code' => 'nullable|string|max:'.AppConstants::POSTAL_CODE_MAX_LENGTH,
             'country' => 'nullable|string|max:100',
             'website' => 'nullable|url|max:255',
             'tax_id' => 'nullable|string|max:50',
             'notes' => 'nullable|string',
             'is_active' => 'boolean',
             'org_id' => 'nullable|integer|exists:organizations,id',
-            
+
             // Item-Supplier relationship fields
             'item_id' => 'nullable|integer|exists:items,id',
             'supplier_id' => 'nullable|integer|exists:suppliers,id',
@@ -36,7 +38,7 @@ class SupplierRequest extends BaseRequest
             'currency' => 'nullable|string|size:3',
             'lead_time_days' => 'nullable|integer|min:0',
             'is_preferred' => 'boolean',
-            
+
             // Operation type (for service to handle business logic)
             'type' => 'nullable|string|in:supplier,relationship',
         ];

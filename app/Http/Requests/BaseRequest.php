@@ -2,31 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Services\PublicIdResolver;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
-use App\Services\PublicIdResolver;
 
-/**
- * Base Request Class - CLEAN ARCHITECTURE PRINCIPLE
- * 
- * 🎯 REQUESTS SHOULD ONLY HANDLE VALIDATION
- * ✅ Basic field validation (required, string, max, etc.)
- * ✅ Simple format validation (email, date, etc.)
- * ✅ Basic existence checks (exists:table,id)
- * 
- * ❌ NO BUSINESS LOGIC IN REQUESTS
- * ❌ NO conditional validation based on business rules
- * ❌ NO data transformation or manipulation
- * ❌ NO complex uniqueness checks with context
- * 
- * 🔧 BUSINESS LOGIC BELONGS IN SERVICES
- * - Complex validation rules
- * - Conditional requirements
- * - Data transformation
- * - Uniqueness checks with organization context
- * - Authorization logic
- */
 abstract class BaseRequest extends FormRequest
 {
     /**
@@ -83,6 +62,7 @@ abstract class BaseRequest extends FormRequest
         // Resolve public IDs to internal IDs before validation
         $this->resolvePublicIds();
     }
+
     /**
      * Resolve public IDs to internal IDs for validation.
      */
@@ -90,7 +70,7 @@ abstract class BaseRequest extends FormRequest
     {
         $data = $this->all();
         $resolvedData = PublicIdResolver::resolve($data);
-        
+
         // Only merge if there were changes
         if ($resolvedData !== $data) {
             $this->replace($resolvedData);

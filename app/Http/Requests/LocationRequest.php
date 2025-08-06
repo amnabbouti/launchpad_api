@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Constants\AppConstants;
+
 class LocationRequest extends BaseRequest
 {
     /**
@@ -10,10 +12,10 @@ class LocationRequest extends BaseRequest
     protected function getValidationRules(): array
     {
         return [
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:'.AppConstants::NAME_MAX_LENGTH,
             'code' => 'required|string|max:50',
             'parent_id' => 'nullable|exists:locations,id',
-            'path' => 'nullable|string|max:500',
+            'path' => 'nullable|string|max:'.AppConstants::ADDRESS_MAX_LENGTH,
             'description' => 'nullable|string',
             'is_active' => 'nullable|boolean',
             'org_id' => 'required|exists:organizations,id',

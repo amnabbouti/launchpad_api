@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\Organization;
-use App\Services\AuthorizationEngine;
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Eloquent\Model;
-
-use App\Constants\ErrorMessages;
+use App\Models\Plan;
+use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
+use InvalidArgumentException;
 
 class OrganizationService extends BaseService
 {
@@ -17,7 +19,7 @@ class OrganizationService extends BaseService
     }
 
     /**
-     * Create organization with business rules.
+     * Create an organization with business rules.
      */
     public function createOrganization(array $data): Organization
     {
@@ -33,7 +35,7 @@ class OrganizationService extends BaseService
     public function updateOrganization(int $organizationId, array $data): Organization
     {
         $data = $this->applyOrganizationBusinessRules($data, $organizationId);
-        $this->validateOrganizationBusinessRules($data, $organizationId);
+        $this->validateOrganizationBusinessRules($data);
 
         return $this->update($organizationId, $data);
     }
@@ -41,7 +43,7 @@ class OrganizationService extends BaseService
     /**
      * Super admins see all organizations
      */
-    protected function getQuery()
+    protected function getQuery(): Builder
     {
         $query = $this->model->newQuery();
         $user = AuthorizationEngine::getCurrentUser();
@@ -56,17 +58,51 @@ class OrganizationService extends BaseService
             return $query->where('id', $user->org_id);
         }
 
-        // No user or no org_id means no access
         return $query->whereRaw('1 = 0');
     }
-
 
     /**
      * Get active organizations
      */
-    public function getActive(): Collection
+    public function getActive(): Builder
     {
-        return $this->getQuery()->where('is_active', true)->get();
+        return $this->getQuery()->where('is_active', true);
+    }
+
+    /**
+     * Get filtered organizations with optional relationships.
+     */
+    public function getFiltered(array $filters = []): Builder
+    {
+        $query = $this->getQuery();
+
+        $query->when($filters['name'] ?? null, fn($q, $value) => $q->where('name', 'like', "%$value%"))
+            ->when($filters['email'] ?? null, fn($q, $value) => $q->where('email', 'like', "%$value%"))
+            ->when($filters['country'] ?? null, fn($q, $value) => $q->where('country', 'like', "%$value%"))
+            ->when($filters['status'] ?? null, fn($q, $value) => $q->where('status', $value))
+            ->when(isset($filters['is_active']), fn($q) => $q->where('is_active', $filters['is_active']))
+            ->when($filters['plan_id'] ?? null, fn($q, $value) => $q->where('plan_id', $value))
+            ->when($filters['with'] ?? null, fn($q, $relations) => $q->with($relations));
+
+        return $query;
+    }
+
+    /**
+     * Process request parameters with validation and type conversion.
+     */
+    public function processRequestParams(array $params): array
+    {
+        $this->validateParams($params);
+
+        return [
+            'name' => $this->toString($params['name'] ?? null),
+            'email' => $this->toString($params['email'] ?? null),
+            'country' => $this->toString($params['country'] ?? null),
+            'status' => $this->toString($params['status'] ?? null),
+            'is_active' => $this->toBool($params['is_active'] ?? null),
+            'plan_id' => $this->toInt($params['plan_id'] ?? null),
+            'with' => $this->processWithParameter($params['with'] ?? null),
+        ];
     }
 
     /**
@@ -81,12 +117,14 @@ class OrganizationService extends BaseService
         // all available relationships
         if ($withParam === 'all') {
             return [
+                'plan',
+                'licenses',
                 'users',
                 'items',
                 'categories',
                 'locations',
                 'suppliers',
-                'stocks',
+                'batches',
                 'unitOfMeasures',
                 'statuses',
                 'itemStatuses',
@@ -104,12 +142,14 @@ class OrganizationService extends BaseService
 
         // Define allowed relationships
         $allowedRelations = [
+            'plan',
+            'licenses',
             'users',
             'items',
             'categories',
             'locations',
             'suppliers',
-            'stocks',
+            'batches',
             'unitOfMeasures',
             'statuses',
             'itemStatuses',
@@ -124,17 +164,54 @@ class OrganizationService extends BaseService
     }
 
     /**
+     * Get allowed query parameters.
+     */
+    protected function getAllowedParams(): array
+    {
+        return array_merge(parent::getAllowedParams(), [
+            'name',
+            'email',
+            'country',
+            'status',
+            'is_active',
+            'plan_id',
+        ]);
+    }
+
+    /**
+     * Get valid relations for the model.
+     */
+    protected function getValidRelations(): array
+    {
+        return [
+            'users',
+            'items',
+            'categories',
+            'locations',
+            'suppliers',
+            'batches',
+            'unitOfMeasures',
+            'statuses',
+            'itemStatuses',
+            'maintenanceCategories',
+            'maintenances',
+            'checkInOuts',
+            'attachments',
+            'plan',
+            'licenses',
+        ];
+    }
+
+    /**
      * Apply business rules for organization operations.
      */
     private function applyOrganizationBusinessRules(array $data, $organizationId = null): array
     {
-        // Set created_by if not provided and it's a new organization
-        if (!$organizationId && !isset($data['created_by'])) {
+        if (! $organizationId && ! isset($data['created_by'])) {
             $data['created_by'] = AuthorizationEngine::getCurrentUser()?->id;
         }
 
-        // Set default status if not provided
-        if (!isset($data['status'])) {
+        if (! isset($data['status'])) {
             $data['status'] = 'active';
         }
 
@@ -144,52 +221,52 @@ class OrganizationService extends BaseService
     /**
      * Validate business rules for organization operations.
      */
-    private function validateOrganizationBusinessRules(array $data, $organizationId = null): void
+    private function validateOrganizationBusinessRules(array $data): void
     {
         // Validate required fields
         $requiredFields = ['name', 'email', 'country', 'billing_address', 'tax_id', 'plan_id'];
-        
+
         foreach ($requiredFields as $field) {
             if (empty($data[$field])) {
-                throw new \InvalidArgumentException("The {$field} field is required");
+                throw new InvalidArgumentException("The $field field is required");
             }
         }
 
         // Validate email format
-        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-            throw new \InvalidArgumentException('The email must be a valid email address');
+        if (! filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+            throw new InvalidArgumentException('The email must be a valid email address');
         }
 
         // Validate website URL if provided
-        if (isset($data['website']) && !empty($data['website'])) {
-            if (!filter_var($data['website'], FILTER_VALIDATE_URL)) {
-                throw new \InvalidArgumentException('The website must be a valid URL');
+        if (! empty($data['website'])) {
+            if (! filter_var($data['website'], FILTER_VALIDATE_URL)) {
+                throw new InvalidArgumentException('The website must be a valid URL');
             }
         }
 
         // Validate subscription date relationship
         if (isset($data['subscription_starts_at']) && isset($data['subscription_ends_at'])) {
-            $startDate = \Carbon\Carbon::parse($data['subscription_starts_at']);
-            $endDate = \Carbon\Carbon::parse($data['subscription_ends_at']);
-            
+            $startDate = Carbon::parse($data['subscription_starts_at']);
+            $endDate = Carbon::parse($data['subscription_ends_at']);
+
             if ($endDate->isBefore($startDate)) {
-                throw new \InvalidArgumentException('The subscription end date must be after or equal to the subscription start date');
+                throw new InvalidArgumentException('The subscription end date must be after or equal to the subscription start date');
             }
         }
 
         // Validate plan exists
         if (isset($data['plan_id'])) {
-            $plan = \App\Models\Plan::find($data['plan_id']);
-            if (!$plan) {
-                throw new \InvalidArgumentException('The selected plan ID is invalid');
+            $plan = Plan::find($data['plan_id']);
+            if (! $plan) {
+                throw new InvalidArgumentException('The selected plan ID is invalid');
             }
         }
 
         // Validate created_by user exists if provided
         if (isset($data['created_by'])) {
-            $user = \App\Models\User::find($data['created_by']);
-            if (!$user) {
-                throw new \InvalidArgumentException('The selected creator is invalid');
+            $user = User::find($data['created_by']);
+            if (! $user) {
+                throw new InvalidArgumentException('The selected creator is invalid');
             }
         }
     }

@@ -1,10 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api\Attachment;
 
-use App\Constants\HttpStatus;
-use App\Constants\SuccessMessages;
 use App\Http\Controllers\Api\BaseController;
+use App\Http\Middleware\ApiResponseMiddleware;
 use App\Http\Requests\AttachmentRequest;
 use App\Http\Resources\AttachmentResource;
 use App\Services\AttachmentService;
@@ -13,12 +14,12 @@ use Illuminate\Http\Request;
 
 class AttachmentController extends BaseController
 {
-    protected AttachmentService $attachmentService;
-
-    public function __construct(AttachmentService $attachmentService)
-    {
-        $this->attachmentService = $attachmentService;
-    }
+    /**
+     * Create a new controller instance.
+     */
+    public function __construct(
+        private readonly AttachmentService $attachmentService,
+    ) {}
 
     /**
      * Get attachments with optional filters.
@@ -26,16 +27,13 @@ class AttachmentController extends BaseController
     public function index(Request $request): JsonResponse
     {
         $filters = $this->attachmentService->processRequestParams($request->query());
-        $attachments = $this->attachmentService->getFiltered($filters);
+        $query = $this->attachmentService->getFiltered($filters);
+        $attachments = $this->paginated($query, $request);
 
-        // Determine appropriate message
-        $message = $attachments->isEmpty() 
-            ? 'No attachments found' 
-            : SuccessMessages::RESOURCES_RETRIEVED;
-
-        return $this->successResponse(
+        return ApiResponseMiddleware::listResponse(
             AttachmentResource::collection($attachments),
-            $message
+            'attachment',
+            $attachments->total()
         );
     }
 
@@ -46,10 +44,10 @@ class AttachmentController extends BaseController
     {
         $attachment = $this->attachmentService->createAttachment($request->validated());
 
-        return $this->successResponse(
+        return ApiResponseMiddleware::createResponse(
             new AttachmentResource($attachment),
-            SuccessMessages::RESOURCE_CREATED,
-            HttpStatus::HTTP_CREATED,
+            'attachment',
+            $attachment->toArray()
         );
     }
 
@@ -61,7 +59,11 @@ class AttachmentController extends BaseController
         $with = array_filter(explode(',', request()->query('with', '')));
         $attachment = $this->attachmentService->find($id, $with);
 
-        return $this->successResponse(new AttachmentResource($attachment));
+        return ApiResponseMiddleware::showResponse(
+            new AttachmentResource($attachment),
+            'attachment',
+            $attachment->toArray()
+        );
     }
 
     /**
@@ -71,9 +73,10 @@ class AttachmentController extends BaseController
     {
         $updatedAttachment = $this->attachmentService->updateAttachment($id, $request->validated());
 
-        return $this->successResponse(
+        return ApiResponseMiddleware::updateResponse(
             new AttachmentResource($updatedAttachment),
-            SuccessMessages::RESOURCE_UPDATED,
+            'attachment',
+            $updatedAttachment->toArray()
         );
     }
 
@@ -84,7 +87,7 @@ class AttachmentController extends BaseController
     {
         $this->attachmentService->deleteAttachment($id);
 
-        return $this->successResponse(null, SuccessMessages::RESOURCE_DELETED);
+        return ApiResponseMiddleware::deleteResponse('attachment');
     }
 
     /**
@@ -94,13 +97,26 @@ class AttachmentController extends BaseController
     {
         $options = $this->attachmentService->getAttachmentTypeOptions();
 
-        return $this->successResponse([
+        return ApiResponseMiddleware::showResponse([
             'options' => $options,
             'instructions' => [
                 'step_1' => 'Select an attachment type',
-                'step_2' => 'Enter the specific entity ID (e.g., item ID, user ID)', 
-                'step_3' => 'Upload'
-            ]
-        ], SuccessMessages::OPTIONS_RETRIEVED);
+                'step_2' => 'Enter the specific entity ID (e.g., item ID, user ID)',
+                'step_3' => 'Upload',
+            ],
+        ], 'attachment');
+    }
+
+    /**
+     * Get attachment usage statistics.
+     */
+    public function getStats(int $id): JsonResponse
+    {
+        $stats = $this->attachmentService->getAttachmentStats($id);
+
+        return ApiResponseMiddleware::showResponse([
+            'stats' => $stats,
+            'attachment_id' => $id,
+        ], 'attachment');
     }
 }

@@ -1,10 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api\Maintenance;
 
-use App\Constants\HttpStatus;
-use App\Constants\SuccessMessages;
 use App\Http\Controllers\Api\BaseController;
+use App\Http\Middleware\ApiResponseMiddleware;
 use App\Http\Requests\MaintenanceConditionRequest;
 use App\Http\Resources\MaintenanceConditionResource;
 use App\Services\MaintenanceConditionService;
@@ -13,7 +14,7 @@ use Illuminate\Http\JsonResponse;
 class MaintenanceConditionController extends BaseController
 {
     public function __construct(
-        private MaintenanceConditionService $maintenanceConditionService,
+        private readonly MaintenanceConditionService $maintenanceConditionService,
     ) {}
 
     /**
@@ -23,9 +24,16 @@ class MaintenanceConditionController extends BaseController
     {
         $request = request();
         $processedParams = $this->maintenanceConditionService->processRequestParams($request->query());
-        $maintenanceConditions = $this->maintenanceConditionService->getFiltered($processedParams);
+        $maintenanceConditionsQuery = $this->maintenanceConditionService->getFiltered($processedParams);
+        $totalCount = $maintenanceConditionsQuery->count();
 
-        return $this->successResponse(MaintenanceConditionResource::collection($maintenanceConditions));
+        $maintenanceConditions = $this->paginated($maintenanceConditionsQuery, $request);
+
+        return ApiResponseMiddleware::listResponse(
+            MaintenanceConditionResource::collection($maintenanceConditions),
+            'maintenance_condition',
+            $totalCount
+        );
     }
 
     /**
@@ -35,10 +43,10 @@ class MaintenanceConditionController extends BaseController
     {
         $maintenanceCondition = $this->maintenanceConditionService->createMaintenanceCondition($request->validated());
 
-        return $this->successResponse(
+        return ApiResponseMiddleware::createResponse(
             new MaintenanceConditionResource($maintenanceCondition),
-            SuccessMessages::RESOURCE_CREATED,
-            HttpStatus::HTTP_CREATED,
+            'maintenance_condition',
+            $maintenanceCondition->toArray()
         );
     }
 
@@ -50,10 +58,14 @@ class MaintenanceConditionController extends BaseController
         $request = request();
         $processedParams = $this->maintenanceConditionService->processRequestParams($request->query());
         $with = $processedParams['with'] ?? [];
-        
+
         $maintenanceCondition = $this->maintenanceConditionService->find($id, $with);
 
-        return $this->successResponse(new MaintenanceConditionResource($maintenanceCondition));
+        return ApiResponseMiddleware::showResponse(
+            new MaintenanceConditionResource($maintenanceCondition),
+            'maintenance_condition',
+            $maintenanceCondition->toArray()
+        );
     }
 
     /**
@@ -63,9 +75,10 @@ class MaintenanceConditionController extends BaseController
     {
         $updatedMaintenanceCondition = $this->maintenanceConditionService->updateMaintenanceCondition($id, $request->validated());
 
-        return $this->successResponse(
+        return ApiResponseMiddleware::updateResponse(
             new MaintenanceConditionResource($updatedMaintenanceCondition),
-            SuccessMessages::RESOURCE_UPDATED,
+            'maintenance_condition',
+            $updatedMaintenanceCondition->toArray()
         );
     }
 
@@ -74,12 +87,12 @@ class MaintenanceConditionController extends BaseController
      */
     public function destroy(int $id): JsonResponse
     {
+        $maintenanceCondition = $this->maintenanceConditionService->find($id);
         $this->maintenanceConditionService->delete($id);
 
-        return $this->successResponse(
-            null,
-            SuccessMessages::RESOURCE_DELETED,
-            HttpStatus::HTTP_NO_CONTENT,
+        return ApiResponseMiddleware::deleteResponse(
+            'maintenance_condition',
+            $maintenanceCondition->toArray()
         );
     }
 }

@@ -1,10 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
+use App\Constants\ErrorMessages;
+use App\Models\Organization;
 use App\Models\Status;
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
+use InvalidArgumentException;
 
 class StatusService extends BaseService
 {
@@ -28,11 +32,11 @@ class StatusService extends BaseService
     }
 
     /**
-     * Update status with business rules.
+     * Update the status with business rules.
      */
     public function updateStatus(int $statusId, array $data): Status
     {
-        $data = $this->applyStatusBusinessRules($data, $statusId);
+        $data = $this->applyStatusBusinessRules($data);
         $this->validateStatusBusinessRules($data, $statusId);
 
         return $this->update($statusId, $data);
@@ -44,32 +48,12 @@ class StatusService extends BaseService
     protected function getAllowedParams(): array
     {
         return array_merge(parent::getAllowedParams(), [
-            'org_id', 'name', 'code', 'is_active', 'description',
+            'org_id',
+            'name',
+            'code',
+            'is_active',
+            'description',
         ]);
-    }
-
-    /**
-     * Get statuses by name (partial match).
-     */
-    public function getByName(string $name): Collection
-    {
-        return $this->getQuery()->where('name', 'like', "%{$name}%")->get();
-    }
-
-    /**
-     * Get statuses by code.
-     */
-    public function getByCode(string $code): Collection
-    {
-        return $this->getQuery()->where('code', $code)->get();
-    }
-
-    /**
-     * Get only active statuses.
-     */
-    public function getActive(): Collection
-    {
-        return $this->getQuery()->where('is_active', true)->get();
     }
 
     /**
@@ -77,7 +61,7 @@ class StatusService extends BaseService
      */
     public function processRequestParams(array $params): array
     {
-        // Validate parameters against whitelist
+        // Validate parameters against the allowlist
         $this->validateParams($params);
 
         return [
@@ -93,34 +77,25 @@ class StatusService extends BaseService
     /**
      * Get filtered statuses with optional relationships.
      */
-    public function getFiltered(array $filters = []): Collection
+    public function getFiltered(array $filters = []): Builder
     {
         $query = $this->getQuery();
 
-        $query->when($filters['name'] ?? null, fn ($q, $name) => $q->where('name', 'like', "%{$name}%"))
-            ->when($filters['code'] ?? null, fn ($q, $code) => $q->where('code', 'like', "%{$code}%"))
-            ->when($filters['description'] ?? null, fn ($q, $desc) => $q->where('description', 'like', "%{$desc}%"))
-            ->when(isset($filters['is_active']), fn ($q) => $q->where('is_active', $filters['is_active']))
-            ->when($filters['with'] ?? null, fn ($q, $relations) => $q->with($relations));
+        $query->when($filters['name'] ?? null, fn($q, $name) => $q->where('name', 'like', "%$name%"))
+            ->when($filters['code'] ?? null, fn($q, $code) => $q->where('code', 'like', "%$code%"))
+            ->when($filters['description'] ?? null, fn($q, $desc) => $q->where('description', 'like', "%$desc%"))
+            ->when(isset($filters['is_active']), fn($q) => $q->where('is_active', $filters['is_active']))
+            ->when($filters['with'] ?? null, fn($q, $relations) => $q->with($relations));
 
-        return $query->get();
-    }
-
-    /**
-     * Get statuses with their related items.
-     */
-    public function getWithItems(): Collection
-    {
-        return $this->getQuery()->with('items')->get();
+        return $query;
     }
 
     /**
      * Apply business rules for status operations.
      */
-    private function applyStatusBusinessRules(array $data, $statusId = null): array
+    private function applyStatusBusinessRules(array $data): array
     {
-        // Set default active status if not provided
-        if (!isset($data['is_active'])) {
+        if (! isset($data['is_active'])) {
             $data['is_active'] = true;
         }
 
@@ -129,40 +104,37 @@ class StatusService extends BaseService
 
     /**
      * Validate business rules for status operations.
-     * This handles the complex validation logic that was in StatusRequest.
      */
     private function validateStatusBusinessRules(array $data, $statusId = null): void
     {
         // Validate required fields
         if (empty($data['name'])) {
-            throw new \InvalidArgumentException('The status name is required');
+            throw new InvalidArgumentException(__(ErrorMessages::STATUS_NAME_REQUIRED));
         }
 
         if (empty($data['code'])) {
-            throw new \InvalidArgumentException('The status code is required');
+            throw new InvalidArgumentException(__(ErrorMessages::STATUS_CODE_REQUIRED));
         }
 
         if (empty($data['org_id'])) {
-            throw new \InvalidArgumentException('Organization ID is required');
+            throw new InvalidArgumentException(__(ErrorMessages::ORG_REQUIRED));
         }
 
-        // Validate organization exists
-        $organization = \App\Models\Organization::find($data['org_id']);
-        if (!$organization) {
-            throw new \InvalidArgumentException('The selected organization does not exist');
+        $organization = Organization::find($data['org_id']);
+        if (! $organization) {
+            throw new InvalidArgumentException(__(ErrorMessages::INVALID_ORG));
         }
 
         // Validate code uniqueness within organization
-        // This replaces: Rule::unique('statuses')->ignore($statusId)->where(fn ($query) => $query->where('org_id', $this->org_id))
         $query = Status::where('code', $data['code'])
-                      ->where('org_id', $data['org_id']);
-        
+            ->where('org_id', $data['org_id']);
+
         if ($statusId) {
             $query->where('id', '!=', $statusId);
         }
-        
+
         if ($query->exists()) {
-            throw new \InvalidArgumentException('This status code already exists in your organization');
+            throw new InvalidArgumentException(__(ErrorMessages::STATUS_CODE_EXISTS));
         }
     }
 }

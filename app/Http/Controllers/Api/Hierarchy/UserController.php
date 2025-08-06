@@ -2,11 +2,9 @@
 
 namespace App\Http\Controllers\Api\Hierarchy;
 
-use App\Constants\ErrorMessages;
-use App\Constants\HttpStatus;
-use App\Constants\SuccessMessages;
 use App\Exceptions\UnauthorizedAccessException;
 use App\Http\Controllers\Api\BaseController;
+use App\Http\Middleware\ApiResponseMiddleware;
 use App\Http\Requests\UserRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
@@ -28,21 +26,16 @@ class UserController extends BaseController
     public function index(UserRequest $request): JsonResponse
     {
         $filters = $this->userService->processRequestParams($request->query());
-        $users = $this->userService->getFiltered($filters);
-        $resourceType = 'users';
+        $usersQuery = $this->userService->getFiltered($filters);
+        $totalCount = $usersQuery->count();
 
-        if ($users->isEmpty()) {
-            $hasFilters = ! empty(array_filter($filters, fn($value) => $value !== null && $value !== ''));
-            if ($hasFilters) {
-                $message = str_replace('resources', $resourceType, ErrorMessages::NO_RESOURCES_FOUND);
-            } else {
-                $message = str_replace('resources', $resourceType, ErrorMessages::NO_RESOURCES_AVAILABLE);
-            }
-        } else {
-            $message = str_replace('Resources', ucfirst($resourceType), SuccessMessages::RESOURCES_RETRIEVED);
-        }
+        $users = $this->paginated($usersQuery, $request);
 
-        return $this->successResponse(UserResource::collection($users), $message);
+        return ApiResponseMiddleware::listResponse(
+            UserResource::collection($users),
+            'user',
+            $totalCount
+        );
     }
 
     /**
@@ -50,19 +43,13 @@ class UserController extends BaseController
      */
     public function store(UserRequest $request): JsonResponse
     {
-        try {
-            $user = $this->userService->createUser($request->validatedForUser());
+        $user = $this->userService->createUser($request->validated());
 
-            return $this->successResponse(
-                new UserResource($user),
-                SuccessMessages::RESOURCE_CREATED,
-                HttpStatus::HTTP_CREATED,
-            );
-        } catch (UnauthorizedAccessException $e) {
-            return $this->errorResponse($e->getMessage(), HttpStatus::HTTP_FORBIDDEN);
-        } catch (\Exception $e) {
-            return $this->errorResponse(ErrorMessages::SERVER_ERROR, HttpStatus::HTTP_INTERNAL_SERVER_ERROR);
-        }
+        return ApiResponseMiddleware::createResponse(
+            new UserResource($user),
+            'user',
+            $user->toArray()
+        );
     }
 
     /**
@@ -72,7 +59,11 @@ class UserController extends BaseController
     {
         $user = $this->userService->findById($id, ['*'], ['role', 'organization']);
 
-        return $this->successResponse(new UserResource($user));
+        return ApiResponseMiddleware::showResponse(
+            new UserResource($user),
+            'user',
+            $user->toArray()
+        );
     }
 
     /**
@@ -80,17 +71,12 @@ class UserController extends BaseController
      */
     public function update(UserRequest $request, int $id): JsonResponse
     {
-        $user = $this->userService->findById($id);
+        $updatedUser = $this->userService->updateUser($id, $request->validated());
 
-        if (! $user) {
-            return $this->errorResponse(ErrorMessages::NOT_FOUND, HttpStatus::HTTP_NOT_FOUND);
-        }
-
-        $updatedUser = $this->userService->updateUser($user->id, $request->validatedForUser());
-
-        return $this->successResponse(
+        return ApiResponseMiddleware::updateResponse(
             new UserResource($updatedUser),
-            SuccessMessages::RESOURCE_UPDATED,
+            'user',
+            $updatedUser->toArray()
         );
     }
 
@@ -102,11 +88,11 @@ class UserController extends BaseController
         try {
             $this->userService->deleteUser($id);
 
-            return $this->successResponse(null, SuccessMessages::RESOURCE_DELETED, HttpStatus::HTTP_NO_CONTENT);
+            return ApiResponseMiddleware::deleteResponse('user');
         } catch (UnauthorizedAccessException $e) {
-            return $this->errorResponse($e->getMessage(), HttpStatus::HTTP_FORBIDDEN);
+            throw $e;
         } catch (\Exception $e) {
-            return $this->errorResponse(ErrorMessages::SERVER_ERROR, HttpStatus::HTTP_INTERNAL_SERVER_ERROR);
+            throw $e;
         }
     }
 }

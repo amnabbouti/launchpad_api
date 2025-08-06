@@ -3,9 +3,8 @@
 namespace App\Models;
 
 use App\Traits\HasAttachments;
-use App\Traits\HasPublicId;
-
 use App\Traits\HasOrganizationScope;
+use App\Traits\HasPublicId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -15,11 +14,11 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasAttachments;
-    use HasPublicId;
     use HasApiTokens;
+    use HasAttachments;
     use HasFactory;
     use HasOrganizationScope;
+    use HasPublicId;
     use Notifiable;
 
     protected $fillable = [
@@ -118,8 +117,8 @@ class User extends Authenticatable
     public function hasPermission(string $action): bool
     {
         $roleSlug = $this->getCurrentRoleSlug();
-        
-        if (!$roleSlug) {
+
+        if (! $roleSlug) {
             return false;
         }
 
@@ -129,11 +128,11 @@ class User extends Authenticatable
         if (count($parts) !== 2) {
             return false; // Invalid action format
         }
-        
+
         [$resource, $actionPart] = $parts;
 
         // Use AuthorizationEngine to check permissions with correct resource
-        return !\App\Services\AuthorizationEngine::isForbidden($actionPart, $resource, $this);
+        return ! \App\Services\AuthorizationEngine::isForbidden($actionPart, $resource, $this);
     }
 
     public function lacksPermission(string $action): bool
@@ -151,6 +150,6 @@ class User extends Authenticatable
      */
     public function getName(): string
     {
-        return trim($this->first_name . ' ' . $this->last_name);
+        return trim($this->first_name.' '.$this->last_name);
     }
 }

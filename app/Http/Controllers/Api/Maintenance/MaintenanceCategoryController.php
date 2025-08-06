@@ -1,10 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api\Maintenance;
 
-use App\Constants\HttpStatus;
-use App\Constants\SuccessMessages;
 use App\Http\Controllers\Api\BaseController;
+use App\Http\Middleware\ApiResponseMiddleware;
 use App\Http\Requests\MaintenanceCategoryRequest;
 use App\Http\Resources\MaintenanceCategoryResource;
 use App\Services\MaintenanceCategoryService;
@@ -14,7 +15,7 @@ use Illuminate\Http\Request;
 class MaintenanceCategoryController extends BaseController
 {
     public function __construct(
-        private MaintenanceCategoryService $maintenanceCategoryService,
+        private readonly MaintenanceCategoryService $maintenanceCategoryService,
     ) {}
 
     /**
@@ -23,9 +24,16 @@ class MaintenanceCategoryController extends BaseController
     public function index(Request $request): JsonResponse
     {
         $filters = $this->maintenanceCategoryService->processRequestParams($request->query());
-        $categories = $this->maintenanceCategoryService->getFiltered($filters);
+        $categoriesQuery = $this->maintenanceCategoryService->getFiltered($filters);
+        $totalCount = $categoriesQuery->count();
 
-        return $this->successResponse(MaintenanceCategoryResource::collection($categories));
+        $categories = $this->paginated($categoriesQuery, $request);
+
+        return ApiResponseMiddleware::listResponse(
+            MaintenanceCategoryResource::collection($categories),
+            'maintenance_category',
+            $totalCount
+        );
     }
 
     /**
@@ -35,10 +43,10 @@ class MaintenanceCategoryController extends BaseController
     {
         $category = $this->maintenanceCategoryService->createMaintenanceCategory($request->validated());
 
-        return $this->successResponse(
+        return ApiResponseMiddleware::createResponse(
             new MaintenanceCategoryResource($category),
-            SuccessMessages::RESOURCE_CREATED,
-            HttpStatus::HTTP_CREATED,
+            'maintenance_category',
+            $category->toArray()
         );
     }
 
@@ -51,7 +59,11 @@ class MaintenanceCategoryController extends BaseController
 
         $category = $this->maintenanceCategoryService->findById($id, $with);
 
-        return $this->successResponse(new MaintenanceCategoryResource($category));
+        return ApiResponseMiddleware::showResponse(
+            new MaintenanceCategoryResource($category),
+            'maintenance_category',
+            $category->toArray()
+        );
     }
 
     /**
@@ -61,9 +73,10 @@ class MaintenanceCategoryController extends BaseController
     {
         $updatedCategory = $this->maintenanceCategoryService->updateMaintenanceCategory($id, $request->validated());
 
-        return $this->successResponse(
+        return ApiResponseMiddleware::updateResponse(
             new MaintenanceCategoryResource($updatedCategory),
-            SuccessMessages::RESOURCE_UPDATED,
+            'maintenance_category',
+            $updatedCategory->toArray()
         );
     }
 
@@ -72,8 +85,12 @@ class MaintenanceCategoryController extends BaseController
      */
     public function destroy(int $id): JsonResponse
     {
+        $category = $this->maintenanceCategoryService->findById($id);
         $this->maintenanceCategoryService->delete($id);
 
-        return $this->successResponse(null, SuccessMessages::RESOURCE_DELETED);
+        return ApiResponseMiddleware::deleteResponse(
+            'maintenance_category',
+            $category->toArray()
+        );
     }
 }

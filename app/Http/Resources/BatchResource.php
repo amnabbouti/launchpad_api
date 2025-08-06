@@ -4,7 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 
-class StockResource extends BaseResource
+class BatchResource extends BaseResource
 {
     public function toArray(Request $request): array
     {
@@ -22,11 +22,11 @@ class StockResource extends BaseResource
             'active_and_not_expired' => $this->getIsActiveAndNotExpiredAttribute(),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
-            'organization' => $this->whenLoaded('organization', fn() => new OrganizationResource($this->organization)),
-            'supplier' => $this->whenLoaded('supplier', fn() => new SupplierResource($this->supplier)),
-            'items' => $this->whenLoaded('items', fn() => ItemResource::collection($this->items)),
-            'check_in_outs' => $this->whenLoaded('checkInOuts', fn() => CheckInOutResource::collection($this->checkInOuts)),
-            'maintenances' => $this->whenLoaded('maintenances', fn() => MaintenanceResource::collection($this->maintenances)),
+            'organization' => $this->whenLoaded('organization', fn () => new OrganizationResource($this->organization)),
+            'supplier' => $this->whenLoaded('supplier', fn () => new SupplierResource($this->supplier)),
+            'items' => $this->whenLoaded('items', fn () => ItemResource::collection($this->items)),
+            'check_in_outs' => $this->whenLoaded('checkInOuts', fn () => CheckInOutResource::collection($this->checkInOuts)),
+            'maintenances' => $this->whenLoaded('maintenances', fn () => MaintenanceResource::collection($this->maintenances)),
         ];
 
         return $this->addCommonData($data, $request);

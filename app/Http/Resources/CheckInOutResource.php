@@ -77,8 +77,9 @@ class CheckInOutResource extends BaseResource
                 'name' => $this->statusIn?->name,
                 'color' => $this->statusIn?->color,
             ]),
-            'attachments' => $this->whenLoaded('attachments', fn () => 
-                $this->attachments->map(fn ($attachment) => [
+            'attachments' => $this->whenLoaded(
+                'attachments',
+                fn () => $this->attachments->map(fn ($attachment) => [
                     'id' => $attachment->public_id,
                     'name' => $attachment->name,
                     'url' => $attachment->url,
@@ -90,3 +91,5 @@ class CheckInOutResource extends BaseResource
         return $this->addCommonData($data, $request);
     }
 }
+
+// you have to be sure about the checkin location (TODO: check if this is correct)

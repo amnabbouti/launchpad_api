@@ -9,7 +9,7 @@ class MaintenanceResource extends BaseResource
     public function toArray(Request $request): array
     {
         // Calculate if maintenance is currently active
-        $isActive = $this->date_in_maintenance && !$this->date_back_from_maintenance;
+        $isActive = $this->date_in_maintenance && ! $this->date_back_from_maintenance;
 
         // Calculate duration if maintenance is completed
         $duration = null;
@@ -22,7 +22,6 @@ class MaintenanceResource extends BaseResource
         $data = [
             'id' => $this->public_id,
             'remarks' => $this->remarks,
-            'invoice_nbr' => $this->invoice_nbr,
             'cost' => $this->cost,
             'date_in_maintenance' => $this->date_in_maintenance?->format('c'),
             'date_expected_back_from_maintenance' => $this->date_expected_back_from_maintenance?->format('c'),
@@ -32,7 +31,7 @@ class MaintenanceResource extends BaseResource
             'is_repair' => $this->is_repair,
             'import_id' => $this->import_id,
             'import_source' => $this->import_source,
-            
+
             // Relationships
             'user' => $this->whenLoaded('user', fn () => [
                 'id' => $this->user?->public_id,
@@ -48,6 +47,7 @@ class MaintenanceResource extends BaseResource
                         'type' => 'item',
                     ];
                 }
+
                 // Handle other maintainable types if they exist
                 return [
                     'id' => $this->maintainable?->public_id,
@@ -70,15 +70,17 @@ class MaintenanceResource extends BaseResource
                 'name' => $this->statusIn?->name,
                 'color' => $this->statusIn?->color,
             ]),
-            'maintenance_details' => $this->whenLoaded('maintenanceDetails', fn () => 
-                $this->maintenanceDetails->map(fn ($detail) => [
+            'maintenance_details' => $this->whenLoaded(
+                'maintenanceDetails',
+                fn () => $this->maintenanceDetails ? $this->maintenanceDetails->map(fn ($detail) => [
                     'id' => $detail->public_id,
-                    'description' => $detail->description,
-                    'cost' => $detail->cost,
-                ])
+                    'value' => $detail->value,
+                    'maintenance_condition_id' => $detail->maintenance_condition_id,
+                ]) : []
             ),
-            'attachments' => $this->whenLoaded('attachments', fn () => 
-                $this->attachments->map(fn ($attachment) => [
+            'attachments' => $this->whenLoaded(
+                'attachments',
+                fn () => $this->attachments->map(fn ($attachment) => [
                     'id' => $attachment->public_id,
                     'name' => $attachment->name,
                     'url' => $attachment->url,

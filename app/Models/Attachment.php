@@ -13,9 +13,9 @@ use Illuminate\Support\Facades\Storage;
 
 class Attachment extends Model
 {
-    use HasPublicId; 
     use HasFactory;
     use HasOrganizationScope;
+    use HasPublicId;
     use SoftDeletes;
 
     protected $fillable = [

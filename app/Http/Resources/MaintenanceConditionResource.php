@@ -28,17 +28,13 @@ class MaintenanceConditionResource extends BaseResource
             'unit_of_measure_id' => $this->unit_of_measure_id,
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
-
-            // Computed fields (aligned with service filters)
             'is_overdue' => $this->maintenance_date && $this->maintenance_date->isPast(),
             'is_warning_due' => $this->maintenance_warning_date && $this->maintenance_warning_date->isPast(),
             'is_recurring' => $this->is_recurring,
-
-            // Relationships
             'organization' => new OrganizationResource($this->whenLoaded('organization')),
             'item' => new ItemResource($this->whenLoaded('item')),
-            'status_when_returned' => new ItemStatusResource($this->whenLoaded('statusWhenReturned')),
-            'status_when_exceeded' => new ItemStatusResource($this->whenLoaded('statusWhenExceeded')),
+            'status_when_returned' => new StatusResource($this->whenLoaded('statusWhenReturned')),
+            'status_when_exceeded' => new StatusResource($this->whenLoaded('statusWhenExceeded')),
             'maintenance_category' => new MaintenanceCategoryResource($this->whenLoaded('maintenanceCategory')),
             'unit_of_measure' => new UnitOfMeasureResource($this->whenLoaded('unitOfMeasure')),
             'maintenance_details' => MaintenanceDetailResource::collection($this->whenLoaded('maintenanceDetails')),

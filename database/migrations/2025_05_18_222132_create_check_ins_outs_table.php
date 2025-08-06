@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('org_id')->constrained('organizations')->onDelete('cascade');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->morphs('trackable'); 
+            $table->morphs('trackable');
             $table->foreignId('checkout_location_id')->constrained('locations')->onDelete('cascade');
             $table->timestamp('checkout_date');
             $table->decimal('quantity', 10, 2)->default(1);

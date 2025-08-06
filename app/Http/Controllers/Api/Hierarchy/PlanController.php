@@ -1,39 +1,46 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\Hierarchy;
 
-use App\Constants\SuccessMessages;
-use App\Constants\HttpStatus;
 use App\Http\Controllers\Api\BaseController;
-use App\Http\Resources\PlanResource;
+use App\Http\Middleware\ApiResponseMiddleware;
 use App\Http\Requests\PlanRequest;
+use App\Http\Resources\PlanResource;
 use App\Services\PlanService;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class PlanController extends BaseController
 {
-    private PlanService $planService;
-
-    public function __construct(PlanService $planService)
-    {
-        $this->planService = $planService;
-    }
+    /**
+     * Create a new controller instance.
+     */
+    public function __construct(
+        private readonly PlanService $planService,
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
         $filters = $this->planService->processRequestParams($request->query());
         $plans = $this->planService->getFiltered($filters);
-        return $this->successResponse(PlanResource::collection($plans));
+        $totalCount = $plans->count();
+
+        return ApiResponseMiddleware::listResponse(
+            PlanResource::collection($plans),
+            'plan',
+            $totalCount
+        );
     }
 
     public function store(PlanRequest $request): JsonResponse
     {
         $plan = $this->planService->createPlan($request->validated());
-        return $this->successResponse(
+
+        return ApiResponseMiddleware::createResponse(
             new PlanResource($plan),
-            SuccessMessages::created('Plan'),
-            HttpStatus::HTTP_CREATED,
+            'plan',
+            $plan->toArray()
         );
     }
 
@@ -41,21 +48,29 @@ class PlanController extends BaseController
     {
         $plan = $this->planService->findById($id);
         $plan->loadCount(['licenses', 'organizations']);
-        return $this->successResponse(new PlanResource($plan));
+
+        return ApiResponseMiddleware::showResponse(
+            new PlanResource($plan),
+            'plan',
+            $plan->toArray()
+        );
     }
 
     public function update(PlanRequest $request, int $id): JsonResponse
     {
         $plan = $this->planService->updatePlan($id, $request->validated());
-        return $this->successResponse(
+
+        return ApiResponseMiddleware::updateResponse(
             new PlanResource($plan),
-            SuccessMessages::updated('Plan'),
+            'plan',
+            $plan->toArray()
         );
     }
 
     public function destroy(int $id): JsonResponse
     {
         $this->planService->deletePlan($id);
-        return $this->successResponse(null, SuccessMessages::deleted('Plan'));
+
+        return ApiResponseMiddleware::deleteResponse('plan');
     }
 }

@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Constants\ValidationMessages;
+
 class MaintenanceConditionRequest extends BaseRequest
 {
     /**
@@ -35,36 +37,34 @@ class MaintenanceConditionRequest extends BaseRequest
     public function messages(): array
     {
         return [
-            'item_id.required' => 'The item is required',
-            'item_id.exists' => 'The selected item is invalid',
-            'maintenance_category_id.required' => 'The maintenance category is required',
-            'maintenance_category_id.exists' => 'The selected maintenance category is invalid',
-            'unit_of_measure_id.required' => 'The unit of measure is required',
-            'unit_of_measure_id.exists' => 'The selected unit of measure is invalid',
-            'org_id.required' => 'Organization ID is required',
-            'org_id.exists' => 'The selected organization does not exist',
+            'item_id.required' => __(ValidationMessages::MAINTENANCE_CONDITION_ITEM_REQUIRED),
+            'item_id.exists' => __(ValidationMessages::ITEM_NOT_EXISTS),
+            'maintenance_category_id.required' => __(ValidationMessages::MAINTENANCE_CONDITION_CATEGORY_REQUIRED),
+            'maintenance_category_id.exists' => __(ValidationMessages::MAINTENANCE_CATEGORY_NOT_FOUND),
+            'unit_of_measure_id.required' => __(ValidationMessages::MAINTENANCE_CONDITION_UNIT_REQUIRED),
+            'unit_of_measure_id.exists' => __(ValidationMessages::UNIT_NOT_EXISTS),
+            'org_id.required' => __(ValidationMessages::ORG_REQUIRED),
+            'org_id.exists' => __(ValidationMessages::INVALID_ORG),
+            'mail_on_warning.boolean' => __(ValidationMessages::BOOLEAN_INVALID),
+            'mail_on_maintenance.boolean' => __(ValidationMessages::BOOLEAN_INVALID),
+            'is_active.boolean' => __(ValidationMessages::BOOLEAN_INVALID),
+            'maintenance_recurrence_quantity.integer' => __(ValidationMessages::INTEGER_INVALID),
+            'maintenance_recurrence_quantity.min' => __(ValidationMessages::MAINTENANCE_CONDITION_NEGATIVE_VALUES),
+            'quantity_for_warning.numeric' => __(ValidationMessages::NUMERIC_INVALID),
+            'quantity_for_warning.min' => __(ValidationMessages::MAINTENANCE_CONDITION_NEGATIVE_VALUES),
+            'quantity_for_maintenance.numeric' => __(ValidationMessages::NUMERIC_INVALID),
+            'quantity_for_maintenance.min' => __(ValidationMessages::MAINTENANCE_CONDITION_NEGATIVE_VALUES),
+            'price_per_unit.numeric' => __(ValidationMessages::NUMERIC_INVALID),
+            'price_per_unit.min' => __(ValidationMessages::MAINTENANCE_CONDITION_NEGATIVE_VALUES),
 
-            'mail_on_warning.boolean' => 'Mail on warning must be true or false',
-            'mail_on_maintenance.boolean' => 'Mail on maintenance must be true or false',
-            'is_active.boolean' => 'Active status must be true or false',
+            'maintenance_warning_date.date' => __(ValidationMessages::INVALID_DATE),
+            'maintenance_date.date' => __(ValidationMessages::INVALID_DATE),
 
-            'maintenance_recurrence_quantity.integer' => 'Maintenance recurrence quantity must be a whole number',
-            'maintenance_recurrence_quantity.min' => 'Maintenance recurrence quantity cannot be negative',
-            'quantity_for_warning.numeric' => 'Warning quantity must be a valid number',
-            'quantity_for_warning.min' => 'Warning quantity cannot be negative',
-            'quantity_for_maintenance.numeric' => 'Maintenance quantity must be a valid number',
-            'quantity_for_maintenance.min' => 'Maintenance quantity cannot be negative',
-            'price_per_unit.numeric' => 'Price per unit must be a valid number',
-            'price_per_unit.min' => 'Price per unit cannot be negative',
+            'recurrence_unit.string' => __(ValidationMessages::STRING_INVALID),
+            'recurrence_unit.max' => __(ValidationMessages::STRING_TOO_LONG),
 
-            'maintenance_warning_date.date' => 'Maintenance warning date must be a valid date',
-            'maintenance_date.date' => 'Maintenance date must be a valid date',
-
-            'recurrence_unit.string' => 'Recurrence unit must be a valid text value',
-            'recurrence_unit.max' => 'Recurrence unit cannot exceed 50 characters',
-
-            'status_when_returned_id.exists' => 'The selected return status is invalid',
-            'status_when_exceeded_id.exists' => 'The selected exceeded status is invalid',
+            'status_when_returned_id.exists' => __(ValidationMessages::STATUS_NOT_EXISTS),
+            'status_when_exceeded_id.exists' => __(ValidationMessages::STATUS_NOT_EXISTS),
         ];
     }
 }

@@ -1,13 +1,14 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
 use App\Models\ApiKeyUsage;
 use App\Models\PersonalAccessToken;
-use Laravel\Sanctum\PersonalAccessToken as SanctumPersonalAccessToken;
-use Laravel\Sanctum\TransientToken;
 use Closure;
 use Illuminate\Http\Request;
+use Laravel\Sanctum\PersonalAccessToken as SanctumPersonalAccessToken;
+use Laravel\Sanctum\TransientToken;
 use Symfony\Component\HttpFoundation\Response;
 
 class LogApiUsageMiddleware
@@ -69,6 +70,7 @@ class LogApiUsageMiddleware
             // Only return if it's a real PersonalAccessToken
             if ($token instanceof SanctumPersonalAccessToken && $token->id) {
                 $fullToken = PersonalAccessToken::find($token->id);
+
                 return $fullToken ?: $token;
             }
 
@@ -79,6 +81,7 @@ class LogApiUsageMiddleware
         $header = $request->header('Authorization');
         if ($header && str_starts_with($header, 'Bearer ')) {
             $tokenString = substr($header, 7);
+
             return PersonalAccessToken::findToken($tokenString);
         }
 
@@ -101,7 +104,7 @@ class LogApiUsageMiddleware
         }
 
         // Skip non-API routes (if any)
-        if (!str_starts_with($path, '/api') && $path !== '/') {
+        if (! str_starts_with($path, '/api') && $path !== '/') {
             return true;
         }
 

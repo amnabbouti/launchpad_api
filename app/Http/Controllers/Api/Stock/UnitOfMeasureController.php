@@ -1,11 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api\Stock;
 
-use App\Constants\ErrorMessages;
-use App\Constants\HttpStatus;
-use App\Constants\SuccessMessages;
 use App\Http\Controllers\Api\BaseController;
+use App\Http\Middleware\ApiResponseMiddleware;
 use App\Http\Requests\UnitOfMeasureRequest;
 use App\Http\Resources\UnitOfMeasureResource;
 use App\Services\UnitOfMeasureService;
@@ -18,7 +18,7 @@ class UnitOfMeasureController extends BaseController
      * Create a new controller instance with the unit of measure service.
      */
     public function __construct(
-        private UnitOfMeasureService $unitOfMeasureService,
+        private readonly UnitOfMeasureService $unitOfMeasureService,
     ) {}
 
     /**
@@ -27,9 +27,16 @@ class UnitOfMeasureController extends BaseController
     public function index(Request $request): JsonResponse
     {
         $filters = $this->unitOfMeasureService->processRequestParams($request->all());
-        $units = $this->unitOfMeasureService->getFiltered($filters);
+        $unitsQuery = $this->unitOfMeasureService->getFiltered($filters);
+        $totalCount = $unitsQuery->count();
 
-        return $this->successResponse(UnitOfMeasureResource::collection($units));
+        $units = $this->paginated($unitsQuery, $request);
+
+        return ApiResponseMiddleware::listResponse(
+            UnitOfMeasureResource::collection($units),
+            'unitofmeasure',
+            $totalCount
+        );
     }
 
     /**
@@ -37,12 +44,12 @@ class UnitOfMeasureController extends BaseController
      */
     public function store(UnitOfMeasureRequest $request): JsonResponse
     {
-        $unit = $this->unitOfMeasureService->create($request->validated());
+        $unit = $this->unitOfMeasureService->createUnitOfMeasure($request->validated());
 
-        return $this->successResponse(
+        return ApiResponseMiddleware::createResponse(
             new UnitOfMeasureResource($unit),
-            SuccessMessages::RESOURCE_CREATED,
-            HttpStatus::HTTP_CREATED,
+            'unitofmeasure',
+            $unit->toArray()
         );
     }
 
@@ -53,11 +60,11 @@ class UnitOfMeasureController extends BaseController
     {
         $unit = $this->unitOfMeasureService->findById($id);
 
-        if (! $unit) {
-            return $this->errorResponse(ErrorMessages::NOT_FOUND, HttpStatus::HTTP_NOT_FOUND);
-        }
-
-        return $this->successResponse(new UnitOfMeasureResource($unit));
+        return ApiResponseMiddleware::showResponse(
+            new UnitOfMeasureResource($unit),
+            'unitofmeasure',
+            $unit->toArray()
+        );
     }
 
     /**
@@ -65,17 +72,12 @@ class UnitOfMeasureController extends BaseController
      */
     public function update(UnitOfMeasureRequest $request, int $id): JsonResponse
     {
-        $unit = $this->unitOfMeasureService->findById($id);
+        $updatedUnit = $this->unitOfMeasureService->updateUnitOfMeasure($id, $request->validated());
 
-        if (! $unit) {
-            return $this->errorResponse(ErrorMessages::NOT_FOUND, HttpStatus::HTTP_NOT_FOUND);
-        }
-
-        $updatedUnit = $this->unitOfMeasureService->update($id, $request->validated());
-
-        return $this->successResponse(
+        return ApiResponseMiddleware::updateResponse(
             new UnitOfMeasureResource($updatedUnit),
-            SuccessMessages::RESOURCE_UPDATED,
+            'unitofmeasure',
+            $updatedUnit->toArray()
         );
     }
 
@@ -84,38 +86,8 @@ class UnitOfMeasureController extends BaseController
      */
     public function destroy(int $id): JsonResponse
     {
-        $unit = $this->unitOfMeasureService->findById($id);
-
-        if (! $unit) {
-            return $this->errorResponse(ErrorMessages::NOT_FOUND, HttpStatus::HTTP_NOT_FOUND);
-        }
-
         $this->unitOfMeasureService->delete($id);
 
-        return $this->successResponse(
-            null,
-            SuccessMessages::RESOURCE_DELETED,
-            HttpStatus::HTTP_NO_CONTENT,
-        );
-    }
-
-    /**
-     * Get units of measure by name.
-     */
-    public function getByName(string $name): JsonResponse
-    {
-        $units = $this->unitOfMeasureService->getByName($name);
-
-        return $this->successResponse(UnitOfMeasureResource::collection($units));
-    }
-
-    /**
-     * Get active units of measure.
-     */
-    public function getActive(): JsonResponse
-    {
-        $units = $this->unitOfMeasureService->getActive();
-
-        return $this->successResponse(UnitOfMeasureResource::collection($units));
+        return ApiResponseMiddleware::deleteResponse('unitofmeasure');
     }
 }

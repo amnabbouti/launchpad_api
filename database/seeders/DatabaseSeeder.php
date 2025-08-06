@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Batch;
 use App\Models\Category;
 use App\Models\Item;
 use App\Models\Location;
@@ -11,7 +12,6 @@ use App\Models\MaintenanceCondition;
 use App\Models\MaintenanceDetail;
 use App\Models\Organization;
 use App\Models\Status;
-use App\Models\Stock;
 use App\Models\Supplier;
 use App\Models\UnitOfMeasure;
 use App\Models\User;
@@ -27,7 +27,7 @@ class DatabaseSeeder extends Seeder
     {
         // Run the comprehensive enterprise system seeder first
         $this->call(EnterpriseSystemSeeder::class);
-        
+
         // Then continue with the existing inventory seeding for the first organization
         $org = \App\Models\Organization::first();
 
@@ -189,7 +189,7 @@ class DatabaseSeeder extends Seeder
         $retailSafeDrawer = Location::firstOrCreate(['name' => 'Safe Drawer', 'code' => 'SAFE-DR', 'is_active' => true, 'parent_id' => $retailSafe->id, 'org_id' => $org->id]);
         $locationModels[] = $retailSafeDrawer;
 
-        $stockData = [
+        $batchData = [
             ['batch_number' => 'REG-001', 'notes' => 'Items in regular inventory', 'is_active' => true, 'received_date' => now()->subDays(30)],
             ['batch_number' => 'RES-001', 'notes' => 'Items held in reserve', 'is_active' => true, 'received_date' => now()->subDays(60)],
             ['batch_number' => 'DAM-001', 'notes' => 'Items that are damaged', 'is_active' => true, 'received_date' => now()->subDays(90)],
@@ -197,10 +197,10 @@ class DatabaseSeeder extends Seeder
             ['batch_number' => 'DIS-001', 'notes' => 'Items that are discontinued', 'is_active' => false, 'received_date' => now()->subDays(365)],
         ];
 
-        $stockModels = [];
-        foreach ($stockData as $data) {
+        $batchModels = [];
+        foreach ($batchData as $data) {
             $data['org_id'] = $org->id;
-            $stockModels[] = Stock::firstOrCreate(
+            $batchModels[] = Batch::firstOrCreate(
                 ['batch_number' => $data['batch_number'], 'org_id' => $org->id],
                 $data
             );
@@ -293,7 +293,7 @@ class DatabaseSeeder extends Seeder
                 'unit_id' => $eachUnit->id,
                 'category_id' => 4,
                 'user_id' => $users[0]->id,
-                'tracking_mode' => 'bulk',
+                'tracking_mode' => 'standard',
                 'is_active' => true,
                 'specifications' => json_encode(['connectivity' => 'Bluetooth', 'battery' => 'Rechargeable']),
             ],
@@ -305,7 +305,7 @@ class DatabaseSeeder extends Seeder
                 'unit_id' => $eachUnit->id,
                 'category_id' => 4,
                 'user_id' => $users[0]->id,
-                'tracking_mode' => 'bulk',
+                'tracking_mode' => 'standard',
                 'is_active' => true,
                 'specifications' => json_encode(['connectivity' => 'Bluetooth', 'battery' => 'Rechargeable']),
             ],
@@ -317,7 +317,7 @@ class DatabaseSeeder extends Seeder
                 'unit_id' => $packUnit->id,
                 'category_id' => 5,
                 'user_id' => $users[1]->id,
-                'tracking_mode' => 'bulk',
+                'tracking_mode' => 'standard',
                 'is_active' => true,
                 'specifications' => json_encode(['size' => 'A4', 'weight' => '80gsm']),
             ],
@@ -400,8 +400,8 @@ class DatabaseSeeder extends Seeder
 
                 foreach ($randomLocations as $location) {
                     if (! $item->locations()->where('location_id', $location->id)->exists()) {
-                        // For bulk items, add a random quantity
-                        $quantity = $item->isBulk() ? rand(1, 10) : 1;
+                        // For standard items, add a random quantity
+                        $quantity = $item->isStandard() ? rand(1, 10) : 1;
 
                         $item->locations()->attach($location->id, [
                             'org_id' => $org->id,
@@ -422,7 +422,7 @@ class DatabaseSeeder extends Seeder
                     if (! $item->suppliers()->where('supplier_id', $supplier->id)->exists()) {
                         $item->suppliers()->attach($supplier->id, [
                             'org_id' => $org->id,
-                            'supplier_part_number' => 'SP' . rand(1000, 9999),
+                            'supplier_part_number' => 'SP'.rand(1000, 9999),
                             'price' => $item->price * (rand(80, 95) / 100),
                             'lead_time_days' => rand(1, 30),
                             'is_preferred' => rand(0, 1),
@@ -506,7 +506,7 @@ class DatabaseSeeder extends Seeder
         foreach ([0, 1, 2, 7, 8, 9] as $itemIndex) {
             if (isset($itemModels[$itemIndex])) {
                 $item = $itemModels[$itemIndex];
-                $stock = $stockModels[array_rand($stockModels)];
+                $batch = $batchModels[array_rand($batchModels)];
                 $supplier = $supplierModels[array_rand($supplierModels)];
                 $employee = $allUsers->random();
                 // Create 1-2 maintenance records per item
@@ -519,8 +519,7 @@ class DatabaseSeeder extends Seeder
                     $maintenanceRecord = Maintenance::create([
                         'org_id' => $org->id,
                         'is_repair' => $isRepair,
-                        'remarks' => $isRepair ? 'Repair needed for ' . $item->name : 'Routine maintenance for ' . $item->name,
-                        'invoice_nbr' => 'INV-' . rand(10000, 99999),
+                        'remarks' => $isRepair ? 'Repair needed for '.$item->name : 'Routine maintenance for '.$item->name,
                         'cost' => rand(50, 500),
                         'date_expected_back_from_maintenance' => $expectedBackDate,
                         'date_back_from_maintenance' => $actualBackDate,

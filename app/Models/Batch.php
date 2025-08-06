@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Stock extends Model
+class Batch extends Model
 {
     use HasAttachments;
     use HasFactory;
@@ -39,7 +39,7 @@ class Stock extends Model
 
     protected static function getEntityType(): string
     {
-        return 'stock';
+        return 'batch';
     }
 
     public function organization(): BelongsTo
@@ -54,17 +54,17 @@ class Stock extends Model
 
     public function items(): HasMany
     {
-        return $this->hasMany(Item::class, 'stock_id');
+        return $this->hasMany(Item::class, 'batch_id');
     }
 
     public function checkInOuts(): HasMany
     {
-        return $this->hasMany(CheckInOut::class, 'stock_id');
+        return $this->hasMany(CheckInOut::class, 'batch_id');
     }
 
     public function maintenances(): HasMany
     {
-        return $this->hasMany(Maintenance::class, 'stock_id');
+        return $this->hasMany(Maintenance::class, 'batch_id');
     }
 
     public function getIsExpiredAttribute(): bool

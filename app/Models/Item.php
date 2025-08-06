@@ -1,7 +1,9 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Constants\AppConstants;
 use App\Traits\HasAttachments;
 use App\Traits\HasOrganizationScope;
 use App\Traits\HasPublicId;
@@ -27,9 +29,11 @@ class Item extends Model
     /**
      * Tracking mode constants
      */
-    const TRACKING_ABSTRACT = 'abstract';     
-    const TRACKING_BULK = 'bulk';             
-    const TRACKING_SERIALIZED = 'serialized'; 
+    const TRACKING_ABSTRACT = 'abstract';
+
+    const TRACKING_STANDARD = 'standard';
+
+    const TRACKING_SERIALIZED = 'serialized';
 
     protected static function getEntityType(): string
     {
@@ -54,13 +58,19 @@ class Item extends Model
         'user_id',
         'parent_item_id',
         'item_relation_id',
+        'batch_id',
+        'estimated_value',
+        'tracking_changed_at',
+        'tracking_change_reason',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
+        'estimated_value' => 'decimal:2',
         'is_active' => 'boolean',
         'specifications' => 'json',
         'tracking_mode' => 'string',
+        'tracking_changed_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -68,8 +78,8 @@ class Item extends Model
     protected $hidden = [];
 
     protected $appends = [
-        'public_id', 
-        'type'
+        'public_id',
+        'type',
     ];
 
     /**
@@ -91,7 +101,7 @@ class Item extends Model
     public static function rules(): array
     {
         return [
-            'price' => 'nullable|numeric|min:0',
+            'price' => 'nullable|numeric|min:0|max:'.AppConstants::ITEM_MAX_PRICE,
         ];
     }
 
@@ -120,6 +130,11 @@ class Item extends Model
         return $this->belongsTo(Status::class, 'status_id');
     }
 
+    public function batch(): BelongsTo
+    {
+        return $this->belongsTo(Batch::class, 'batch_id');
+    }
+
     public function parentItem(): BelongsTo
     {
         return $this->belongsTo(Item::class, 'parent_item_id');
@@ -145,7 +160,7 @@ class Item extends Model
     {
         return $this->hasMany(ItemLocation::class, 'item_id');
     }
-    
+
     // Many-to-many relationship with locations through item_locations
     public function locations(): BelongsToMany
     {
@@ -181,6 +196,11 @@ class Item extends Model
             ->withTimestamps();
     }
 
+    public function historyEvents(): HasMany
+    {
+        return $this->hasMany(ItemHistoryEvent::class);
+    }
+
     /**
      * Get the type attribute
      */
@@ -197,9 +217,9 @@ class Item extends Model
         return $query->where('tracking_mode', self::TRACKING_ABSTRACT);
     }
 
-    public function scopeBulk($query)
+    public function scopeStandard($query)
     {
-        return $query->where('tracking_mode', self::TRACKING_BULK);
+        return $query->where('tracking_mode', self::TRACKING_STANDARD);
     }
 
     public function scopeSerialized($query)
@@ -209,7 +229,7 @@ class Item extends Model
 
     public function scopePhysical($query)
     {
-        return $query->whereIn('tracking_mode', [self::TRACKING_BULK, self::TRACKING_SERIALIZED]);
+        return $query->whereIn('tracking_mode', [self::TRACKING_STANDARD, self::TRACKING_SERIALIZED]);
     }
 
     /**
@@ -237,9 +257,9 @@ class Item extends Model
     {
         return $query->where(function ($q) use ($term) {
             $q->where('name', 'like', "%{$term}%")
-              ->orWhere('code', 'like', "%{$term}%")
-              ->orWhere('description', 'like', "%{$term}%")
-              ->orWhere('serial_number', 'like', "%{$term}%");
+                ->orWhere('code', 'like', "%{$term}%")
+                ->orWhere('description', 'like', "%{$term}%")
+                ->orWhere('serial_number', 'like', "%{$term}%");
         });
     }
 
@@ -250,8 +270,8 @@ class Item extends Model
     {
         return $query->where(function ($q) use ($code) {
             $q->where('barcode', $code)
-              ->orWhere('serial_number', $code)
-              ->orWhere('code', $code);
+                ->orWhere('serial_number', $code)
+                ->orWhere('code', $code);
         });
     }
 
@@ -263,9 +283,9 @@ class Item extends Model
         return $this->tracking_mode === self::TRACKING_ABSTRACT;
     }
 
-    public function isBulk(): bool
+    public function isStandard(): bool
     {
-        return $this->tracking_mode === self::TRACKING_BULK;
+        return $this->tracking_mode === self::TRACKING_STANDARD;
     }
 
     public function isSerialized(): bool
@@ -275,7 +295,7 @@ class Item extends Model
 
     public function isPhysical(): bool
     {
-        return in_array($this->tracking_mode, [self::TRACKING_BULK, self::TRACKING_SERIALIZED]);
+        return in_array($this->tracking_mode, [self::TRACKING_STANDARD, self::TRACKING_SERIALIZED]);
     }
 
     /**
@@ -285,7 +305,7 @@ class Item extends Model
     {
         match ($this->tracking_mode) {
             self::TRACKING_ABSTRACT => $this->setAbstractConstraints(),
-            self::TRACKING_BULK => $this->setBulkConstraints(),
+            self::TRACKING_STANDARD => $this->setStandardConstraints(),
             self::TRACKING_SERIALIZED => $this->setSerializedConstraints(),
             default => null,
         };
@@ -301,21 +321,14 @@ class Item extends Model
         $this->notes = null;
     }
 
-    /**
-     * Set constraints for bulk items
-     */
-    private function setBulkConstraints(): void
+    private function setStandardConstraints(): void
     {
         $this->serial_number = null;
     }
 
-    /**
-     * Set constraints for serialized items (no automatic changes)
-     */
     private function setSerializedConstraints(): void
     {
         // Serialized items keep all their data
         // Validation ensures serial_number is provided
     }
-
 }

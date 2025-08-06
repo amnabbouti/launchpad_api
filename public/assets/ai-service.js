@@ -105,7 +105,7 @@ Example response:
 \`\`\`
 
 COMPREHENSIVE RESPONSES:
-When asked about endpoints, ALWAYS provide a comprehensive list of ALL available endpoints relevant to the question. This includes authentication endpoints, category endpoints, user endpoints, stock endpoints, UOM endpoints, checkInOut endpoints, maintenance endpoints, and any other relevant endpoints.
+When asked about endpoints, ALWAYS provide a comprehensive list of ALL available endpoints relevant to the question. This includes authentication endpoints, category endpoints, user endpoints, batch endpoints, UOM endpoints, checkInOut endpoints, maintenance endpoints, and any other relevant endpoints.
 
 QUICK REPLIES FORMAT (EXTREMELY IMPORTANT):
 - You MUST use bullet points (dashes) for quick replies

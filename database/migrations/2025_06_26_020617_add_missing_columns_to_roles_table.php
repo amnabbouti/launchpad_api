@@ -12,14 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('roles', function (Blueprint $table) {
-            // Add description column
             $table->text('description')->nullable()->after('title');
-            
-            // Add org_id to scope custom roles to organizations (NULL for system roles)
             $table->unsignedBigInteger('org_id')->nullable()->after('description');
             $table->foreign('org_id')->references('id')->on('organizations')->onDelete('cascade');
-            
-            // Add is_system flag to identify system roles
             $table->boolean('is_system')->default(false)->after('org_id');
         });
     }

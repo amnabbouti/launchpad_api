@@ -23,12 +23,12 @@ class ThreatDetectionController extends BaseController
     public function overview(ThreatDetectionRequest $request): JsonResponse
     {
         $organizationId = $request->user()->isSuperAdmin() ? null : $request->user()->org_id;
-        
+
         $threatData = $this->threatDetectionService->getThreatOverview($organizationId);
-        
+
         return $this->successResponse(
             new ThreatDetectionResource($threatData),
             'Threat detection overview retrieved successfully'
         );
     }
-} 
+}

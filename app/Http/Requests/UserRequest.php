@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Validation\Rule;
+use App\Constants\AppConstants;
 
 class UserRequest extends BaseRequest
 {
@@ -12,9 +12,9 @@ class UserRequest extends BaseRequest
     protected function getValidationRules(): array
     {
         return [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255',
-            'password' => 'nullable|string|min:8',
+            'name' => 'required|string|max:'.AppConstants::EMAIL_MAX_LENGTH,
+            'email' => 'required|string|email|max:'.AppConstants::EMAIL_MAX_LENGTH,
+            'password' => 'nullable|string|min:'.AppConstants::PASSWORD_MIN_LENGTH,
             'password_confirmation' => 'nullable|string',
             'role_id' => 'nullable|integer|exists:roles,id',
             'org_id' => 'nullable|integer|exists:organizations,id',

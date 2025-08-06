@@ -5,7 +5,6 @@ namespace App\Console\Commands;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\Hash;
 
 class CreateUserToken extends Command
 {
@@ -32,11 +31,12 @@ class CreateUserToken extends Command
         $tokenName = $this->option('name');
 
         // If no email provided, ask for it or show available users
-        if (!$email) {
+        if (! $email) {
             $users = User::select('email', 'first_name', 'last_name')->get();
-            
+
             if ($users->isEmpty()) {
                 $this->error('No users found in the database.');
+
                 return;
             }
 
@@ -51,8 +51,9 @@ class CreateUserToken extends Command
         // Find the user
         $user = User::where('email', $email)->first();
 
-        if (!$user) {
+        if (! $user) {
             $this->error("User with email '{$email}' not found.");
+
             return;
         }
 

@@ -17,7 +17,16 @@ class ItemMovement extends Model
     /**
      * ID prefix for ItemMovements
      */
-    protected string $publicIdPrefix = 'MOV';
+    protected string $publicIdPrefix = 'IMV';
+
+    /**
+     * Movement type constants
+     */
+    const MOVEMENT_TRANSFER = 'transfer';
+
+    const MOVEMENT_INITIAL_PLACEMENT = 'initial_placement';
+
+    const MOVEMENT_ADJUSTMENT = 'adjustment';
 
     protected static function getEntityType(): string
     {
@@ -37,6 +46,10 @@ class ItemMovement extends Model
         'quantity',
         'user_id',
         'moved_at',
+        'movement_type',
+        'reason',
+        'reference_id',
+        'reference_type',
         'notes',
     ];
 

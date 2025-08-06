@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Constants\AppConstants;
+
 class OrganizationRequest extends BaseRequest
 {
     /**
@@ -10,8 +12,8 @@ class OrganizationRequest extends BaseRequest
     protected function getValidationRules(): array
     {
         return [
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
+            'name' => 'required|string|max:' . AppConstants::NAME_MAX_LENGTH,
+            'email' => 'required|email|max:' . AppConstants::EMAIL_MAX_LENGTH,
             'country' => 'required|string|max:100',
             'billing_address' => 'required|string|max:255',
             'tax_id' => 'required|string|max:100',
@@ -21,7 +23,7 @@ class OrganizationRequest extends BaseRequest
             'street_number' => 'nullable|string|max:50',
             'city' => 'nullable|string|max:255',
             'province' => 'nullable|string|max:255',
-            'postal_code' => 'nullable|string|max:20',
+            'postal_code' => 'nullable|string|max:' . AppConstants::POSTAL_CODE_MAX_LENGTH,
             'logo' => 'nullable|string|max:255',
             'industry' => 'nullable|string|max:255',
             'timezone' => 'nullable|string|max:100',

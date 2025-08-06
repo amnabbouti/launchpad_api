@@ -30,7 +30,7 @@ return new class extends Migration
 
         $entityTypes = [
             'item' => ['table' => 'items', 'prefix' => 'ITM'],
-            'stock' => ['table' => 'stocks', 'prefix' => 'BCH'],
+            'batch' => ['table' => 'batches', 'prefix' => 'BCH'],
             'maintenance' => ['table' => 'maintenances', 'prefix' => 'MNT'],
             'check_in_out' => ['table' => 'check_ins_outs', 'prefix' => 'TXN'],
             'category' => ['table' => 'categories', 'prefix' => 'CAT'],
@@ -51,7 +51,7 @@ return new class extends Migration
                     $records = DB::table($config['table'])
                         ->where('org_id', $orgId)
                         ->orderBy('id')
-                        ->lockForUpdate() 
+                        ->lockForUpdate()
                         ->get();
 
                     $batchData = [];

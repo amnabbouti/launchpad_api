@@ -14,7 +14,7 @@ class LicenseRequest extends FormRequest
     /**
      * Validation rules
      */
-    protected function getValidationRules(): array
+    public function rules(): array
     {
         return [
             'organization_id' => 'required|exists:organizations,id',

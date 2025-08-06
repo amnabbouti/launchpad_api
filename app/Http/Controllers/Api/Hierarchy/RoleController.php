@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers\Api\Hierarchy;
 
-use App\Constants\HttpStatus;
-use App\Constants\SuccessMessages;
 use App\Http\Controllers\Api\BaseController;
+use App\Http\Middleware\ApiResponseMiddleware;
 use App\Http\Requests\StoreRoleRequest;
 use App\Http\Requests\UpdateRoleRequest;
 use App\Http\Resources\RoleResource;
@@ -27,9 +26,16 @@ class RoleController extends BaseController
     public function index(Request $request): JsonResponse
     {
         $filters = $this->roleService->processRequestParams($request->query());
-        $roles = $this->roleService->getFiltered($filters);
+        $rolesQuery = $this->roleService->getFiltered($filters);
+        $totalCount = $rolesQuery->count();
 
-        return $this->successResponse(RoleResource::collection($roles));
+        $roles = $this->paginated($rolesQuery, $request);
+
+        return ApiResponseMiddleware::listResponse(
+            RoleResource::collection($roles),
+            'role',
+            $totalCount
+        );
     }
 
     /**
@@ -38,8 +44,13 @@ class RoleController extends BaseController
     public function all(): JsonResponse
     {
         $roles = $this->roleService->getAllRoles();
+        $totalCount = $roles->count();
 
-        return $this->successResponse(RoleResource::collection($roles));
+        return ApiResponseMiddleware::listResponse(
+            RoleResource::collection($roles),
+            'role',
+            $totalCount
+        );
     }
 
     /**
@@ -48,8 +59,13 @@ class RoleController extends BaseController
     public function organizationRoles(): JsonResponse
     {
         $roles = $this->roleService->getOrganizationRoles();
+        $totalCount = $roles->count();
 
-        return $this->successResponse(RoleResource::collection($roles));
+        return ApiResponseMiddleware::listResponse(
+            RoleResource::collection($roles),
+            'role',
+            $totalCount
+        );
     }
 
     /**
@@ -60,7 +76,11 @@ class RoleController extends BaseController
         $filters = $this->roleService->processRequestParams($request->query());
         $role = $this->roleService->findById($id, ['*'], $filters['with'] ?? []);
 
-        return $this->successResponse([new RoleResource($role)]);
+        return ApiResponseMiddleware::showResponse(
+            new RoleResource($role),
+            'role',
+            $role->toArray()
+        );
     }
 
     /**
@@ -70,7 +90,11 @@ class RoleController extends BaseController
     {
         $role = $this->roleService->createCustomRole($request->validated());
 
-        return $this->successResponse([new RoleResource($role)], SuccessMessages::RESOURCE_CREATED, HttpStatus::HTTP_CREATED);
+        return ApiResponseMiddleware::createResponse(
+            new RoleResource($role),
+            'role',
+            $role->toArray()
+        );
     }
 
     /**
@@ -80,7 +104,11 @@ class RoleController extends BaseController
     {
         $role = $this->roleService->updateCustomRole($id, $request->validated());
 
-        return $this->successResponse([new RoleResource($role)], SuccessMessages::RESOURCE_UPDATED);
+        return ApiResponseMiddleware::updateResponse(
+            new RoleResource($role),
+            'role',
+            $role->toArray()
+        );
     }
 
     /**
@@ -90,7 +118,7 @@ class RoleController extends BaseController
     {
         $this->roleService->deleteCustomRole($id);
 
-        return $this->successResponse([], SuccessMessages::RESOURCE_DELETED);
+        return ApiResponseMiddleware::deleteResponse('role');
     }
 
     /**
@@ -100,7 +128,11 @@ class RoleController extends BaseController
     {
         $permissions = $this->roleService->getAvailablePermissions();
 
-        return $this->successResponse([$permissions]);
+        return ApiResponseMiddleware::showResponse(
+            ['permissions' => $permissions],
+            'role',
+            []
+        );
     }
 
     /**
@@ -114,7 +146,11 @@ class RoleController extends BaseController
 
         $role = $this->roleService->addForbiddenAction($id, $request->action);
 
-        return $this->successResponse([new RoleResource($role)], SuccessMessages::ACTION_FORBIDDEN);
+        return ApiResponseMiddleware::updateResponse(
+            new RoleResource($role),
+            'role',
+            $role->toArray()
+        );
     }
 
     /**
@@ -128,6 +164,10 @@ class RoleController extends BaseController
 
         $role = $this->roleService->removeForbiddenAction($id, $request->action);
 
-        return $this->successResponse([new RoleResource($role)], SuccessMessages::ACTION_ALLOWED);
+        return ApiResponseMiddleware::updateResponse(
+            new RoleResource($role),
+            'role',
+            $role->toArray()
+        );
     }
 }

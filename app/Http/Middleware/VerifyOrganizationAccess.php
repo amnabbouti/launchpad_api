@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
@@ -19,8 +20,6 @@ class VerifyOrganizationAccess extends BaseController
             Auth::shouldUse($guard);
         }
 
-        // only users with a valid organization ID are allowed
-        // Exception: super admins don't need an organization ID
         if (! Auth::check() || (! Auth::user()->org_id && ! Auth::user()->isSuperAdmin())) {
             return $this->errorResponse('User must belong to an organization', Response::HTTP_FORBIDDEN);
         }

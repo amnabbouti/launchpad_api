@@ -15,7 +15,7 @@ class TranslationController extends Controller
     {
         // Validate locale
         $supportedLocales = ['en', 'fr', 'de', 'es', 'nl'];
-        if (!in_array($locale, $supportedLocales)) {
+        if (! in_array($locale, $supportedLocales)) {
             $locale = 'en';
         }
 
@@ -31,7 +31,7 @@ class TranslationController extends Controller
             'btn.delete' => __('btn.delete'),
             'btn.create' => __('btn.create'),
             'btn.update' => __('btn.update'),
-            
+
             // Labels
             'lbl.name' => __('lbl.name'),
             'lbl.email' => __('lbl.email'),
@@ -42,16 +42,16 @@ class TranslationController extends Controller
             'lbl.status' => __('lbl.status'),
             'lbl.active' => __('lbl.active'),
             'lbl.inactive' => __('lbl.inactive'),
-            
+
             // Messages
             'msg.welcome' => __('msg.welcome'),
             'msg.goodbye' => __('msg.goodbye'),
-            
+
             // Success messages
             'ok.user_created' => __('ok.user_created'),
             'ok.user_updated' => __('ok.user_updated'),
             'ok.user_deleted' => __('ok.user_deleted'),
-            
+
             // Common errors (you might want to expose some)
             'err.unauthorized' => __('err.unauthorized'),
             'err.not_found' => __('err.not_found'),
@@ -60,7 +60,7 @@ class TranslationController extends Controller
 
         return response()->json([
             'locale' => $locale,
-            'translations' => $translations
+            'translations' => $translations,
         ]);
     }
 
@@ -71,16 +71,16 @@ class TranslationController extends Controller
     {
         // Validate locale
         $supportedLocales = ['en', 'fr', 'de', 'es', 'nl'];
-        if (!in_array($locale, $supportedLocales)) {
+        if (! in_array($locale, $supportedLocales)) {
             $locale = 'en';
         }
 
         App::setLocale($locale);
-        
+
         return response()->json([
             'key' => $key,
             'translation' => __($key),
-            'locale' => $locale
+            'locale' => $locale,
         ]);
     }
-} 
+}

@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
-use App\Models\Role;
-use App\Services\AuthorizationEngine;
 use App\Constants\Permissions;
+use App\Models\Role;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -24,7 +26,7 @@ class RoleService extends BaseService
      */
     public function createCustomRole(array $data): Role
     {
-        if (!AuthorizationEngine::canCreateCustomRole()) {
+        if (! AuthorizationEngine::canCreateCustomRole()) {
             throw new InvalidArgumentException('You do not have permission to create custom roles');
         }
 
@@ -41,7 +43,7 @@ class RoleService extends BaseService
     {
         $role = $this->findById($roleId);
 
-        if (!AuthorizationEngine::canModifyCustomRole($role)) {
+        if (! AuthorizationEngine::canModifyCustomRole($role)) {
             throw new InvalidArgumentException('You do not have permission to modify this role');
         }
 
@@ -62,7 +64,7 @@ class RoleService extends BaseService
             throw new InvalidArgumentException('Cannot delete system roles');
         }
 
-        if (!AuthorizationEngine::canModifyCustomRole($role)) {
+        if (! AuthorizationEngine::canModifyCustomRole($role)) {
             throw new InvalidArgumentException('You do not have permission to delete this role');
         }
 
@@ -74,7 +76,7 @@ class RoleService extends BaseService
     }
 
     /**
-     * Get roles that current user can assign.
+     * Get roles that the current user can assign.
      */
     public function getAssignableRoles(): array
     {
@@ -84,24 +86,24 @@ class RoleService extends BaseService
     /**
      * Get roles with filters.
      */
-    public function getFiltered(array $filters = []): Collection
+    public function getFiltered(array $filters = []): Builder
     {
         $query = $this->getQuery();
 
         $query->when($filters['org_id'] ?? null, fn($q, $value) => $q->where('org_id', $value))
             ->when($filters['is_system'] ?? null, fn($q, $value) => $q->where('is_system', $value))
-            ->when($filters['slug'] ?? null, fn($q, $value) => $q->where('slug', 'like', "%{$value}%"))
-            ->when($filters['title'] ?? null, fn($q, $value) => $q->where('title', 'like', "%{$value}%"))
+            ->when($filters['slug'] ?? null, fn($q, $value) => $q->where('slug', 'like', "%$value%"))
+            ->when($filters['title'] ?? null, fn($q, $value) => $q->where('title', 'like', "%$value%"))
             ->when($filters['q'] ?? null, function ($q, $value) {
                 return $q->where(function ($query) use ($value) {
-                    $query->where('slug', 'like', "%{$value}%")
-                        ->orWhere('title', 'like', "%{$value}%")
-                        ->orWhere('description', 'like', "%{$value}%");
+                    $query->where('slug', 'like', "%$value%")
+                        ->orWhere('title', 'like', "%$value%")
+                        ->orWhere('description', 'like', "%$value%");
                 });
             })
             ->when($filters['with'] ?? null, fn($q, $relations) => $q->with($relations));
 
-        return $query->get();
+        return $query;
     }
 
     /**
@@ -109,7 +111,7 @@ class RoleService extends BaseService
      */
     public function getAllRoles(): Collection
     {
-        return $this->all(['*'], [], [], ['title', 'asc']);
+        return $this->all(['*'], [], [], ['title', 'asc'])->get();
     }
 
     /**
@@ -129,6 +131,7 @@ class RoleService extends BaseService
     public function processRequestParams(array $params): array
     {
         $this->validateParams($params);
+
         return [
             'org_id' => $this->toInt($params['org_id'] ?? null),
             'is_system' => $this->toBool($params['is_system'] ?? null),
@@ -181,19 +184,19 @@ class RoleService extends BaseService
     }
 
     /**
-     * Add forbidden action to role.
+     * Add forbidden action to a role.
      */
     public function addForbiddenAction(int $roleId, string $action): Role
     {
         $role = $this->findById($roleId);
 
-        if (!AuthorizationEngine::canModifyCustomRole($role)) {
+        if (! AuthorizationEngine::canModifyCustomRole($role)) {
             throw new InvalidArgumentException('You do not have permission to modify this role');
         }
 
         $forbidden = $role->getForbidden();
 
-        if (!in_array($action, $forbidden)) {
+        if (! in_array($action, $forbidden)) {
             $forbidden[] = $action;
             $role->update(['forbidden' => $forbidden]);
         }
@@ -208,7 +211,7 @@ class RoleService extends BaseService
     {
         $role = $this->findById($roleId);
 
-        if (!AuthorizationEngine::canModifyCustomRole($role)) {
+        if (! AuthorizationEngine::canModifyCustomRole($role)) {
             throw new InvalidArgumentException('You do not have permission to modify this role');
         }
 
@@ -217,7 +220,7 @@ class RoleService extends BaseService
         if ($currentUser && $currentUser->isManager()) {
             $requiredForbidden = AuthorizationEngine::getRequiredForbiddenActionsForManagers();
             if (in_array($action, $requiredForbidden)) {
-                throw new InvalidArgumentException("Cannot remove security-required permission: {$action}");
+                throw new InvalidArgumentException("Cannot remove security-required permission: $action");
             }
         }
 
@@ -236,13 +239,13 @@ class RoleService extends BaseService
         $currentUser = AuthorizationEngine::getCurrentUser();
 
         // Auto-assign organization for managers
-        if ($currentUser && $currentUser->isManager() && !isset($data['org_id'])) {
+        if ($currentUser && $currentUser->isManager() && ! isset($data['org_id'])) {
             $data['org_id'] = $currentUser->org_id;
         }
 
         $data['is_system'] = false;
 
-        if (!isset($data['forbidden'])) {
+        if (! isset($data['forbidden'])) {
             $data['forbidden'] = [];
         }
 
@@ -260,13 +263,13 @@ class RoleService extends BaseService
      */
     private function validateCustomRolePermissions(array $data): void
     {
-        if (!isset($data['forbidden']) || !is_array($data['forbidden'])) {
+        if (! isset($data['forbidden']) || ! is_array($data['forbidden'])) {
             throw new InvalidArgumentException('Forbidden permissions must be provided as an array');
         }
 
         $errors = AuthorizationEngine::validateCustomRolePermissions($data['forbidden']);
 
-        if (!empty($errors)) {
+        if (! empty($errors)) {
             throw new InvalidArgumentException('Security validation failed: ' . implode(', ', $errors));
         }
     }

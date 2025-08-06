@@ -29,24 +29,24 @@ class ItemResource extends BaseResource
             'is_active' => $this->is_active,
 
             // Inventory summary
-            'total_quantity' => $this->whenLoaded('locations', fn() => $this->locations->sum('pivot.quantity') ?? 0),
-            'supplier_count' => $this->whenLoaded('suppliers', fn() => $this->suppliers->count() ?? 0),
+            'total_quantity' => $this->whenLoaded('locations', fn () => $this->locations->sum('pivot.quantity') ?? 0),
+            'supplier_count' => $this->whenLoaded('suppliers', fn () => $this->suppliers->count() ?? 0),
 
             // Related entities (simplified)
-            'organization' => $this->whenLoaded('organization', fn() => ['id' => $this->organization?->public_id, 'name' => $this->organization?->name]),
-            'category' => $this->whenLoaded('category', fn() => ['id' => $this->category?->public_id, 'name' => $this->category?->name]),
-            'status' => $this->whenLoaded('status', fn() => ['id' => $this->status?->public_id, 'name' => $this->status?->name]),
-            'unit_of_measure' => $this->whenLoaded('unitOfMeasure', fn() => ['name' => $this->unitOfMeasure?->name, 'symbol' => $this->unitOfMeasure?->symbol]),
+            'organization' => $this->whenLoaded('organization', fn () => ['id' => $this->organization?->public_id, 'name' => $this->organization?->name]),
+            'category' => $this->whenLoaded('category', fn () => ['id' => $this->category?->public_id, 'name' => $this->category?->name]),
+            'status' => $this->whenLoaded('status', fn () => ['id' => $this->status?->public_id, 'name' => $this->status?->name]),
+            'unit_of_measure' => $this->whenLoaded('unitOfMeasure', fn () => ['name' => $this->unitOfMeasure?->name, 'symbol' => $this->unitOfMeasure?->symbol]),
 
             // Detailed
-            'suppliers' => $this->whenLoaded('suppliers', fn() => $this->suppliers->map(function ($supplier) {
+            'suppliers' => $this->whenLoaded('suppliers', fn () => $this->suppliers->map(function ($supplier) {
                 return [
                     'id' => $supplier->public_id,
                     'name' => $supplier->name,
                     'is_preferred' => $supplier->pivot->is_preferred ?? false,
                 ];
             })),
-            'locations' => $this->whenLoaded('locations', fn() => $this->locations->map(function ($location) {
+            'locations' => $this->whenLoaded('locations', fn () => $this->locations->map(function ($location) {
                 return [
                     'id' => $location->public_id,
                     'name' => $location->name,

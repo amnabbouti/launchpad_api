@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Constants\AppConstants;
+
 class AttachmentRequest extends BaseRequest
 {
     /**
@@ -9,19 +11,22 @@ class AttachmentRequest extends BaseRequest
      */
     protected function getValidationRules(): array
     {
+        $allowedExtensions = implode(',', AppConstants::SUPPORTED_ATTACHMENT_EXTENSIONS);
+        $maxSizeInKb = AppConstants::MAX_UPLOAD_SIZE / 1024;
+
         return [
-            'file' => 'nullable|file|max:10240|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,jpg,jpeg,png,gif,bmp,svg,zip,rar',
-            'filename' => 'nullable|string|max:255',
-            'original_filename' => 'nullable|string|max:255',
-            'file_type' => 'nullable|string|max:255',
-            'extension' => 'nullable|string|max:10|regex:/^[a-zA-Z0-9]+$/',
-            'size' => 'nullable|integer|min:0|max:10485760',
+            'file' => "nullable|file|max:{$maxSizeInKb}|mimes:{$allowedExtensions}",
+            'filename' => 'nullable|string|max:'.AppConstants::NAME_MAX_LENGTH,
+            'original_filename' => 'nullable|string|max:'.AppConstants::NAME_MAX_LENGTH,
+            'file_type' => 'nullable|string|max:'.AppConstants::NAME_MAX_LENGTH,
+            'extension' => 'nullable|string|max:10|regex:/^[a-zA-Z0-9]+$/|in:'.$allowedExtensions,
+            'size' => 'nullable|integer|min:0|max:'.AppConstants::MAX_UPLOAD_SIZE,
             'file_path' => 'nullable|string',
-            'description' => 'nullable|string|max:1000',
-            'category' => 'nullable|string|max:255',
+            'description' => 'nullable|string|max:'.AppConstants::DESCRIPTION_MAX_LENGTH,
+            'category' => 'nullable|string|max:'.AppConstants::NAME_MAX_LENGTH,
             'user_id' => 'nullable|exists:users,id',
             'org_id' => 'required|exists:organizations,id',
-            'attachmentable_type' => 'required|string|max:255',
+            'attachmentable_type' => 'required|string|max:'.AppConstants::NAME_MAX_LENGTH,
             'attachmentable_id' => 'required|integer|min:1',
         ];
     }
@@ -31,33 +36,37 @@ class AttachmentRequest extends BaseRequest
      */
     public function messages(): array
     {
+        $maxSizeMB = AppConstants::MAX_UPLOAD_SIZE / 1024 / 1024;
+        $allowedExtensions = implode(', ', AppConstants::SUPPORTED_ATTACHMENT_EXTENSIONS);
+
         return [
             'file.file' => 'The uploaded file is not valid',
-            'file.max' => 'The file size cannot exceed 10MB',
-            'file.mimes' => 'The file must be a valid type: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT, JPG, JPEG, PNG, GIF, BMP, SVG, ZIP, or RAR',
+            'file.max' => "The file size cannot exceed {$maxSizeMB}MB",
+            'file.mimes' => "The file must be one of the following types: {$allowedExtensions}",
             'filename.string' => 'The filename must be a string',
-            'filename.max' => 'The filename cannot exceed 255 characters',
+            'filename.max' => 'The filename cannot exceed '.AppConstants::NAME_MAX_LENGTH.' characters',
             'original_filename.string' => 'The original filename must be a string',
-            'original_filename.max' => 'The original filename cannot exceed 255 characters',
+            'original_filename.max' => 'The original filename cannot exceed '.AppConstants::NAME_MAX_LENGTH.' characters',
             'file_type.string' => 'The file type must be a string',
-            'file_type.max' => 'The file type cannot exceed 255 characters',
+            'file_type.max' => 'The file type cannot exceed '.AppConstants::NAME_MAX_LENGTH.' characters',
             'extension.string' => 'The file extension must be a string',
             'extension.max' => 'The file extension cannot exceed 10 characters',
             'extension.regex' => 'The file extension can only contain letters and numbers',
+            'extension.in' => "The file extension must be one of: {$allowedExtensions}",
             'size.integer' => 'The file size must be a number',
             'size.min' => 'The file size cannot be negative',
-            'size.max' => 'The file size cannot exceed 10MB (10485760 bytes)',
+            'size.max' => "The file size cannot exceed {$maxSizeMB}MB (".AppConstants::MAX_UPLOAD_SIZE.' bytes)',
             'file_path.string' => 'The file path must be a string',
             'description.string' => 'The description must be a string',
-            'description.max' => 'The description cannot exceed 1000 characters',
+            'description.max' => 'The description cannot exceed '.AppConstants::DESCRIPTION_MAX_LENGTH.' characters',
             'category.string' => 'The category must be a string',
-            'category.max' => 'The category cannot exceed 255 characters',
+            'category.max' => 'The category cannot exceed '.AppConstants::NAME_MAX_LENGTH.' characters',
             'user_id.exists' => 'The selected user does not exist',
             'org_id.required' => 'Organization ID is required',
             'org_id.exists' => 'The selected organization does not exist',
             'attachmentable_type.required' => 'You must specify what entity this attachment belongs to',
             'attachmentable_type.string' => 'The entity type must be a string',
-            'attachmentable_type.max' => 'The entity type cannot exceed 255 characters',
+            'attachmentable_type.max' => 'The entity type cannot exceed '.AppConstants::NAME_MAX_LENGTH.' characters',
             'attachmentable_id.required' => 'You must specify which specific entity this attachment belongs to',
             'attachmentable_id.integer' => 'The entity ID must be a number',
             'attachmentable_id.min' => 'The entity ID must be positive',

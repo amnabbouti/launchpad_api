@@ -2,19 +2,19 @@
 
 namespace App\Models;
 
+use App\Constants\AppConstants;
 use App\Constants\ErrorMessages;
-use App\Traits\HasPublicId;
-
 use App\Traits\HasOrganizationScope;
+use App\Traits\HasPublicId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ItemSupplier extends Model
 {
-    use HasPublicId; // Add public_id support
     use HasFactory;
     use HasOrganizationScope;
+    use HasPublicId;
 
     protected $table = 'item_supplier';
 
@@ -45,7 +45,7 @@ class ItemSupplier extends Model
     public static function rules(): array
     {
         return [
-            'price' => 'nullable|numeric|min:0',
+            'price' => 'nullable|numeric|min:0|max:'.AppConstants::ITEM_MAX_PRICE,
             'lead_time_days' => 'nullable|integer|min:0',
         ];
     }
@@ -69,11 +69,11 @@ class ItemSupplier extends Model
     {
         static::saving(function ($itemSupplier) {
             if ($itemSupplier->price !== null && $itemSupplier->price < 0) {
-                throw new \InvalidArgumentException(ErrorMessages::NEGATIVE_PRICE);
+                throw new \InvalidArgumentException(__(ErrorMessages::NEGATIVE_PRICE));
             }
 
             if ($itemSupplier->lead_time_days !== null && $itemSupplier->lead_time_days < 0) {
-                throw new \InvalidArgumentException(ErrorMessages::NEGATIVE_LEAD_TIME);
+                throw new \InvalidArgumentException(__(ErrorMessages::NEGATIVE_LEAD_TIME));
             }
         });
     }

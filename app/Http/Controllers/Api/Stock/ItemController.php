@@ -1,10 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api\Stock;
 
-use App\Constants\HttpStatus;
-use App\Constants\SuccessMessages;
 use App\Http\Controllers\Api\BaseController;
+use App\Http\Middleware\ApiResponseMiddleware;
 use App\Http\Requests\ItemRequest;
 use App\Http\Resources\ItemResource;
 use App\Services\ItemService;
@@ -23,16 +24,13 @@ class ItemController extends BaseController
     public function index(Request $request): JsonResponse
     {
         $filters = $this->itemService->processRequestParams($request->query());
-        $items = $this->itemService->getFiltered($filters);
+        $query = $this->itemService->getFiltered($filters);
+        $items = $this->paginated($query, $request);
 
-        // Determine appropriate message
-        $message = $items->isEmpty()
-            ? 'No items found'
-            : SuccessMessages::RESOURCES_RETRIEVED;
-
-        return $this->successResponse(
+        return ApiResponseMiddleware::listResponse(
             ItemResource::collection($items),
-            $message
+            'item',
+            $items->total()
         );
     }
 
@@ -43,10 +41,10 @@ class ItemController extends BaseController
     {
         $item = $this->itemService->create($request->validated());
 
-        return $this->successResponse(
+        return ApiResponseMiddleware::createResponse(
             new ItemResource($item),
-            SuccessMessages::RESOURCE_CREATED,
-            HttpStatus::HTTP_CREATED,
+            'item',
+            $item->toArray()
         );
     }
 
@@ -57,7 +55,11 @@ class ItemController extends BaseController
     {
         $item = $this->itemService->findById($id);
 
-        return $this->successResponse(new ItemResource($item));
+        return ApiResponseMiddleware::showResponse(
+            new ItemResource($item),
+            'item',
+            $item->toArray()
+        );
     }
 
     /**
@@ -67,9 +69,10 @@ class ItemController extends BaseController
     {
         $updatedItem = $this->itemService->update($id, $request->validated());
 
-        return $this->successResponse(
+        return ApiResponseMiddleware::updateResponse(
             new ItemResource($updatedItem),
-            SuccessMessages::RESOURCE_UPDATED,
+            'item',
+            $updatedItem->toArray()
         );
     }
 
@@ -78,30 +81,9 @@ class ItemController extends BaseController
      */
     public function destroy($id): JsonResponse
     {
+        $item = $this->itemService->findById($id);
         $this->itemService->delete($id);
 
-        return $this->successResponse(
-            null,
-            SuccessMessages::RESOURCE_DELETED,
-            HttpStatus::HTTP_NO_CONTENT,
-        );
-    }
-
-    /**
-     * Toggle item maintenance status.
-     */
-    public function toggleMaintenance(Request $request, $id): JsonResponse
-    {
-        $action = $request->input('action'); // 'in' or 'out'
-        $date = $request->input('date', now()->toISOString());
-        $remarks = $request->input('remarks');
-        $isRepair = $request->boolean('is_repair', false);
-
-        $item = $this->itemService->toggleMaintenance($id, $action, $date, $remarks, $isRepair);
-
-        return $this->successResponse(
-            new ItemResource($item),
-            $action === 'in' ? 'Item sent to maintenance' : 'Item returned from maintenance'
-        );
+        return ApiResponseMiddleware::deleteResponse('item', $item->toArray());
     }
 }

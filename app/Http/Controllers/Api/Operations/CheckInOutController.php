@@ -1,241 +1,177 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api\Operations;
 
-use App\Constants\ErrorMessages;
-use App\Constants\HttpStatus;
-use App\Constants\SuccessMessages;
 use App\Http\Controllers\Api\BaseController;
+use App\Http\Middleware\ApiResponseMiddleware;
 use App\Http\Requests\CheckInOutRequest;
 use App\Http\Resources\CheckInOutResource;
 use App\Services\CheckInOutService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class CheckInOutController extends BaseController
 {
     public function __construct(
-        private CheckInOutService $checkInOutService,
+        private readonly CheckInOutService $checkInOutService,
     ) {}
 
-    // All
-    public function index(CheckInOutRequest $request): JsonResponse
+    /**
+     * Get all check-in/out records.
+     */
+    public function index(Request $request): JsonResponse
     {
         $filters = $this->checkInOutService->processRequestParams($request->query());
+        $query = $this->checkInOutService->getFiltered($filters);
+        $checkInOuts = $this->paginated($query, $request);
 
-        // Add default relationships if not specified
-        if (!isset($filters['with'])) {
-            $filters['with'] = ['user', 'trackable', 'checkoutLocation', 'statusOut'];
-        }
-
-        $checkInOuts = $this->checkInOutService->getFiltered($filters);
-        $resourceType = 'check-in/out records';
-
-        // Check if results are empty
-        if ($checkInOuts->isEmpty()) {
-            $hasFilters = !empty(array_filter($filters, fn($value) => $value !== null && $value !== ''));
-
-            if ($hasFilters) {
-                $message = str_replace('resources', $resourceType, ErrorMessages::NO_RESOURCES_FOUND);
-            } else {
-                $message = str_replace('resources', $resourceType, ErrorMessages::NO_RESOURCES_AVAILABLE);
-            }
-        } else {
-            $message = str_replace('Resources', ucfirst($resourceType), SuccessMessages::RESOURCES_RETRIEVED);
-        }
-
-        return $this->successResponse(CheckInOutResource::collection($checkInOuts), $message);
+        return ApiResponseMiddleware::listResponse(
+            CheckInOutResource::collection($checkInOuts),
+            'checkinout',
+            $checkInOuts->total()
+        );
     }
 
-    // Show
+    /**
+     * Get a specific check-in/out record.
+     */
     public function show($id): JsonResponse
     {
         $checkInOut = $this->checkInOutService->findByIdWithRelations($id);
 
-        return $this->successResponse(new CheckInOutResource($checkInOut));
+        return ApiResponseMiddleware::showResponse(
+            new CheckInOutResource($checkInOut),
+            'checkinout',
+            $checkInOut->toArray()
+        );
     }
 
-    // Create
+    /**
+     * Create a new check-in/out record.
+     */
     public function store(CheckInOutRequest $request): JsonResponse
     {
-        $checkInOut = $this->checkInOutService->create($request->validated());
+        // Use the event-enabled method based on the operation type
+        $data = $request->validated();
 
-        return $this->successResponse(
+        // If this is a checkout operation (has checkout_date but no checkin_date)
+        if (isset($data['checkout_date']) && ! isset($data['checkin_date'])) {
+            $checkInOut = $this->checkInOutService->processItemCheckout($data);
+        }
+        // If this is a checkin operation (has checkin_date)
+        elseif (isset($data['checkin_date'])) {
+            $checkInOut = $this->checkInOutService->createCheckin($data);
+        }
+        // Default fallback (shouldn't normally happen with proper validation)
+        else {
+            $checkInOut = $this->checkInOutService->create($data);
+        }
+
+        return ApiResponseMiddleware::createResponse(
             new CheckInOutResource($checkInOut),
-            SuccessMessages::RESOURCE_CREATED,
-            HttpStatus::HTTP_CREATED,
+            'checkinout',
+            $checkInOut->toArray()
         );
     }
 
-    // Update
+    /**
+     * Update a check-in/out record.
+     */
     public function update(CheckInOutRequest $request, $id): JsonResponse
     {
-        $updatedCheckInOut = $this->checkInOutService->update($id, $request->validated());
+        $data = $request->validated();
 
-        return $this->successResponse(
+        // If this update includes checkin_date, it's likely a checkin operation
+        if (isset($data['checkin_date'])) {
+            $updatedCheckInOut = $this->checkInOutService->processItemCheckin($id, $data);
+        }
+        // Otherwise use regular update
+        else {
+            $updatedCheckInOut = $this->checkInOutService->update($id, $data);
+        }
+
+        return ApiResponseMiddleware::updateResponse(
             new CheckInOutResource($updatedCheckInOut),
-            SuccessMessages::RESOURCE_UPDATED,
+            'checkinout',
+            $updatedCheckInOut->toArray()
         );
     }
 
-    // Delete
+    /**
+     * Delete a check-in/out record.
+     */
     public function destroy($id): JsonResponse
     {
+        $checkInOut = $this->checkInOutService->findById($id);
         $this->checkInOutService->delete($id);
 
-        return $this->successResponse(
-            null,
-            SuccessMessages::RESOURCE_DELETED,
-            HttpStatus::HTTP_NO_CONTENT,
+        return ApiResponseMiddleware::deleteResponse(
+            'checkinout',
+            $checkInOut->toArray()
         );
     }
 
-    // backward compatibility
+    /**
+     * Checkout method for item location.
+     */
     public function checkout(CheckInOutRequest $request, $itemLocationId): JsonResponse
     {
-        $itemLocationService = app(\App\Services\ItemLocationService::class);
-        
-        try {
-            $itemLocation = $itemLocationService->findById($itemLocationId);
-        } catch (\Exception $e) {
-            return $this->errorResponse(
-                'Item location not found',
-                HttpStatus::HTTP_NOT_FOUND
-            );
-        }
+        $checkInOut = $this->checkInOutService->processItemLocationCheckout(
+            $itemLocationId,
+            $request->validated()
+        );
 
-        $data = array_merge($request->validated(), [
-            'trackable_id' => $itemLocation->id, 
-            'trackable_type' => \App\Models\ItemLocation::class,
-            'checkout_location_id' => $itemLocation->location_id,
-            'checkout_date' => now(),
-            'user_id' => auth()->id(),
-            'is_active' => true,
-        ]);
-
-        $checkInOut = $this->checkInOutService->create($data);
-
-        return $this->successResponse(
+        return ApiResponseMiddleware::createResponse(
             new CheckInOutResource($checkInOut),
-            'Item checked out successfully',
-            HttpStatus::HTTP_CREATED,
+            'checkinout',
+            $checkInOut->toArray()
         );
     }
 
+    /**
+     * Checkin method for item location.
+     */
     public function checkin(CheckInOutRequest $request, $itemLocationId): JsonResponse
     {
-        $itemLocationService = app(\App\Services\ItemLocationService::class);
-        $itemService = app(\App\Services\ItemService::class);
-        
-        $itemLocation = null;
-        
-        // Try to find as ItemLocation first
-        try {
-            $itemLocation = $itemLocationService->findById($itemLocationId);
-        } catch (\Exception $e) {
-            // try to find as Item and get its ItemLocation
-            try {
-                $item = $itemService->findById($itemLocationId);
-                
-                // Get the first ItemLocation for this item that has active checkouts
-                $itemLocations = $item->itemLocations()->get();
-                
-                foreach ($itemLocations as $il) {
-                    $activeCheckouts = $this->checkInOutService->getFiltered([
-                        'trackable_id' => $il->id,
-                        'trackable_type' => \App\Models\ItemLocation::class,
-                        'user_id' => auth()->id(),
-                        'is_checked_out' => true,
-                    ]);
-                    
-                    if ($activeCheckouts->isNotEmpty()) {
-                        $itemLocation = $il;
-                        break;
-                    }
-                }
-                
-                if (!$itemLocation) {
-                    return $this->errorResponse(
-                        'No active checkout found for this item',
-                        HttpStatus::HTTP_NOT_FOUND
-                    );
-                }
-            } catch (\Exception $e) {
-                return $this->errorResponse(
-                    'Item or item location not found',
-                    HttpStatus::HTTP_NOT_FOUND
-                );
-            }
-        }
+        $updatedCheckInOut = $this->checkInOutService->processItemLocationCheckin(
+            $itemLocationId,
+            $request->validated()
+        );
 
-        // Find active checkout for this item location and user
-        $activeCheckout = $this->checkInOutService->getFiltered([
-            'trackable_id' => $itemLocation->id,
-            'trackable_type' => \App\Models\ItemLocation::class,
-            'user_id' => auth()->id(),
-            'is_checked_out' => true,
-        ])->first();
-
-        if (!$activeCheckout) {
-            return $this->errorResponse(
-                'No active checkout found for this item',
-                HttpStatus::HTTP_NOT_FOUND
-            );
-        }
-
-        $data = array_merge($request->validated(), [
-            'checkin_date' => now(),
-            'checkin_user_id' => auth()->id(),
-            'is_active' => false,
-        ]);
-
-        $updatedCheckInOut = $this->checkInOutService->update($activeCheckout->id, $data);
-
-        return $this->successResponse(
+        return ApiResponseMiddleware::updateResponse(
             new CheckInOutResource($updatedCheckInOut),
-            'Item checked in successfully'
+            'checkinout',
+            $updatedCheckInOut->toArray()
         );
     }
 
+    /**
+     * Check availability for item location.
+     */
     public function checkAvailability($itemLocationId): JsonResponse
     {
-        $itemLocationService = app(\App\Services\ItemLocationService::class);
-        
-        try {
-            $itemLocation = $itemLocationService->findById($itemLocationId);
-        } catch (\Exception $e) {
-            return $this->errorResponse(
-                'Item location not found',
-                HttpStatus::HTTP_NOT_FOUND
-            );
-        }
+        $availability = $this->checkInOutService->getItemLocationAvailability($itemLocationId);
 
-        $availability = $this->checkInOutService->getAvailabilityData($itemLocation->id);
-
-        return $this->successResponse($availability, 'Availability data retrieved');
+        return ApiResponseMiddleware::success(
+            $availability,
+            'succ.checkinout.availability'
+        );
     }
 
+    /**
+     * Get history for item location.
+     */
     public function history($itemLocationId): JsonResponse
     {
-        $itemLocationService = app(\App\Services\ItemLocationService::class);
-        
-        try {
-            $itemLocation = $itemLocationService->findById($itemLocationId);
-        } catch (\Exception $e) {
-            return $this->errorResponse(
-                'Item location not found',
-                HttpStatus::HTTP_NOT_FOUND
-            );
-        }
+        $history = $this->checkInOutService->getItemLocationHistory($itemLocationId);
+        $totalCount = $history->count();
 
-        $history = $this->checkInOutService->getFiltered([
-            'trackable_id' => $itemLocation->id,
-            'trackable_type' => \App\Models\ItemLocation::class,
-            'with' => ['user', 'checkinUser', 'checkoutLocation', 'checkinLocation', 'statusOut', 'statusIn']
-        ]);
-
-        return $this->successResponse(
+        return ApiResponseMiddleware::listResponse(
             CheckInOutResource::collection($history),
-            'Check-in/out history retrieved'
+            'checkinout',
+            $totalCount
         );
     }
 }

@@ -1,10 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
+use App\Constants\ErrorMessages;
 use App\Models\UnitOfMeasure;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use InvalidArgumentException;
 
 class UnitOfMeasureService extends BaseService
 {
@@ -21,7 +25,6 @@ class UnitOfMeasureService extends BaseService
      */
     public function processRequestParams(array $params): array
     {
-        // Validate parameters against whitelist
         $this->validateParams($params);
 
         return [
@@ -36,35 +39,76 @@ class UnitOfMeasureService extends BaseService
     /**
      * Get filtered units of measure.
      */
-    public function getFiltered(array $filters = []): Collection
+    public function getFiltered(array $filters = []): Builder
     {
         return $this->getQuery()
-            ->when($filters['name'] ?? null, fn ($q, $name) => $q->where('name', 'like', "%{$name}%"))
-            ->when($filters['code'] ?? null, fn ($q, $code) => $q->where('code', $code))
-            ->when($filters['type'] ?? null, fn ($q, $type) => $q->where('type', $type))
-            ->when(isset($filters['is_active']), fn ($q) => $q->where('is_active', $filters['is_active']))
-            ->when($filters['with'] ?? null, fn ($q, $with) => $q->with($with))
-            ->get();
+            ->when($filters['name'] ?? null, fn($q, $name) => $q->where('name', 'like', "%$name%"))
+            ->when($filters['code'] ?? null, fn($q, $code) => $q->where('code', $code))
+            ->when($filters['type'] ?? null, fn($q, $type) => $q->where('type', $type))
+            ->when(isset($filters['is_active']), fn($q) => $q->where('is_active', $filters['is_active']))
+            ->when($filters['with'] ?? null, fn($q, $with) => $q->with($with));
     }
 
     /**
-     * Get units of measure by name.
+     * Apply business rules for unit of measure operations.
      */
-    public function getByName(string $name): Collection
+    private function applyUnitOfMeasureBusinessRules(array $data): array
     {
-        return $this->getFiltered(['name' => $name]);
+        if (! isset($data['is_active'])) {
+            $data['is_active'] = true;
+        }
+
+        return $data;
     }
 
     /**
-     * Get only active units of measure.
+     * Validate business rules for unit of measure operations.
      */
-    public function getActive(): Collection
+    private function validateUnitOfMeasureBusinessRules(array $data, $unitId = null): void
     {
-        return $this->getFiltered(['is_active' => true]);
+        if (empty($data['name'])) {
+            throw new InvalidArgumentException(__(ErrorMessages::UNIT_OF_MEASURE_NAME_REQUIRED));
+        }
+
+        if (empty($data['type'])) {
+            throw new InvalidArgumentException(__(ErrorMessages::UNIT_OF_MEASURE_TYPE_REQUIRED));
+        }
+
+        if (empty($data['org_id'])) {
+            throw new InvalidArgumentException(__(ErrorMessages::UNIT_OF_MEASURE_ORG_REQUIRED));
+        }
+
+        $validTypes = [
+            UnitOfMeasure::TYPE_DATE,
+            UnitOfMeasure::TYPE_DAYS_ACTIVE,
+            UnitOfMeasure::TYPE_DAYS_CHECKED_OUT,
+            UnitOfMeasure::TYPE_QUANTITY,
+            UnitOfMeasure::TYPE_DISTANCE,
+            UnitOfMeasure::TYPE_WEIGHT,
+            UnitOfMeasure::TYPE_VOLUME,
+        ];
+
+        if (! in_array($data['type'], $validTypes)) {
+            throw new InvalidArgumentException(__(ErrorMessages::UNIT_OF_MEASURE_TYPE_INVALID));
+        }
+
+        // Validate code uniqueness within an organization if provided
+        if (! empty($data['code'])) {
+            $query = UnitOfMeasure::where('code', $data['code'])
+                ->where('org_id', $data['org_id']);
+
+            if ($unitId) {
+                $query->where('id', '!=', $unitId);
+            }
+
+            if ($query->exists()) {
+                throw new InvalidArgumentException(__(ErrorMessages::UNIT_OF_MEASURE_CODE_EXISTS));
+            }
+        }
     }
 
     /**
-     * Create a new unit of measure with validaion
+     * Create a new unit of measure with validation
      */
     public function createUnitOfMeasure(array $data): Model
     {
@@ -79,26 +123,10 @@ class UnitOfMeasureService extends BaseService
      */
     public function updateUnitOfMeasure(int $id, array $data): Model
     {
-        $data = $this->applyUnitOfMeasureBusinessRules($data, $id);
+        $data = $this->applyUnitOfMeasureBusinessRules($data);
         $this->validateUnitOfMeasureBusinessRules($data, $id);
 
         return $this->update($id, $data);
-    }
-
-    /**
-     * Get units of measure by code.
-     */
-    public function getByCode(string $code): Collection
-    {
-        return $this->getFiltered(['code' => $code]);
-    }
-
-    /**
-     * Get units of measure by type.
-     */
-    public function getByType(string $type): Collection
-    {
-        return $this->getFiltered(['type' => $type]);
     }
 
     /**
@@ -107,7 +135,11 @@ class UnitOfMeasureService extends BaseService
     protected function getAllowedParams(): array
     {
         return array_merge(parent::getAllowedParams(), [
-            'org_id', 'name', 'code', 'type', 'is_active',
+            'org_id',
+            'name',
+            'code',
+            'type',
+            'is_active',
         ]);
     }
 
@@ -117,68 +149,5 @@ class UnitOfMeasureService extends BaseService
     protected function getValidRelations(): array
     {
         return ['maintenanceConditions'];
-    }
-
-    /**
-     * Apply business rules for unit of measure operations.
-     */
-    private function applyUnitOfMeasureBusinessRules(array $data, $unitId = null): array
-    {
-        // Set default active status if not provided
-        if (!isset($data['is_active'])) {
-            $data['is_active'] = true;
-        }
-
-        return $data;
-    }
-
-    /**
-     * Validate business rules for unit of measure operations.
-     * This handles the complex validation logic that was in UnitOfMeasureRequest.
-     */
-    private function validateUnitOfMeasureBusinessRules(array $data, $unitId = null): void
-    {
-        // Validate required fields
-        if (empty($data['name'])) {
-            throw new \InvalidArgumentException('The unit name is required');
-        }
-
-        if (empty($data['type'])) {
-            throw new \InvalidArgumentException('The unit type is required');
-        }
-
-        if (empty($data['org_id'])) {
-            throw new \InvalidArgumentException('Organization ID is required');
-        }
-
-        // Validate type is valid
-        $validTypes = [
-            UnitOfMeasure::TYPE_DATE,
-            UnitOfMeasure::TYPE_DAYS_ACTIVE,
-            UnitOfMeasure::TYPE_DAYS_CHECKED_OUT,
-            UnitOfMeasure::TYPE_QUANTITY,
-            UnitOfMeasure::TYPE_DISTANCE,
-            UnitOfMeasure::TYPE_WEIGHT,
-            UnitOfMeasure::TYPE_VOLUME,
-        ];
-
-        if (!in_array($data['type'], $validTypes)) {
-            throw new \InvalidArgumentException('The selected unit type is invalid');
-        }
-
-        // Validate code uniqueness within organization if provided
-        // This replaces: unique:unit_of_measures,code,{id},id,org_id,{orgId}
-        if (isset($data['code']) && !empty($data['code'])) {
-            $query = UnitOfMeasure::where('code', $data['code'])
-                                  ->where('org_id', $data['org_id']);
-            
-            if ($unitId) {
-                $query->where('id', '!=', $unitId);
-            }
-            
-            if ($query->exists()) {
-                throw new \InvalidArgumentException('This unit code is already used in your organization');
-            }
-        }
     }
 }

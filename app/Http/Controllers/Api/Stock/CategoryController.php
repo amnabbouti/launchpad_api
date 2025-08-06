@@ -2,10 +2,8 @@
 
 namespace App\Http\Controllers\Api\Stock;
 
-use App\Constants\ErrorMessages;
-use App\Constants\HttpStatus;
-use App\Constants\SuccessMessages;
 use App\Http\Controllers\Api\BaseController;
+use App\Http\Middleware\ApiResponseMiddleware;
 use App\Http\Requests\CategoryRequest;
 use App\Http\Resources\CategoryResource;
 use App\Services\CategoryService;
@@ -26,23 +24,25 @@ class CategoryController extends BaseController
     public function index(CategoryRequest $request): JsonResponse
     {
         $filters = $this->categoryService->processRequestParams($request->query());
-        $categories = $this->categoryService->getFiltered($filters);
-        $resourceType = 'categories';
+        $query = $this->categoryService->getFiltered($filters);
 
-        // Check if results are empty
-        if ($categories->isEmpty()) {
-            $hasFilters = ! empty(array_filter($filters, fn ($value) => $value !== null && $value !== ''));
-
-            if ($hasFilters) {
-                $message = str_replace('resources', $resourceType, ErrorMessages::NO_RESOURCES_FOUND);
-            } else {
-                $message = str_replace('resources', $resourceType, ErrorMessages::NO_RESOURCES_AVAILABLE);
-            }
-        } else {
-            $message = str_replace('Resources', ucfirst($resourceType), SuccessMessages::RESOURCES_RETRIEVED);
+        $wantsHierarchy = $request->query('hierarchy', true);
+        if ($wantsHierarchy && $wantsHierarchy !== 'false') {
+            $query->whereNull('parent_id')
+                ->with('childrenRecursive');
         }
 
-        return $this->successResponse(CategoryResource::collection($categories), $message);
+        $categories = $this->paginated($query, $request);
+
+        $totalCount = $wantsHierarchy
+            ? $this->categoryService->getFiltered(array_merge($filters, ['hierarchy' => false]))->count()
+            : null;
+
+        return ApiResponseMiddleware::listResponse(
+            CategoryResource::collection($categories),
+            'category',
+            $totalCount
+        );
     }
 
     /**
@@ -52,10 +52,10 @@ class CategoryController extends BaseController
     {
         $category = $this->categoryService->create($request->validated());
 
-        return $this->successResponse(
+        return ApiResponseMiddleware::createResponse(
             new CategoryResource($category),
-            SuccessMessages::RESOURCE_CREATED,
-            HttpStatus::HTTP_CREATED,
+            'category',
+            $category->toArray()
         );
     }
 
@@ -66,7 +66,11 @@ class CategoryController extends BaseController
     {
         $category = $this->categoryService->findById($id);
 
-        return $this->successResponse(new CategoryResource($category));
+        return ApiResponseMiddleware::showResponse(
+            new CategoryResource($category),
+            'category',
+            $category->toArray()
+        );
     }
 
     /**
@@ -76,9 +80,10 @@ class CategoryController extends BaseController
     {
         $updatedCategory = $this->categoryService->update($id, $request->validated());
 
-        return $this->successResponse(
+        return ApiResponseMiddleware::updateResponse(
             new CategoryResource($updatedCategory),
-            SuccessMessages::RESOURCE_UPDATED,
+            'category',
+            $updatedCategory->toArray()
         );
     }
 
@@ -87,12 +92,9 @@ class CategoryController extends BaseController
      */
     public function destroy($id): JsonResponse
     {
+        $category = $this->categoryService->findById($id);
         $this->categoryService->delete($id);
 
-        return $this->successResponse(
-            null,
-            SuccessMessages::RESOURCE_DELETED,
-            HttpStatus::HTTP_NO_CONTENT,
-        );
+        return ApiResponseMiddleware::deleteResponse('category', $category->toArray());
     }
 }

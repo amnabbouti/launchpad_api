@@ -3,9 +3,7 @@
 namespace App\Services;
 
 use App\Models\ApiKeyUsage;
-use App\Models\PersonalAccessToken;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class ThreatDetectionService
 {
@@ -228,6 +226,7 @@ class ThreatDetectionService
                 ];
             }
         }
+
         return array_slice($alerts, 0, 20);
     }
 
@@ -329,6 +328,7 @@ class ThreatDetectionService
         } elseif ($failureRate > 15 || $authFailures > 20 || $rateLimited > 50) {
             return 'medium';
         }
+
         return 'low';
     }
 
@@ -346,6 +346,7 @@ class ThreatDetectionService
         $score += min(20, $totalRequests * 0.02);
         // Scanning behavior (0-10 points)
         $score += min(10, max(0, $uniqueEndpoints - 10) * 0.5);
+
         return min(100, round($score));
     }
 
@@ -354,9 +355,16 @@ class ThreatDetectionService
      */
     private function getRiskLevel(int $score): string
     {
-        if ($score >= 80) return 'critical';
-        if ($score >= 60) return 'high';
-        if ($score >= 40) return 'medium';
+        if ($score >= 80) {
+            return 'critical';
+        }
+        if ($score >= 60) {
+            return 'high';
+        }
+        if ($score >= 40) {
+            return 'medium';
+        }
+
         return 'low';
     }
 
@@ -423,7 +431,6 @@ class ThreatDetectionService
             ->toArray();
     }
 
-
     /**
      * Get API key insights from rich token data
      */
@@ -462,6 +469,7 @@ class ThreatDetectionService
             ->get()
             ->map(function ($key) {
                 $tokenDetails = $this->extractTokenDetailsFromUsage($key->token_id);
+
                 return [
                     'token_id' => $key->token_id,
                     'name' => $tokenDetails['name'] ?? 'Unknown',
@@ -578,7 +586,7 @@ class ThreatDetectionService
                     'error_count' => $query->clone()->where('response_status', '>=', 400)->count(),
                     'error_rate' => 0,
                     'unique_ips' => $query->clone()->distinct('ip_address')->count(),
-                ]
+                ],
             ];
         }
 
@@ -769,6 +777,7 @@ class ThreatDetectionService
             ->get()
             ->map(function ($session) {
                 $duration = (strtotime($session->session_end) - strtotime($session->session_start)) / 60; // minutes
+
                 return [
                     'user_id' => $session->user_id,
                     'session_date' => $session->session_date,
@@ -813,7 +822,7 @@ class ThreatDetectionService
                     'avg_requests_per_user' => round($baseQuery->clone()->count() / max(1, $baseQuery->clone()->distinct('personal_access_tokens.tokenable_id')->count()), 1),
                     'avg_response_time' => round($baseQuery->clone()->avg('api_key_usage.response_time') ?? 0, 2),
                     'most_active_user_requests' => $baseQuery->clone()->selectRaw('COUNT(*) as cnt')->groupBy('personal_access_tokens.tokenable_id')->orderByDesc('cnt')->value('cnt') ?? 0,
-                ]
+                ],
             ]);
         }
 
@@ -944,7 +953,7 @@ class ThreatDetectionService
             ->orderByDesc('created_at')
             ->first();
 
-        if (!$latestUsage || !$latestUsage->request_data) {
+        if (! $latestUsage || ! $latestUsage->request_data) {
             return [];
         }
 
@@ -952,7 +961,7 @@ class ThreatDetectionService
             ? json_decode($latestUsage->request_data, true)
             : $latestUsage->request_data;
 
-        if (!isset($requestData['api_token'])) {
+        if (! isset($requestData['api_token'])) {
             return [];
         }
 

@@ -1,10 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api\Location;
 
-use App\Constants\HttpStatus;
-use App\Constants\SuccessMessages;
 use App\Http\Controllers\Api\BaseController;
+use App\Http\Middleware\ApiResponseMiddleware;
 use App\Http\Requests\LocationRequest;
 use App\Http\Resources\LocationResource;
 use App\Services\LocationService;
@@ -14,7 +15,7 @@ use Illuminate\Http\Request;
 class LocationController extends BaseController
 {
     public function __construct(
-        private LocationService $locationService,
+        private readonly LocationService $locationService,
     ) {}
 
     /**
@@ -22,15 +23,34 @@ class LocationController extends BaseController
      */
     public function index(Request $request): JsonResponse
     {
-        $wantsHierarchy = $request->query('hierarchy', true);
-        if ($wantsHierarchy && $wantsHierarchy !== 'false') {
-            $locations = $this->locationService->getRootLocationsWithHierarchy();
-        } else {
-            $filters = $this->locationService->processRequestParams($request->query());
-            $locations = $this->locationService->getFiltered($filters);
+        $filters = $this->locationService->processRequestParams($request->query());
+        $query = $this->locationService->getFiltered($filters);
+
+        $wantsHierarchy = $filters['hierarchy'] ?? true;
+
+        $hasFilters = !empty($filters['name']) || !empty($filters['code']) ||
+            !empty($filters['description']) || isset($filters['is_active']) ||
+            isset($filters['parent_id']);
+
+        if ($hasFilters) {
+            $wantsHierarchy = false;
         }
 
-        return $this->successResponse(LocationResource::collection($locations));
+        if ($wantsHierarchy) {
+            $query->whereNull('parent_id');
+        }
+
+        $locations = $this->paginated($query, $request);
+
+        $totalCount = $wantsHierarchy
+            ? $this->locationService->getFiltered(array_merge($filters, ['hierarchy' => false]))->count()
+            : null;
+
+        return ApiResponseMiddleware::listResponse(
+            LocationResource::collection($locations),
+            'location',
+            $totalCount
+        );
     }
 
     /**
@@ -40,10 +60,10 @@ class LocationController extends BaseController
     {
         $location = $this->locationService->createLocation($request->validated());
 
-        return $this->resourceResponse(
+        return ApiResponseMiddleware::createResponse(
             new LocationResource($location),
-            SuccessMessages::RESOURCE_CREATED,
-            HttpStatus::HTTP_CREATED,
+            'location',
+            $location->toArray()
         );
     }
 
@@ -52,12 +72,12 @@ class LocationController extends BaseController
      */
     public function show(Request $request, string $id): JsonResponse
     {
-        // Load with children hierarchy by default
         $location = $this->locationService->findWithHierarchy($id);
 
-        return $this->resourceResponse(
+        return ApiResponseMiddleware::showResponse(
             new LocationResource($location),
-            SuccessMessages::RESOURCE_RETRIEVED,
+            'location',
+            $location->toArray()
         );
     }
 
@@ -68,9 +88,10 @@ class LocationController extends BaseController
     {
         $updatedLocation = $this->locationService->update($id, $request->validated());
 
-        return $this->resourceResponse(
+        return ApiResponseMiddleware::updateResponse(
             new LocationResource($updatedLocation),
-            SuccessMessages::RESOURCE_UPDATED,
+            'location',
+            $updatedLocation->toArray()
         );
     }
 
@@ -79,8 +100,9 @@ class LocationController extends BaseController
      */
     public function destroy(string $id): JsonResponse
     {
+        $location = $this->locationService->findById($id);
         $this->locationService->delete($id);
 
-        return $this->successResponse(null, SuccessMessages::RESOURCE_DELETED);
+        return ApiResponseMiddleware::deleteResponse('location', $location->toArray());
     }
 }

@@ -21,7 +21,6 @@ class Maintenance extends Model
     protected $fillable = [
         'org_id',
         'remarks',
-        'invoice_nbr',
         'cost',
         'date_expected_back_from_maintenance',
         'date_back_from_maintenance',

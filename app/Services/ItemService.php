@@ -1,146 +1,103 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
+use App\Constants\ErrorMessages;
 use App\Models\Item;
-use App\Services\AuthorizationEngine;
-use App\Services\PublicIdResolver;
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Pagination\LengthAwarePaginator;
+use App\Models\ItemLocation;
+use Illuminate\Database\Eloquent\Builder;
+use InvalidArgumentException;
 
 class ItemService extends BaseService
 {
-    /**
-     * Create a new service instance.
-     */
     public function __construct(Item $item)
     {
         parent::__construct($item);
     }
 
-    /**
-     * Get filtered items with optional relationships.
-     */
-    public function getFiltered(array $filters = []): Collection
+    public function getFiltered(array $filters = []): Builder
     {
-        $query = $this->getQuery()->with(['maintenances', 'locations', 'category', 'status', 'unitOfMeasure', 'suppliers', 'organization']);
+        $query = $this->all(['*'], ['maintenances', 'locations', 'category', 'status', 'unitOfMeasure', 'suppliers', 'organization']);
 
-        // Apply filters using model scopes where available
         $query->when($filters['tracking_mode'] ?? null, function ($q, $mode) {
-            switch ($mode) {
-                case Item::TRACKING_ABSTRACT:
-                    return $q->abstract();
-                case Item::TRACKING_BULK:
-                    return $q->bulk();
-                case Item::TRACKING_SERIALIZED:
-                    return $q->serialized();
-                default:
-                    return $q;
-            }
+            return match ($mode) {
+                Item::TRACKING_ABSTRACT => $q->abstract(),
+                Item::TRACKING_STANDARD => $q->standard(),
+                Item::TRACKING_SERIALIZED => $q->serialized(),
+                default => $q,
+            };
         })
             ->when($filters['location_id'] ?? null, fn($q, $value) => $q->byLocation($value))
             ->when($filters['q'] ?? null, fn($q, $value) => $q->search($value))
             ->when(isset($filters['is_active']) && $filters['is_active'], fn($q) => $q->active())
             ->when($filters['category_id'] ?? null, fn($q, $value) => $q->where('category_id', $value))
             ->when($filters['user_id'] ?? null, fn($q, $value) => $q->where('user_id', $value))
-            ->when($filters['name'] ?? null, fn($q, $value) => $q->where('name', 'like', "%{$value}%"))
-            ->when($filters['code'] ?? null, fn($q, $value) => $q->where('code', 'like', "%{$value}%"))
+            ->when($filters['name'] ?? null, fn($q, $value) => $q->where('name', 'like', "%$value%"))
+            ->when($filters['code'] ?? null, fn($q, $value) => $q->where('code', 'like', "%$value%"))
             ->when($filters['barcode'] ?? null, fn($q, $value) => $q->where('barcode', $value))
             ->when($filters['with'] ?? null, fn($q, $relations) => $q->with($relations));
 
-        return $query->get();
+        return $query;
     }
 
-    /**
-     * Get items by tracking mode.
-     */
-    public function getByTrackingMode(string $trackingMode): Collection
-    {
-        return $this->getFiltered(['tracking_mode' => $trackingMode]);
-    }
-
-    /**
-     * Get active items.
-     */
-    public function getActive(): Collection
-    {
-        return $this->getFiltered(['is_active' => true]);
-    }
-
-    /**
-     * Find item by ID
-     */
-    public function findById($id, array $columns = ['*'], array $relations = [], array $appends = []): Model
+    public function findById($id, array $columns = ['*'], array $relations = [], array $appends = []): Item
     {
         $relations = array_unique(array_merge($relations, ['maintenances', 'locations', 'category', 'status', 'unitOfMeasure', 'suppliers', 'organization']));
 
-        return parent::findById($id, $columns, $relations, $appends);
+        $item = Item::with($relations)->findOrFail($id, $columns);
+
+        if (!empty($appends)) {
+            $item->append($appends);
+        }
+
+        return $item;
     }
 
-    /**
-     * Create a new item with business logic validation.
-     */
-    public function create(array $data): Model
+    public function create(array $data): Item
     {
-        // Apply business logic before creation
         $data = $this->applyBusinessRules($data);
         $this->validateBusinessRules($data);
 
-        // Extract locations from data if present
         $locations = $data['locations'] ?? null;
         unset($data['locations']);
 
-        // Create the main item using parent method
-        $item = parent::create($data);
+        $item = Item::create($data);
 
-        // Handle locations creation if provided
-        if ($locations !== null && is_array($locations)) {
+        if (is_array($locations)) {
             $this->createItemLocations($item, $locations);
         }
 
-        // Reload the item with fresh location data
-        return $item->fresh(['locations']);
+        return $item->load(['locations']);
     }
 
-    /**
-     * Update an item with business logic validation.
-     */
-    public function update($id, array $data): Model
+    public function update($id, array $data): Item
     {
-        // Apply business logic before update
-        $data = $this->applyBusinessRules($data, $id);
+        $data = $this->applyBusinessRules($data);
         $this->validateBusinessRules($data, $id);
 
-        // Extract locations from data if present
         $locations = $data['locations'] ?? null;
         unset($data['locations']);
 
-        // Update the main item using parent method
-        $item = parent::update($id, $data);
+        $item = Item::findOrFail($id);
+        $item->update($data);
 
-        // Handle locations update if provided
-        if ($locations !== null && is_array($locations)) {
+        if (is_array($locations)) {
             $this->updateItemLocations($item, $locations);
         }
 
-        // Reload the item with fresh location data
-        return $item->fresh(['locations']);
+        return $item->load(['locations']);
     }
 
-    /**
-     * Create item locations for a new item.
-     */
-    private function createItemLocations(Model $item, array $locations): void
+    private function createItemLocations(Item $item, array $locations): void
     {
         foreach ($locations as $locationData) {
             if (isset($locationData['id']) && isset($locationData['quantity'])) {
-                // Use universal public ID resolver
                 $resolvedData = PublicIdResolver::resolve(['location_id' => $locationData['id']]);
                 $locationId = $resolvedData['location_id'];
 
-                // Create the item-location record using the ItemLocation model
-                \App\Models\ItemLocation::create([
+                ItemLocation::create([
                     'org_id' => $item->org_id,
                     'item_id' => $item->id,
                     'location_id' => $locationId,
@@ -151,18 +108,13 @@ class ItemService extends BaseService
         }
     }
 
-    /**
-     * Update item locations quantities.
-     */
-    private function updateItemLocations(Model $item, array $locations): void
+    private function updateItemLocations(Item $item, array $locations): void
     {
         foreach ($locations as $locationData) {
             if (isset($locationData['id']) && isset($locationData['quantity'])) {
-                // Use universal public ID resolver
                 $resolvedData = PublicIdResolver::resolve(['location_id' => $locationData['id']]);
                 $locationId = $resolvedData['location_id'];
 
-                // Update the quantity in the pivot table
                 $item->locations()->updateExistingPivot(
                     $locationId,
                     ['quantity' => $locationData['quantity']]
@@ -171,9 +123,6 @@ class ItemService extends BaseService
         }
     }
 
-    /**
-     * Get allowed query parameters
-     */
     protected function getAllowedParams(): array
     {
         return array_merge(parent::getAllowedParams(), [
@@ -186,13 +135,10 @@ class ItemService extends BaseService
             'name',
             'code',
             'barcode',
-            'q'
+            'q',
         ]);
     }
 
-    /**
-     * Get valid relations
-     */
     protected function getValidRelations(): array
     {
         return [
@@ -207,13 +153,10 @@ class ItemService extends BaseService
             'itemRelations',
             'suppliers',
             'maintenances',
-            'locations'
+            'locations',
         ];
     }
 
-    /**
-     * Process request parameters with validation and type conversion.
-     */
     public function processRequestParams(array $params): array
     {
         $this->validateParams($params);
@@ -233,65 +176,19 @@ class ItemService extends BaseService
         ];
     }
 
-    /**
-     * Toggle item maintenance status.
-     */
-    public function toggleMaintenance($id, string $action, string $date, ?string $remarks = null, bool $isRepair = false): Model
+    private function applyBusinessRules(array $data): array
     {
-        $item = $this->findById($id);
-        $user = AuthorizationEngine::getCurrentUser();
-        $orgId = $user->org_id ?? $item->org_id;
-
-        if ($action === 'in') {
-            // Send item to maintenance - create new maintenance record
-            $item->maintenances()->create([
-                'org_id' => $orgId,
-                'date_in_maintenance' => $date,
-                'remarks' => $remarks,
-                'is_repair' => $isRepair,
-                'user_id' => $user->id ?? null,
-                'maintainable_id' => $item->id,
-                'maintainable_type' => get_class($item),
-            ]);
-        } elseif ($action === 'out') {
-            // Return item from maintenance - update existing active maintenance
-            $activeMaintenance = $item->maintenances()
-                ->whereNotNull('date_in_maintenance')
-                ->whereNull('date_back_from_maintenance')
-                ->first();
-
-            if ($activeMaintenance) {
-                $activeMaintenance->update([
-                    'date_back_from_maintenance' => $date,
-                    'remarks' => $remarks ?: $activeMaintenance->remarks,
-                ]);
-            }
-        }
-
-        // Return fresh item with updated maintenance status
-        return $item->fresh(['maintenances']);
-    }
-
-    /**
-     * Apply business rules and constraints to item data.
-     */
-    private function applyBusinessRules(array $data, $itemId = null): array
-    {
-        // Apply tracking mode constraints
         if (isset($data['tracking_mode'])) {
             switch ($data['tracking_mode']) {
                 case 'abstract':
-                    // Abstract items don't have serial numbers, status, or notes
                     $data['serial_number'] = null;
                     $data['status_id'] = null;
                     $data['notes'] = null;
                     break;
-                case 'bulk':
-                    // Bulk items don't have serial numbers
+                case 'standard':
                     $data['serial_number'] = null;
                     break;
                 case 'serialized':
-                    // Serialized items require serial numbers - validation handled below
                     break;
             }
         }
@@ -299,46 +196,40 @@ class ItemService extends BaseService
         return $data;
     }
 
-    /**
-     * Validate business rules for item data.
-     */
     private function validateBusinessRules(array $data, $itemId = null): void
     {
         $user = AuthorizationEngine::getCurrentUser();
         $orgId = $user->org_id;
 
-        // Validate tracking mode requirements
         if (isset($data['tracking_mode']) && $data['tracking_mode'] === 'serialized') {
             if (empty($data['serial_number'])) {
-                throw new \InvalidArgumentException('Serial number is required for serialized items');
+                throw new InvalidArgumentException(__(ErrorMessages::ITEM_SERIAL_REQUIRED));
             }
         }
 
-        // Validate code uniqueness within organization
         if (isset($data['code'])) {
-            $query = \App\Models\Item::where('code', $data['code'])
+            $query = Item::where('code', $data['code'])
                 ->where('org_id', $orgId);
-            
+
             if ($itemId) {
                 $query->where('id', '!=', $itemId);
             }
-            
+
             if ($query->exists()) {
-                throw new \InvalidArgumentException('This item code is already used in your organization');
+                throw new InvalidArgumentException(__(ErrorMessages::ITEM_CODE_EXISTS));
             }
         }
 
-        // Validate serial number uniqueness within organization
-        if (isset($data['serial_number']) && !empty($data['serial_number'])) {
-            $query = \App\Models\Item::where('serial_number', $data['serial_number'])
+        if (! empty($data['serial_number'])) {
+            $query = Item::where('serial_number', $data['serial_number'])
                 ->where('org_id', $orgId);
-            
+
             if ($itemId) {
                 $query->where('id', '!=', $itemId);
             }
-            
+
             if ($query->exists()) {
-                throw new \InvalidArgumentException('This serial number already exists in your organization');
+                throw new InvalidArgumentException(__(ErrorMessages::ITEM_SERIAL_EXISTS));
             }
         }
     }

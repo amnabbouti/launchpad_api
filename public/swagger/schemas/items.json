@@ -20,7 +20,7 @@
       },
       "type": {
         "type": "string",
-        "enum": ["abstract", "bulk", "serialized"],
+        "enum": ["abstract", "standard", "serialized"],
         "example": "serialized",
         "description": "Alias for tracking_mode, indicates how the item is tracked"
       },
@@ -30,9 +30,9 @@
       },
       "tracking_mode": {
         "type": "string",
-        "enum": ["abstract", "bulk", "serialized"],
+        "enum": ["abstract", "standard", "serialized"],
         "example": "serialized",
-        "description": "Abstract: No tracking, Bulk: Track by quantity, Serialized: Track individual items"
+        "description": "Abstract: No tracking, Standard: Track by quantity, Serialized: Track individual items with serial numbers"
       },
       "price": {
         "type": "number",
@@ -253,7 +253,7 @@
       },
       "tracking_mode": {
         "type": "string",
-        "enum": ["abstract", "bulk", "serialized"],
+        "enum": ["abstract", "standard", "serialized"],
         "example": "serialized"
       },
       "unit_id": {

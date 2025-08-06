@@ -2,14 +2,13 @@
 
 namespace App\Console\Commands;
 
-use App\Models\EntityId;
 use App\Services\EntityIdService;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 
 class BackfillPublicIds extends Command
 {
     protected $signature = 'public-id:backfill {model? : The model to backfill (e.g., item, location, supplier)}';
+
     protected $description = 'Backfill public IDs for existing records that don\'t have them';
 
     protected EntityIdService $entityIdService;
@@ -39,7 +38,7 @@ class BackfillPublicIds extends Command
             'supplier' => \App\Models\Supplier::class,
             'category' => \App\Models\Category::class,
             'maintenance' => \App\Models\Maintenance::class,
-            'stock' => \App\Models\Stock::class,
+            'batch' => \App\Models\Batch::class,
             'check_in_out' => \App\Models\CheckInOut::class,
             'status' => \App\Models\Status::class,
             'organization' => \App\Models\Organization::class,
@@ -52,7 +51,8 @@ class BackfillPublicIds extends Command
             'maintenance_detail' => \App\Models\MaintenanceDetail::class,
             'attachment' => \App\Models\Attachment::class,
             'user' => \App\Models\User::class,
-            'users' => \App\Models\User::class,
+            'item_movement' => \App\Models\ItemMovement::class,
+            'item_history_event' => \App\Models\ItemHistoryEvent::class,
         ];
 
         foreach ($models as $type => $class) {
@@ -69,8 +69,7 @@ class BackfillPublicIds extends Command
             'supplier' => \App\Models\Supplier::class,
             'category' => \App\Models\Category::class,
             'maintenance' => \App\Models\Maintenance::class,
-            // 'stock_item' => \App\Models\StockItem::class, // Removed as we now use the consolidated Item model
-            'stock' => \App\Models\Stock::class,
+            'batch' => \App\Models\Batch::class,
             'check_in_out' => \App\Models\CheckInOut::class,
             'status' => \App\Models\Status::class,
             'organization' => \App\Models\Organization::class,
@@ -83,12 +82,14 @@ class BackfillPublicIds extends Command
             'maintenance_detail' => \App\Models\MaintenanceDetail::class,
             'attachment' => \App\Models\Attachment::class,
             'user' => \App\Models\User::class,
-            'users' => \App\Models\User::class,
+            'item_movement' => \App\Models\ItemMovement::class,
+            'item_history_event' => \App\Models\ItemHistoryEvent::class,
         ];
 
-        if (!isset($models[$modelType])) {
+        if (! isset($models[$modelType])) {
             $this->error("Unknown model type: {$modelType}");
-            $this->line("Available models: " . implode(', ', array_keys($models)));
+            $this->line('Available models: '.implode(', ', array_keys($models)));
+
             return;
         }
 
@@ -106,6 +107,7 @@ class BackfillPublicIds extends Command
 
         if ($modelsWithoutPublicId->isEmpty()) {
             $this->line("  No {$entityType} records need backfilling.");
+
             return;
         }
 
@@ -117,9 +119,10 @@ class BackfillPublicIds extends Command
 
         foreach ($modelsWithoutPublicId as $model) {
             // Skip if org_id is null (global/super admin roles, etc.)
-            if (!isset($model->org_id) || is_null($model->org_id)) {
+            if (! isset($model->org_id) || is_null($model->org_id)) {
                 $this->line("\n  Skipping {$entityType} ID {$model->id} (org_id is null)");
                 $bar->advance();
+
                 continue;
             }
             try {
@@ -130,7 +133,7 @@ class BackfillPublicIds extends Command
                 );
                 $successful++;
             } catch (\Exception $e) {
-                $this->error("\n  Failed to generate public ID for {$entityType} ID {$model->id}: " . $e->getMessage());
+                $this->error("\n  Failed to generate public ID for {$entityType} ID {$model->id}: ".$e->getMessage());
                 $failed++;
             }
             $bar->advance();

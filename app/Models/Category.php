@@ -24,9 +24,14 @@ class Category extends Model
         'name',
         'parent_id',
         'path',
+        'default_tracking_mode',
+        'allow_tracking_transitions',
+        'min_value_for_serialized',
     ];
 
     protected $casts = [
+        'allow_tracking_transitions' => 'boolean',
+        'min_value_for_serialized' => 'decimal:2',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

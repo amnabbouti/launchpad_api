@@ -12,19 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('organizations', function (Blueprint $table) {
-            // Add plan_id foreign key
-            if (!Schema::hasColumn('organizations', 'plan_id')) {
+            if (! Schema::hasColumn('organizations', 'plan_id')) {
                 $table->unsignedBigInteger('plan_id')->nullable()->after('id');
             }
             $table->foreign('plan_id')->references('id')->on('plans')->onDelete('set null');
-
-            // Add license_id foreign key
-            if (!Schema::hasColumn('organizations', 'license_id')) {
+            if (! Schema::hasColumn('organizations', 'license_id')) {
                 $table->unsignedBigInteger('license_id')->nullable()->after('plan_id');
             }
             $table->foreign('license_id')->references('id')->on('licenses')->onDelete('set null');
-
-            // Add created_by foreign key
             $table->foreign('created_by')->references('id')->on('users')->onDelete('set null');
         });
     }

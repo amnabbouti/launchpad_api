@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Traits\HasAttachments;
 use App\Traits\HasPublicId;
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -13,8 +12,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Organization extends Model
 {
     use HasAttachments;
-    use HasPublicId;
     use HasFactory;
+    use HasPublicId;
     use SoftDeletes;
 
     protected $fillable = [
@@ -106,9 +105,9 @@ class Organization extends Model
         return $this->hasMany(Supplier::class, 'org_id');
     }
 
-    public function stocks(): HasMany
+    public function batches(): HasMany
     {
-        return $this->hasMany(Stock::class, 'org_id');
+        return $this->hasMany(Batch::class, 'org_id');
     }
 
     public function unitOfMeasures(): HasMany
@@ -147,6 +146,7 @@ class Organization extends Model
     public function activeLicenseSeatCount(): int
     {
         $now = now();
+
         return $this->licenses()
             ->where('status', 'active')
             ->where('starts_at', '<=', $now)
@@ -154,6 +154,17 @@ class Organization extends Model
                 $q->whereNull('ends_at')->orWhere('ends_at', '>', $now);
             })
             ->sum('seats');
+    }
+
+    /**
+     * Total available seats = plan user_limit + additional license seats
+     */
+    public function totalAvailableSeats(): int
+    {
+        $planSeats = $this->plan ? $this->plan->user_limit : 0;
+        $licenseSeats = $this->activeLicenseSeatCount();
+
+        return $planSeats + $licenseSeats;
     }
 
     /**
@@ -169,6 +180,6 @@ class Organization extends Model
      */
     public function hasAvailableSeats(): bool
     {
-        return $this->activeUserCount() < $this->activeLicenseSeatCount();
+        return $this->activeUserCount() < $this->totalAvailableSeats();
     }
 }

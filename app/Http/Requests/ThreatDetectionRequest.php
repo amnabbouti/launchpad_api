@@ -49,4 +49,4 @@ class ThreatDetectionRequest extends BaseRequest
             'threat_type.in' => 'Invalid threat type specified',
         ];
     }
-} 
+}

@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use App\Traits\HasAttachments;
-use App\Traits\HasPublicId;
 use App\Traits\HasOrganizationScope;
+use App\Traits\HasPublicId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,9 +12,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ItemLocation extends Model
 {
     use HasAttachments;
-    use HasPublicId; 
     use HasFactory;
     use HasOrganizationScope;
+    use HasPublicId;
 
     protected $fillable = [
         'org_id',

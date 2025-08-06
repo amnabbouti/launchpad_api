@@ -170,7 +170,7 @@
     "post": {
       "tags": ["Item Locations"],
       "summary": "Create a new item location",
-      "description": "Assign an item to a location with a specific quantity. This tracks the distribution of items across multiple storage locations. When an item is first assigned to a location, its tracking mode may change from 'abstract' to 'bulk'.",
+      "description": "Assign an item to a location with a specific quantity. This tracks the distribution of items across multiple storage locations. When an item is first assigned to a location, its tracking mode may change from 'abstract' to 'standard'.",
       "operationId": "createItemLocation",
       "security": [
         {

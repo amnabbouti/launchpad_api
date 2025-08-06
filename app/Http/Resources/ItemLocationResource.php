@@ -12,11 +12,11 @@ class ItemLocationResource extends BaseResource
         $availableQuantity = null;
         $checkedOutQuantity = 0;
         $availabilityStatus = 'unknown';
-        
+
         try {
             $checkInOutService = app(\App\Services\CheckInOutService::class);
             $availabilityData = $checkInOutService->getAvailabilityData($this->id);
-            
+
             $availableQuantity = $availabilityData['available_quantity'];
             $checkedOutQuantity = $availabilityData['checked_out_quantity'];
             $availabilityStatus = $availabilityData['availability_status'];
@@ -34,20 +34,18 @@ class ItemLocationResource extends BaseResource
             'notes' => $this->notes,
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
-            
-            // Organization details 
+
+            // Organization details
             'organization' => [
                 'id' => $this->org_id,
                 'name' => $this->organization?->name,
             ],
-            
-            // Item details 
+
+            // Item details
             'item' => $this->whenLoaded('item', fn () => new ItemResource($this->item)),
-            
-            // Location details 
+
+            // Location details
             'location' => $this->whenLoaded('location', fn () => new LocationResource($this->location)),
         ];
     }
-
-
 }

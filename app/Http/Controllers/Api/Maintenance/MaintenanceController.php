@@ -1,11 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api\Maintenance;
 
-use App\Constants\ErrorMessages;
-use App\Constants\HttpStatus;
-use App\Constants\SuccessMessages;
 use App\Http\Controllers\Api\BaseController;
+use App\Http\Middleware\ApiResponseMiddleware;
 use App\Http\Requests\MaintenanceRequest;
 use App\Http\Resources\MaintenanceResource;
 use App\Services\MaintenanceService;
@@ -14,78 +14,108 @@ use Illuminate\Http\JsonResponse;
 class MaintenanceController extends BaseController
 {
     public function __construct(
-        private MaintenanceService $maintenanceService,
+        private readonly MaintenanceService $maintenanceService,
     ) {}
 
-    // All
     public function index(MaintenanceRequest $request): JsonResponse
     {
         $filters = $this->maintenanceService->processRequestParams($request->query());
 
-        // Add default relationships if not specified
-        if (!isset($filters['with'])) {
+        if (! isset($filters['with'])) {
             $filters['with'] = ['maintainable', 'user', 'supplier'];
         }
 
-        $maintenances = $this->maintenanceService->getFiltered($filters);
-        $resourceType = 'maintenances';
+        $query = $this->maintenanceService->getFiltered($filters);
+        $maintenances = $this->paginated($query, $request);
 
-        // Check if results are empty
-        if ($maintenances->isEmpty()) {
-            $hasFilters = ! empty(array_filter($filters, fn($value) => $value !== null && $value !== ''));
-
-            if ($hasFilters) {
-                $message = str_replace('resources', $resourceType, ErrorMessages::NO_RESOURCES_FOUND);
-            } else {
-                $message = str_replace('resources', $resourceType, ErrorMessages::NO_RESOURCES_AVAILABLE);
-            }
-        } else {
-            $message = str_replace('Resources', ucfirst($resourceType), SuccessMessages::RESOURCES_RETRIEVED);
-        }
-
-        return $this->successResponse(MaintenanceResource::collection($maintenances), $message);
+        return ApiResponseMiddleware::listResponse(
+            MaintenanceResource::collection($maintenances),
+            'maintenance',
+            $maintenances->total()
+        );
     }
 
-    // Show
+    /**
+     * Get a specific maintenance.
+     */
     public function show($id): JsonResponse
     {
         $maintenance = $this->maintenanceService->findByIdWithRelations($id);
 
-        return $this->successResponse(new MaintenanceResource($maintenance));
-    }
-
-    // Create
-    public function store(MaintenanceRequest $request): JsonResponse
-    {
-        $maintenance = $this->maintenanceService->create($request->validated());
-
-        return $this->successResponse(
+        return ApiResponseMiddleware::showResponse(
             new MaintenanceResource($maintenance),
-            SuccessMessages::RESOURCE_CREATED,
-            HttpStatus::HTTP_CREATED,
+            'maintenance',
+            $maintenance->toArray()
         );
     }
 
-    // Update
+    /**
+     * Update a maintenance.
+     */
     public function update(MaintenanceRequest $request, $id): JsonResponse
     {
         $updatedMaintenance = $this->maintenanceService->update($id, $request->validated());
 
-        return $this->successResponse(
+        return ApiResponseMiddleware::updateResponse(
             new MaintenanceResource($updatedMaintenance),
-            SuccessMessages::RESOURCE_UPDATED,
+            'maintenance',
+            $updatedMaintenance->toArray()
         );
     }
 
-    // Delete
+    /**
+     * Delete a maintenance.
+     */
     public function destroy($id): JsonResponse
     {
+        $maintenance = $this->maintenanceService->findById($id);
         $this->maintenanceService->delete($id);
 
-        return $this->successResponse(
-            null,
-            SuccessMessages::RESOURCE_DELETED,
-            HttpStatus::HTTP_NO_CONTENT,
+        return ApiResponseMiddleware::deleteResponse(
+            'maintenance',
+            $maintenance->toArray()
+        );
+    }
+
+    /**
+     * Create a maintenance record for an item.
+     */
+    public function createItemMaintenance(MaintenanceRequest $request): JsonResponse
+    {
+        $maintenance = $this->maintenanceService->createItemMaintenance($request->validated());
+
+        return ApiResponseMiddleware::createResponse(
+            new MaintenanceResource($maintenance),
+            'maintenance',
+            $maintenance->toArray()
+        );
+    }
+
+    /**
+     * Complete an active maintenance record.
+     */
+    public function completeMaintenance(MaintenanceRequest $request, $id): JsonResponse
+    {
+        $maintenance = $this->maintenanceService->completeMaintenance($id, $request->validated());
+
+        return ApiResponseMiddleware::updateResponse(
+            new MaintenanceResource($maintenance),
+            'maintenance',
+            $maintenance->toArray()
+        );
+    }
+
+    /**
+     * Create maintenance from a condition trigger.
+     */
+    public function createFromCondition(MaintenanceRequest $request): JsonResponse
+    {
+        $maintenance = $this->maintenanceService->createFromCondition($request->validated());
+
+        return ApiResponseMiddleware::createResponse(
+            new MaintenanceResource($maintenance),
+            'maintenance',
+            $maintenance->toArray()
         );
     }
 }

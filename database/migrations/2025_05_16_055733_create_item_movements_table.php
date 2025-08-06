@@ -17,6 +17,10 @@ return new class extends Migration
             $table->decimal('quantity', 10, 2);
             $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null'); // who moved it
             $table->dateTime('moved_at')->default(DB::raw('CURRENT_TIMESTAMP'));
+            $table->enum('movement_type', ['transfer', 'initial_placement', 'adjustment'])->default('transfer');
+            $table->text('reason')->nullable();
+            $table->unsignedBigInteger('reference_id')->nullable();
+            $table->string('reference_type')->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
 

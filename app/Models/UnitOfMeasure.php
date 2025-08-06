@@ -2,9 +2,8 @@
 
 namespace App\Models;
 
-use App\Traits\HasPublicId;
-
 use App\Traits\HasOrganizationScope;
+use App\Traits\HasPublicId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,9 +11,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class UnitOfMeasure extends Model
 {
-    use HasPublicId; // Add public_id support
+    // Add public_id support
     use HasFactory;
     use HasOrganizationScope;
+    use HasPublicId;
 
     // Constants for unit types
     public const TYPE_DATE = 'DATE';

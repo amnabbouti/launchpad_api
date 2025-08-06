@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Constants\AppConstants;
 use App\Http\Controllers\Api\BaseController;
 use App\Services\ApiKeyService;
 use Illuminate\Http\JsonResponse;
@@ -33,10 +34,10 @@ class ApiKeyController extends BaseController
                 'id' => $token->id,
                 'name' => $token->name,
                 'description' => $token->description,
-                'token_preview' => substr($token->token, 0, 8) . '...' . substr($token->token, -4),
+                'token_preview' => substr($token->token, 0, 8).'...'.substr($token->token, -4),
                 'user' => $token->tokenable ? [
                     'id' => $token->tokenable->public_id,
-                    'name' => $token->tokenable->first_name . ' ' . $token->tokenable->last_name,
+                    'name' => $token->tokenable->first_name.' '.$token->tokenable->last_name,
                     'email' => $token->tokenable->email,
                 ] : null,
                 'abilities' => $token->abilities,
@@ -67,7 +68,7 @@ class ApiKeyController extends BaseController
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'description' => 'nullable|string|max:1000',
+            'description' => 'nullable|string|max:'.AppConstants::DESCRIPTION_MAX_LENGTH,
             'user_id' => 'nullable|exists:users,id',
             'organization_id' => 'nullable|exists:organizations,id', // Allow super admins to specify org
             'abilities' => 'nullable|array',
@@ -90,7 +91,7 @@ class ApiKeyController extends BaseController
             $validated['organization_id'] = $request->user()->org_id;
         }
 
-        if (!isset($validated['user_id'])) {
+        if (! isset($validated['user_id'])) {
             $validated['user_id'] = $request->user()->id;
         }
 
@@ -112,7 +113,7 @@ class ApiKeyController extends BaseController
         $apiKeys = $this->apiKeyService->getApiKeys($organizationId);
         $token = $apiKeys->firstWhere('id', $id);
 
-        if (!$token) {
+        if (! $token) {
             return $this->errorResponse('API key not found', 404);
         }
 
@@ -122,7 +123,7 @@ class ApiKeyController extends BaseController
             'description' => $token->description,
             'user' => $token->tokenable ? [
                 'id' => $token->tokenable->public_id,
-                'name' => $token->tokenable->first_name . ' ' . $token->tokenable->last_name,
+                'name' => $token->tokenable->first_name.' '.$token->tokenable->last_name,
                 'email' => $token->tokenable->email,
             ] : null,
             'abilities' => $token->abilities,
@@ -151,7 +152,7 @@ class ApiKeyController extends BaseController
     {
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
-            'description' => 'nullable|string|max:1000',
+            'description' => 'nullable|string|max:'.AppConstants::DESCRIPTION_MAX_LENGTH,
             'abilities' => 'nullable|array',
             'abilities.*' => 'string',
             'rate_limit_per_hour' => 'nullable|integer|min:1|max:10000',
@@ -167,7 +168,7 @@ class ApiKeyController extends BaseController
 
         $success = $this->apiKeyService->updateApiKey($id, $validated);
 
-        if (!$success) {
+        if (! $success) {
             return $this->errorResponse('API key not found', 404);
         }
 
@@ -181,7 +182,7 @@ class ApiKeyController extends BaseController
     {
         $success = $this->apiKeyService->deleteApiKey($id);
 
-        if (!$success) {
+        if (! $success) {
             return $this->errorResponse('API key not found', 404);
         }
 
@@ -195,7 +196,7 @@ class ApiKeyController extends BaseController
     {
         $success = $this->apiKeyService->revokeApiKey($id);
 
-        if (!$success) {
+        if (! $success) {
             return $this->errorResponse('API key not found', 404);
         }
 
@@ -209,7 +210,7 @@ class ApiKeyController extends BaseController
     {
         $result = $this->apiKeyService->regenerateApiKey($id);
 
-        if (!$result) {
+        if (! $result) {
             return $this->errorResponse('API key not found', 404);
         }
 

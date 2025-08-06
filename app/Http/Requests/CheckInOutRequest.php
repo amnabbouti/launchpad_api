@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Constants\AppConstants;
 use App\Constants\ErrorMessages;
 
 class CheckInOutRequest extends BaseRequest
@@ -24,7 +25,7 @@ class CheckInOutRequest extends BaseRequest
             'checkin_quantity' => 'nullable|numeric|min:0.01',
             'expected_return_date' => 'nullable|date',
             'reference' => 'nullable|string|max:255',
-            'notes' => 'nullable|string|max:1000',
+            'notes' => 'nullable|string|max:'.AppConstants::REMARKS_MAX_LENGTH,
             'status_out_id' => 'nullable|integer|exists:statuses,id',
             'status_in_id' => 'nullable|integer|exists:statuses,id',
             'is_active' => 'nullable|boolean',

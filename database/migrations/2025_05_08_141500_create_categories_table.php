@@ -17,6 +17,9 @@ return new class extends Migration
             $table->string('name', 100);
             $table->foreignId('parent_id')->nullable()->constrained('categories')->onDelete('set null');
             $table->string('path', 500)->nullable()->index();
+            $table->enum('default_tracking_mode', ['abstract', 'standard', 'serialized'])->nullable();
+            $table->boolean('allow_tracking_transitions')->default(true);
+            $table->decimal('min_value_for_serialized', 10, 2)->nullable();
             $table->timestamps();
             $table->index('org_id');
             $table->index('parent_id');

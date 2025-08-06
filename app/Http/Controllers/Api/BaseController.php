@@ -1,55 +1,49 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api;
 
-use App\Constants\ErrorMessages;
-use App\Constants\HttpStatus;
 use App\Http\Controllers\Controller;
+use App\Services\MessageGeneratorService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Http\Request;
 
 class BaseController extends Controller
 {
-    /** Default success message. */
-    protected const DEFAULT_SUCCESS_MESSAGE = 'Success';
+    /**
+     * Paginate a query builder using request parameters
+     */
+    protected function paginated(Builder $query, Request $request)
+    {
+        $perPage = (int) $request->get('per_page', 40);
+        $perPage = min($perPage, 100);
+
+        return $query->paginate($perPage);
+    }
 
     /**
-     * Return a success response.
+     * Return a successful response with a proper translation
      */
-    protected function successResponse(
-        mixed $data,
-        string $message = self::DEFAULT_SUCCESS_MESSAGE,
-        int $statusCode = HttpStatus::HTTP_OK,
-    ): JsonResponse {
+    protected function successResponse($data = null, string $message = 'succ.default', int $status = 200): JsonResponse
+    {
         return response()->json([
             'status' => 'success',
-            'message' => $message,
+            'message' => MessageGeneratorService::generate($message),
             'data' => $data,
-        ], $statusCode);
+        ], $status);
     }
 
     /**
-     * Return an error response.
+     * Return an error response with a proper translation
      */
-    protected function errorResponse(
-        string $message = ErrorMessages::SERVER_ERROR,
-        int $statusCode = HttpStatus::HTTP_BAD_REQUEST,
-    ): JsonResponse {
+    protected function errorResponse(string $message, int $status = 400): JsonResponse
+    {
         return response()->json([
             'status' => 'error',
-            'message' => $message,
+            'message' => MessageGeneratorService::generate($message),
             'data' => null,
-        ], $statusCode);
-    }
-
-    /**
-     * Return a resource collection response.
-     */
-    protected function resourceResponse(
-        JsonResource $resource,
-        string $message = self::DEFAULT_SUCCESS_MESSAGE,
-        int $statusCode = HttpStatus::HTTP_OK,
-    ): JsonResponse {
-        return $this->successResponse($resource, $message, $statusCode);
+        ], $status);
     }
 }

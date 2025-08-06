@@ -2,27 +2,27 @@
 
 namespace App\Http\Requests;
 
+use App\Constants\AppConstants;
+
 class ItemLocationRequest extends BaseRequest
 {
     /**
-     * Validation rules
+     * Validation rules for ItemLocation operations (inventory management only)
      */
     protected function getValidationRules(): array
     {
         return [
             'org_id' => 'required|exists:organizations,id',
             'item_id' => 'required|exists:items,id',
-            'location_id' => 'nullable|exists:locations,id',
-            'from_location_id' => 'nullable|exists:locations,id',
-            'to_location_id' => 'nullable|exists:locations,id',
-            'quantity' => 'required|numeric|min:0',
+            'location_id' => 'required|exists:locations,id',
+            'quantity' => 'required|numeric|min:0|max:'.AppConstants::ITEM_MAX_QUANTITY,
             'moved_date' => 'nullable|date',
-            'notes' => 'nullable|string|max:65535',
+            'notes' => 'nullable|string|max:'.AppConstants::REMARKS_MAX_LENGTH,
         ];
     }
 
     /**
-     * Error messages
+     * Error messages for ItemLocation validation
      */
     public function messages(): array
     {
@@ -33,10 +33,6 @@ class ItemLocationRequest extends BaseRequest
             'item_id.exists' => 'The selected item is invalid',
             'location_id.required' => 'The location is required',
             'location_id.exists' => 'The selected location is invalid',
-            'from_location_id.required' => 'The source location is required',
-            'from_location_id.exists' => 'The selected source location is invalid',
-            'to_location_id.required' => 'The destination location is required',
-            'to_location_id.exists' => 'The selected destination location is invalid',
             'quantity.required' => 'The quantity is required',
             'quantity.numeric' => 'The quantity must be a number',
             'quantity.min' => 'The quantity cannot be negative',

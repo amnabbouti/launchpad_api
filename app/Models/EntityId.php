@@ -70,7 +70,7 @@ class EntityId extends Model
     public function scopeByPublicId($query, string $publicId, ?int $orgId = null)
     {
         // Parse the public ID (e.g., "LOC-0001" -> prefix="LOC", sequence=1)
-        if (!preg_match('/^([A-Z]+)-(\d+)$/', $publicId, $matches)) {
+        if (! preg_match('/^([A-Z]+)-(\d+)$/', $publicId, $matches)) {
             return $query->whereRaw('1 = 0'); // Invalid format, return empty
         }
 
@@ -78,7 +78,7 @@ class EntityId extends Model
         $sequenceNumber = (int) $matches[2];
 
         $query = $query->where('entity_prefix', $prefix)
-                      ->where('sequence_number', $sequenceNumber);
+            ->where('sequence_number', $sequenceNumber);
 
         if ($orgId) {
             $query->where('org_id', $orgId);
@@ -126,11 +126,11 @@ class EntityId extends Model
     {
         $query = static::where('entity_type', $entityType)
             ->where('entity_internal_id', $internalId);
-            
+
         if ($orgId !== null) {
             $query->where('org_id', $orgId);
         }
-        
+
         $entityId = $query->first();
 
         return $entityId?->public_id;

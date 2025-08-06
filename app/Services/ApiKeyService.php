@@ -1,12 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\ApiKeyUsage;
-use App\Models\User;
 use App\Models\PersonalAccessToken;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 
 class ApiKeyService
 {
@@ -47,11 +48,12 @@ class ApiKeyService
     {
         $token = PersonalAccessToken::find($tokenId);
 
-        if (!$token) {
+        if (! $token) {
             return false;
         }
 
         $token->update(['is_active' => false]);
+
         return true;
     }
 
@@ -59,14 +61,14 @@ class ApiKeyService
     {
         $token = PersonalAccessToken::find($tokenId);
 
-        if (!$token) {
+        if (! $token) {
             return false;
         }
 
         return $token->delete();
     }
 
-    public function getApiKeys(?int $organizationId = null, ?int $userId = null): \Illuminate\Database\Eloquent\Collection
+    public function getApiKeys(?int $organizationId = null, ?int $userId = null): Collection
     {
         $query = PersonalAccessToken::with(['tokenable'])
             ->orderBy('created_at', 'desc');
@@ -106,7 +108,6 @@ class ApiKeyService
         // Requests over time
         $timeFormat = match ($groupBy) {
             'hour' => '%Y-%m-%d %H:00:00',
-            'day' => '%Y-%m-%d',
             'month' => '%Y-%m',
             default => '%Y-%m-%d',
         };
@@ -142,7 +143,7 @@ class ApiKeyService
     {
         $token = PersonalAccessToken::find($tokenId);
 
-        if (!$token) {
+        if (! $token) {
             return false;
         }
 
@@ -150,13 +151,27 @@ class ApiKeyService
         $updateData = [];
 
         // Handle regular fields (filter out nulls)
-        if (isset($data['name'])) $updateData['name'] = $data['name'];
-        if (isset($data['description'])) $updateData['description'] = $data['description'];
-        if (isset($data['allowed_ips'])) $updateData['allowed_ips'] = $data['allowed_ips'];
-        if (isset($data['allowed_origins'])) $updateData['allowed_origins'] = $data['allowed_origins'];
-        if (isset($data['expires_at'])) $updateData['expires_at'] = $data['expires_at'];
-        if (isset($data['abilities'])) $updateData['abilities'] = $data['abilities'];
-        if (isset($data['metadata'])) $updateData['metadata'] = $data['metadata'];
+        if (isset($data['name'])) {
+            $updateData['name'] = $data['name'];
+        }
+        if (isset($data['description'])) {
+            $updateData['description'] = $data['description'];
+        }
+        if (isset($data['allowed_ips'])) {
+            $updateData['allowed_ips'] = $data['allowed_ips'];
+        }
+        if (isset($data['allowed_origins'])) {
+            $updateData['allowed_origins'] = $data['allowed_origins'];
+        }
+        if (isset($data['expires_at'])) {
+            $updateData['expires_at'] = $data['expires_at'];
+        }
+        if (isset($data['abilities'])) {
+            $updateData['abilities'] = $data['abilities'];
+        }
+        if (isset($data['metadata'])) {
+            $updateData['metadata'] = $data['metadata'];
+        }
 
         // Handle rate limits specially - allow null values to clear limits
         if (array_key_exists('rate_limit_per_hour', $data)) {
@@ -176,7 +191,7 @@ class ApiKeyService
     {
         $oldToken = PersonalAccessToken::find($tokenId);
 
-        if (!$oldToken) {
+        if (! $oldToken) {
             return null;
         }
 

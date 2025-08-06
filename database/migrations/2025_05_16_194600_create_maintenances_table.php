@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('org_id')->constrained('organizations')->onDelete('cascade');
             $table->text('remarks')->nullable();
-            $table->string('invoice_nbr')->nullable();
             $table->decimal('cost', 10, 2)->default(0);
             $table->timestamp('date_expected_back_from_maintenance')->nullable();
             $table->timestamp('date_back_from_maintenance')->nullable();
@@ -30,7 +29,6 @@ return new class extends Migration
             $table->foreignId('status_out_id')->nullable()->constrained('statuses')->onDelete('set null');
             $table->foreignId('status_in_id')->nullable()->constrained('statuses')->onDelete('set null');
             $table->timestamps();
-            $table->unique(['org_id', 'invoice_nbr']);
             $table->index('org_id');
             $table->index(['org_id', 'id']);
             $table->index(['org_id', 'user_id']);

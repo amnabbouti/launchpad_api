@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Constants\AppConstants;
+
 class ItemRequest extends BaseRequest
 {
     /**
@@ -17,11 +19,11 @@ class ItemRequest extends BaseRequest
             // Basic validation - no business logic
             'name' => $isUpdate ? 'sometimes|string|max:100' : 'required|string|max:100',
             'code' => $isUpdate ? 'sometimes|string|max:50' : 'required|string|max:50',
-            'barcode' => 'nullable|string|max:255',
-            'description' => 'nullable|string|max:1000',
-            'tracking_mode' => $isUpdate ? 'sometimes|in:abstract,bulk,serialized' : 'required|in:abstract,bulk,serialized',
+            'barcode' => 'nullable|string|max:'.AppConstants::NAME_MAX_LENGTH,
+            'description' => 'nullable|string|max:'.AppConstants::DESCRIPTION_MAX_LENGTH,
+            'tracking_mode' => $isUpdate ? 'sometimes|in:abstract,standard,serialized' : 'required|in:abstract,standard,serialized',
             'unit_id' => $isUpdate ? 'sometimes|integer|exists:unit_of_measures,id' : 'required|integer|exists:unit_of_measures,id',
-            'price' => 'nullable|numeric|min:0|max:999999.99',
+            'price' => 'nullable|numeric|min:0|max:'.AppConstants::ITEM_MAX_PRICE,
             'category_id' => 'nullable|integer|exists:categories,id',
             'user_id' => 'nullable|integer|exists:users,id',
             'specifications' => 'nullable|array',
@@ -31,10 +33,10 @@ class ItemRequest extends BaseRequest
             'item_relation_id' => 'nullable|integer|exists:items,id',
             'serial_number' => 'nullable|string|max:255',
             'status_id' => 'nullable|integer|exists:statuses,id',
-            'notes' => 'nullable|string|max:1000',
+            'notes' => 'nullable|string|max:'.AppConstants::REMARKS_MAX_LENGTH,
             'locations' => 'nullable|array',
             'locations.*.id' => 'required_with:locations|string',
-            'locations.*.quantity' => 'required_with:locations|numeric|min:0',
+            'locations.*.quantity' => 'required_with:locations|numeric|min:0|max:'.AppConstants::ITEM_MAX_QUANTITY,
         ];
     }
 
@@ -47,7 +49,7 @@ class ItemRequest extends BaseRequest
             'name.required' => 'The item name is required',
             'code.required' => 'The item code is required',
             'tracking_mode.required' => 'The tracking mode is required',
-            'tracking_mode.in' => 'The tracking mode must be: abstract, bulk, or serialized',
+            'tracking_mode.in' => 'The tracking mode must be: abstract, standard, or serialized',
             'unit_id.required' => 'The unit of measure is required',
             'unit_id.exists' => 'The selected unit of measure is invalid.',
             'category_id.exists' => 'The selected category is invalid.',

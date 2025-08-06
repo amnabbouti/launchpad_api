@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Constants\ErrorMessages;
@@ -9,9 +11,9 @@ use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class EntityIdService extends BaseService
-{    protected array $entityTypeConfig = [
-        'item' => ['prefix' => 'ITM', 'table' => 'items'],        
-        // 'stock_item' => ['prefix' => 'STK', 'table' => 'stock_items'], // Removed as we now use the consolidated Item model
+{
+    protected array $entityTypeConfig = [
+        'item' => ['prefix' => 'ITM', 'table' => 'items'],
         'stock' => ['prefix' => 'BCH', 'table' => 'stocks'],
         'maintenance' => ['prefix' => 'MNT', 'table' => 'maintenances'],
         'check_in_out' => ['prefix' => 'TXN', 'table' => 'check_ins_outs'],
@@ -29,11 +31,13 @@ class EntityIdService extends BaseService
         'maintenance_condition' => ['prefix' => 'MCO', 'table' => 'maintenance_conditions'],
         'maintenance_detail' => ['prefix' => 'MDE', 'table' => 'maintenance_details'],
         'attachment' => ['prefix' => 'ATT', 'table' => 'attachments'],
+        'item_movement' => ['prefix' => 'IMV', 'table' => 'item_movements'],
+        'item_history_event' => ['prefix' => 'IHE', 'table' => 'item_history_events'],
     ];
 
     public function __construct()
     {
-        parent::__construct(new EntityId());
+        parent::__construct(new EntityId);
     }
 
     /**
@@ -47,7 +51,7 @@ class EntityIdService extends BaseService
 
         try {
             return DB::transaction(function () use ($orgId, $entityType, $entityInternalId) {
-                // Check if entity already has a public ID
+                // Check if an entity already has a public ID
                 $existing = EntityId::where('org_id', $orgId)
                     ->where('entity_type', $entityType)
                     ->where('entity_internal_id', $entityInternalId)
@@ -57,7 +61,7 @@ class EntityIdService extends BaseService
                     return $existing->public_id;
                 }
 
-                // Get next sequence number with row locking to prevent race conditions
+                // Get the next sequence number with row locking to prevent race conditions
                 $lastSequence = EntityId::where('org_id', $orgId)
                     ->where('entity_type', $entityType)
                     ->lockForUpdate()
@@ -79,14 +83,14 @@ class EntityIdService extends BaseService
             });
         } catch (QueryException $e) {
             if ($this->isDuplicateKeyError($e)) {
-                throw new InvalidArgumentException('Entity ID already exists for this record');
+                throw new InvalidArgumentException(__(ErrorMessages::ALREADY_EXISTS));
             }
             throw $e;
         }
     }
 
     /**
-     * Generate public IDs for multiple entities in batch
+     * Generate public IDs for multiple entities in a batch
      */
     public function generateBatchPublicIds(int $orgId, string $entityType, array $entityInternalIds): array
     {
@@ -94,7 +98,7 @@ class EntityIdService extends BaseService
         $this->validateEntityType($entityType);
 
         if (empty($entityInternalIds)) {
-            throw new InvalidArgumentException(ErrorMessages::EMPTY_DATA);
+            throw new InvalidArgumentException(__(ErrorMessages::EMPTY_DATA));
         }
 
         foreach ($entityInternalIds as $id) {
@@ -113,7 +117,7 @@ class EntityIdService extends BaseService
                     ->pluck('public_id', 'entity_internal_id')
                     ->toArray();
 
-                // Get next sequence number with locking
+                // Get the next sequence number with locking
                 $lastSequence = EntityId::where('org_id', $orgId)
                     ->where('entity_type', $entityType)
                     ->lockForUpdate()
@@ -125,11 +129,12 @@ class EntityIdService extends BaseService
                 foreach ($entityInternalIds as $internalId) {
                     if (isset($existing[$internalId])) {
                         $results[$internalId] = $existing[$internalId];
+
                         continue;
                     }
 
                     $currentSequence++;
-                    $publicId = $prefix . '-' . str_pad($currentSequence, 8, '0', STR_PAD_LEFT);
+                    $publicId = $prefix . '-' . str_pad((string)$currentSequence, 8, '0', STR_PAD_LEFT);
 
                     $batchData[] = [
                         'org_id' => $orgId,
@@ -144,7 +149,7 @@ class EntityIdService extends BaseService
                     $results[$internalId] = $publicId;
                 }
 
-                if (!empty($batchData)) {
+                if (! empty($batchData)) {
                     EntityId::insert($batchData);
                 }
 
@@ -152,7 +157,7 @@ class EntityIdService extends BaseService
             });
         } catch (QueryException $e) {
             if ($this->isDuplicateKeyError($e)) {
-                throw new InvalidArgumentException('Some entity IDs already exist');
+                throw new InvalidArgumentException(__(ErrorMessages::ALREADY_EXISTS));
             }
             throw $e;
         }
@@ -168,8 +173,8 @@ class EntityIdService extends BaseService
 
         $entityId = EntityId::findByPublicId($publicId, $orgId);
 
-        if (!$entityId) {
-            throw new InvalidArgumentException(ErrorMessages::NOT_FOUND . ': Invalid public ID');
+        if (! $entityId) {
+            throw new InvalidArgumentException(__(ErrorMessages::NOT_FOUND));
         }
 
         return $entityId->entity_internal_id;
@@ -186,8 +191,8 @@ class EntityIdService extends BaseService
 
         $publicId = EntityId::getPublicId($entityInternalId, $entityType, $orgId);
 
-        if (!$publicId) {
-            throw new InvalidArgumentException(ErrorMessages::NOT_FOUND . ': No public ID found for this entity');
+        if (! $publicId) {
+            throw new InvalidArgumentException(__(ErrorMessages::NOT_FOUND));
         }
 
         return $publicId;
@@ -203,8 +208,8 @@ class EntityIdService extends BaseService
 
         $entityId = EntityId::findByPublicId($publicId, $orgId);
 
-        if (!$entityId) {
-            throw new InvalidArgumentException(ErrorMessages::NOT_FOUND);
+        if (! $entityId) {
+            throw new InvalidArgumentException(__(ErrorMessages::NOT_FOUND));
         }
 
         return $entityId;
@@ -235,7 +240,7 @@ class EntityIdService extends BaseService
     private function validateOrgId(int $orgId): void
     {
         if ($orgId <= 0) {
-            throw new InvalidArgumentException(ErrorMessages::INVALID_ORG);
+            throw new InvalidArgumentException(__(ErrorMessages::INVALID_ORG));
         }
     }
 
@@ -244,9 +249,9 @@ class EntityIdService extends BaseService
      */
     private function validateEntityType(string $entityType): void
     {
-        if (!isset($this->entityTypeConfig[$entityType])) {
+        if (! isset($this->entityTypeConfig[$entityType])) {
             throw new InvalidArgumentException(
-                ErrorMessages::INVALID_ENTITY_TYPE . '. Supported types: ' . implode(', ', array_keys($this->entityTypeConfig))
+                __(ErrorMessages::INVALID_ENTITY_TYPE) . '. Supported types: ' . implode(', ', array_keys($this->entityTypeConfig))
             );
         }
     }
@@ -257,7 +262,7 @@ class EntityIdService extends BaseService
     private function validateEntityInternalId(int $entityInternalId): void
     {
         if ($entityInternalId <= 0) {
-            throw new InvalidArgumentException(ErrorMessages::INVALID_ID);
+            throw new InvalidArgumentException(__(ErrorMessages::INVALID_ID));
         }
     }
 
@@ -267,22 +272,21 @@ class EntityIdService extends BaseService
     private function validatePublicId(string $publicId): void
     {
         if (empty($publicId)) {
-            throw new InvalidArgumentException('Public ID cannot be empty');
+            throw new InvalidArgumentException(__(ErrorMessages::INVALID_PUBLIC_ID_FORMAT));
         }
 
-        // Basic format validation: PREFIX-XXXXXXXX
-        if (!preg_match('/^[A-Z]{2,4}-\d{8}$/', $publicId)) {
-            throw new InvalidArgumentException(ErrorMessages::INVALID_PUBLIC_ID_FORMAT);
+        if (! preg_match('/^[A-Z]{2,4}-\d{8}$/', $publicId)) {
+            throw new InvalidArgumentException(__(ErrorMessages::INVALID_PUBLIC_ID_FORMAT));
         }
     }
 
     /**
-     * Check if query exception is a duplicate key error
+     * Check if the query exception is a duplicate key error
      */
     private function isDuplicateKeyError(QueryException $e): bool
     {
         return str_contains($e->getMessage(), 'Duplicate entry') ||
-               str_contains($e->getMessage(), 'UNIQUE constraint failed') ||
-               $e->getCode() === '23000';
+            str_contains($e->getMessage(), 'UNIQUE constraint failed') ||
+            $e->getCode() === '23000';
     }
 }

@@ -1,22 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
-use App\Models\User;
-use App\Models\Role;
 use App\Constants\ErrorMessages;
+use App\Constants\Permissions;
 use App\Exceptions\UnauthorizedAccessException;
-use Illuminate\Database\Eloquent\Model;
+use App\Models\Role;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
-use InvalidArgumentException;
 
 class AuthorizationEngine
 {
     /**
      * System role definitions with permissions.
      */
-    private static $systemRoles = [
+    private static array $systemRoles = [
         'super_admin' => [
             'title' => 'Super Administrator',
             'description' => 'Full system access - can manage everything',
@@ -26,13 +28,13 @@ class AuthorizationEngine
         'manager' => [
             'title' => 'Manager',
             'description' => 'Organization manager - can manage organization, users, billing, and plans',
-            'forbidden' => null, // Will be loaded from Permissions::getManagerForbiddenPermissions()
+            'forbidden' => null,
             'is_system' => true,
         ],
         'employee' => [
             'title' => 'Employee',
             'description' => 'Employee - can use full inventory system and basic operations',
-            'forbidden' => null, // Will be loaded from Permissions::getEmployeeForbiddenPermissions()
+            'forbidden' => null,
             'is_system' => true,
         ],
     ];
@@ -42,7 +44,7 @@ class AuthorizationEngine
      */
     public static function authorize(string $action, string $resource, $targetModel = null): void
     {
-        if (!static::can($action, $resource, $targetModel)) {
+        if (! static::can($action, $resource, $targetModel)) {
             throw new UnauthorizedAccessException(ErrorMessages::FORBIDDEN);
         }
     }
@@ -54,7 +56,7 @@ class AuthorizationEngine
     {
         $user = static::getCurrentUser();
 
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -66,11 +68,11 @@ class AuthorizationEngine
             return false;
         }
 
-        if (!static::hasOrganizationAccess($action, $resource, $targetModel, $user)) {
+        if (! static::hasOrganizationAccess($action, $resource, $targetModel, $user)) {
             return false;
         }
 
-        if (!static::hasBusinessRuleAccess($action, $resource, $targetModel, $user)) {
+        if (! static::hasBusinessRuleAccess($action, $resource, $targetModel, $user)) {
             return false;
         }
 
@@ -78,7 +80,7 @@ class AuthorizationEngine
     }
 
     /**
-     * Check if action is forbidden for user's role.
+     * Check if action is forbidden for the user's role.
      */
     public static function isForbidden(string $action, string $resource, User $user, $targetModel = null): bool
     {
@@ -86,7 +88,7 @@ class AuthorizationEngine
             return false;
         }
 
-        if (!$user->role) {
+        if (! $user->role) {
             return true;
         }
 
@@ -115,19 +117,20 @@ class AuthorizationEngine
     public static function getRoleForbiddenActions(string $roleSlug): array
     {
         if (static::isSystemRole($roleSlug)) {
-            return \App\Constants\Permissions::getSystemRoleForbiddenPermissions($roleSlug);
+            return Permissions::getSystemRoleForbiddenPermissions($roleSlug);
         }
 
         $role = Role::where('slug', $roleSlug)->where('is_system', false)->first();
+
         return $role ? $role->getForbidden() : [];
     }
 
     /**
-     * Get target type for contextual permissions.
+     * Get a target type for contextual permissions.
      */
     private static function getTargetType($targetModel, User $user): string
     {
-        if (!$targetModel) {
+        if (! $targetModel) {
             return '';
         }
 
@@ -179,13 +182,13 @@ class AuthorizationEngine
     }
 
     /**
-     * Check if user can assign a specific role.
+     * Check if the user can assign a specific role.
      */
     public static function canAssignRole(string $roleSlug, ?User $user = null): bool
     {
         $user = $user ?? static::getCurrentUser();
 
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -202,7 +205,7 @@ class AuthorizationEngine
         }
 
         if ($user->isManager()) {
-            return $roleSlug === 'employee' || !static::isSystemRole($roleSlug);
+            return $roleSlug === 'employee' || ! static::isSystemRole($roleSlug);
         }
 
         return false;
@@ -215,7 +218,7 @@ class AuthorizationEngine
     {
         $user = $user ?? static::getCurrentUser();
 
-        if (!$user) {
+        if (! $user) {
             return [];
         }
 
@@ -227,13 +230,13 @@ class AuthorizationEngine
     }
 
     /**
-     * Check if user can create custom roles.
+     * Check if a user can create custom roles.
      */
     public static function canCreateCustomRole(?User $user = null): bool
     {
         $user = $user ?? static::getCurrentUser();
 
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -249,13 +252,13 @@ class AuthorizationEngine
     }
 
     /**
-     * Check if user can modify a specific custom role.
+     * Check if a user can modify a specific custom role.
      */
     public static function canModifyCustomRole(Role $role, ?User $user = null): bool
     {
         $user = $user ?? static::getCurrentUser();
 
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -279,11 +282,11 @@ class AuthorizationEngine
      */
     public static function getRequiredForbiddenActionsForManagers(): array
     {
-        return \App\Constants\Permissions::getRequiredForbiddenKeys();
+        return Permissions::getRequiredForbiddenKeys();
     }
 
     /**
-     * Validate custom role for manager restrictions.
+     * Validate a custom role for manager restrictions.
      */
     public static function validateCustomRoleForManager(array $forbiddenActions): array
     {
@@ -291,8 +294,8 @@ class AuthorizationEngine
         $requiredForbidden = static::getRequiredForbiddenActionsForManagers();
 
         foreach ($requiredForbidden as $required) {
-            if (!in_array($required, $forbiddenActions)) {
-                $errors[] = "Custom role must forbid: {$required}";
+            if (! in_array($required, $forbiddenActions)) {
+                $errors[] = "Custom role must forbid: $required";
             }
         }
 
@@ -312,7 +315,7 @@ class AuthorizationEngine
      */
     public static function getAvailablePermissionsForManagers(): array
     {
-        return \App\Constants\Permissions::getAvailablePermissionsForManagers();
+        return Permissions::getAvailablePermissionsForManagers();
     }
 
     /**
@@ -320,7 +323,7 @@ class AuthorizationEngine
      */
     public static function getRequiredForbiddenPermissions(): array
     {
-        return \App\Constants\Permissions::getRequiredForbiddenPermissions();
+        return Permissions::getRequiredForbiddenPermissions();
     }
 
     /**
@@ -386,7 +389,7 @@ class AuthorizationEngine
         }
 
         $user = static::getCurrentUser();
-        if (!$user) {
+        if (! $user) {
             return $query->whereRaw('1 = 0');
         }
 
@@ -394,7 +397,7 @@ class AuthorizationEngine
             return $query;
         }
 
-        if (!$user->org_id) {
+        if (! $user->org_id) {
             return $query->whereRaw('1 = 0');
         }
 
@@ -406,17 +409,17 @@ class AuthorizationEngine
     }
 
     /**
-     * Filter array of models to only visible ones.
+     * Filter an array of models to only visible ones.
      */
     public static function filterVisibleModels($models, string $resource, ?User $user = null): array
     {
         $user = $user ?? static::getCurrentUser();
 
-        if (!$user) {
+        if (! $user) {
             return [];
         }
 
-        return array_filter($models, function ($model) use ($resource, $user) {
+        return array_filter($models, function ($model) use ($resource) {
             return static::can('view', $resource, $model);
         });
     }
@@ -428,17 +431,17 @@ class AuthorizationEngine
     {
         $user = $user ?? static::getCurrentUser();
 
-        if (!$user || static::isSuperAdmin($user)) {
+        if (! $user || static::isSuperAdmin($user)) {
             return;
         }
 
-        if (!$model->org_id && $user->org_id) {
+        if (! $model->org_id && $user->org_id) {
             $model->org_id = $user->org_id;
         }
     }
 
     /**
-     * Get current authenticated user.
+     * Get a current authenticated user.
      */
     public static function getCurrentUser(): ?User
     {
@@ -446,16 +449,17 @@ class AuthorizationEngine
     }
 
     /**
-     * Check if user is super admin.
+     * Check if the user is super admin.
      */
     public static function isSuperAdmin(?User $user = null): bool
     {
         $user = $user ?? static::getCurrentUser();
+
         return $user && $user->role && $user->role->slug === 'super_admin';
     }
 
     /**
-     * Check if should skip authorization.
+     * Check if you should skip authorization.
      */
     public static function shouldSkipAuthorization(): bool
     {
@@ -463,11 +467,12 @@ class AuthorizationEngine
     }
 
     /**
-     * Get resource name from model.
+     * Get a resource name from a model.
      */
     public static function getResourceFromModel(Model $model): string
     {
         $className = class_basename($model);
+
         return strtolower($className) . 's';
     }
 
@@ -480,7 +485,7 @@ class AuthorizationEngine
             return true;
         }
 
-        if (!$targetModel || !method_exists($targetModel, 'getTable')) {
+        if (! $targetModel || ! method_exists($targetModel, 'getTable')) {
             return true;
         }
 
@@ -504,7 +509,7 @@ class AuthorizationEngine
             return static::hasLicenseAccess($targetModel, $user);
         }
 
-        if (!$user->org_id) {
+        if (! $user->org_id) {
             return false;
         }
 

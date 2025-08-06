@@ -13,30 +13,30 @@ class ApiKeyMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         $startTime = microtime(true);
-        
+
         $token = $this->getTokenFromRequest($request);
-        
-        if (!$token) {
+
+        if (! $token) {
             return response()->json([
                 'error' => 'API key required',
-                'message' => 'Please provide a valid API key in the Authorization header'
+                'message' => 'Please provide a valid API key in the Authorization header',
             ], 401);
         }
 
         $accessToken = PersonalAccessToken::findToken($token);
-        
-        if (!$accessToken) {
+
+        if (! $accessToken) {
             return response()->json([
                 'error' => 'Invalid API key',
-                'message' => 'The provided API key is invalid'
+                'message' => 'The provided API key is invalid',
             ], 401);
         }
 
         // Check if token is active
-        if (!$accessToken->is_active) {
+        if (! $accessToken->is_active) {
             return response()->json([
                 'error' => 'API key disabled',
-                'message' => 'This API key has been disabled'
+                'message' => 'This API key has been disabled',
             ], 401);
         }
 
@@ -44,23 +44,23 @@ class ApiKeyMiddleware
         if ($accessToken->expires_at && $accessToken->expires_at->isPast()) {
             return response()->json([
                 'error' => 'API key expired',
-                'message' => 'This API key has expired'
+                'message' => 'This API key has expired',
             ], 401);
         }
 
         // Check IP restrictions
-        if ($accessToken->allowed_ips && !$this->isIpAllowed($request->ip(), $accessToken->allowed_ips)) {
+        if ($accessToken->allowed_ips && ! $this->isIpAllowed($request->ip(), $accessToken->allowed_ips)) {
             return response()->json([
                 'error' => 'IP not allowed',
-                'message' => 'Your IP address is not authorized to use this API key'
+                'message' => 'Your IP address is not authorized to use this API key',
             ], 403);
         }
 
         // Check origin restrictions
-        if ($accessToken->allowed_origins && !$this->isOriginAllowed($request->header('Origin'), $accessToken->allowed_origins)) {
+        if ($accessToken->allowed_origins && ! $this->isOriginAllowed($request->header('Origin'), $accessToken->allowed_origins)) {
             return response()->json([
                 'error' => 'Origin not allowed',
-                'message' => 'Your origin is not authorized to use this API key'
+                'message' => 'Your origin is not authorized to use this API key',
             ], 403);
         }
 
@@ -81,8 +81,8 @@ class ApiKeyMiddleware
     private function getTokenFromRequest(Request $request): ?string
     {
         $header = $request->header('Authorization');
-        
-        if (!$header || !str_starts_with($header, 'Bearer ')) {
+
+        if (! $header || ! str_starts_with($header, 'Bearer ')) {
             return null;
         }
 
@@ -96,6 +96,7 @@ class ApiKeyMiddleware
                 return true;
             }
         }
+
         return false;
     }
 
@@ -106,12 +107,13 @@ class ApiKeyMiddleware
         }
 
         [$subnet, $mask] = explode('/', $range);
+
         return (ip2long($ip) & ~((1 << (32 - $mask)) - 1)) === ip2long($subnet);
     }
 
     private function isOriginAllowed(?string $origin, array $allowedOrigins): bool
     {
-        if (!$origin) {
+        if (! $origin) {
             return false;
         }
 
@@ -137,7 +139,7 @@ class ApiKeyMiddleware
     private function getLoggableRequestData(Request $request): array
     {
         $data = $request->except(['password', 'password_confirmation', 'token', 'api_key']);
-        
+
         // Limit the size of logged data
         $jsonData = json_encode($data);
         if (strlen($jsonData) > 1000) {

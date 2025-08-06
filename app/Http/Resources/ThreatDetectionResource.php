@@ -47,8 +47,8 @@ class ThreatDetectionResource extends BaseResource
                     'ip_address' => $pattern['ip_address'],
                     'count' => $pattern['type'] === 'brute_force' ? $pattern['attempts'] : $pattern['total_requests'],
                     'description' => $pattern['type'] === 'brute_force'
-                        ? "Multiple authentication failures detected from this IP"
-                        : "Scanning multiple endpoints for vulnerabilities",
+                        ? 'Multiple authentication failures detected from this IP'
+                        : 'Scanning multiple endpoints for vulnerabilities',
                     'timeframe' => 'Last 24 hours',
                     'first_seen' => now()->subHours(24)->toISOString(),
                     'last_seen' => now()->toISOString(),

@@ -22,7 +22,7 @@ return new class extends Migration
             $table->boolean('is_active')->default(true)->after('allowed_origins');
             $table->string('key_type', 20)->default('api')->after('is_active'); // api, webhook, integration
             $table->json('metadata')->nullable()->after('key_type');
-            
+
             $table->foreign('organization_id')->references('id')->on('organizations')->onDelete('cascade');
             $table->index(['organization_id', 'is_active']);
             $table->index(['key_type', 'is_active']);
@@ -38,7 +38,7 @@ return new class extends Migration
             $table->dropForeign(['organization_id']);
             $table->dropIndex(['organization_id', 'is_active']);
             $table->dropIndex(['key_type', 'is_active']);
-            
+
             $table->dropColumn([
                 'description',
                 'organization_id',
@@ -49,7 +49,7 @@ return new class extends Migration
                 'allowed_origins',
                 'is_active',
                 'key_type',
-                'metadata'
+                'metadata',
             ]);
         });
     }

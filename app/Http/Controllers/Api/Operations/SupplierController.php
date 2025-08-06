@@ -1,11 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api\Operations;
 
-use App\Constants\ErrorMessages;
-use App\Constants\HttpStatus;
-use App\Constants\SuccessMessages;
 use App\Http\Controllers\Api\BaseController;
+use App\Http\Middleware\ApiResponseMiddleware;
 use App\Http\Requests\SupplierRequest;
 use App\Http\Resources\SupplierResource;
 use App\Services\SupplierService;
@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 class SupplierController extends BaseController
 {
     public function __construct(
-        private SupplierService $supplierService,
+        private readonly SupplierService $supplierService,
     ) {}
 
     /**
@@ -25,20 +25,28 @@ class SupplierController extends BaseController
     {
         if ($request->get('type') === 'relationships') {
             $filters = $this->supplierService->processItemSupplierParams($request->all());
-            $relationships = $this->supplierService->getItemSuppliers($filters);
+            $relationshipsQuery = $this->supplierService->getItemSuppliers($filters);
+            $totalCount = $relationshipsQuery->count();
 
-            return $this->successResponse(
+            $relationships = $this->paginated($relationshipsQuery, $request);
+
+            return ApiResponseMiddleware::listResponse(
                 SupplierResource::collection($relationships),
-                SuccessMessages::RESOURCE_RETRIEVED,
+                'supplier_relationship',
+                $totalCount
             );
         }
 
         $filters = $this->supplierService->processRequestParams($request->all());
-        $suppliers = $this->supplierService->getFiltered($filters);
+        $suppliersQuery = $this->supplierService->getFiltered($filters);
+        $totalCount = $suppliersQuery->count();
 
-        return $this->successResponse(
+        $suppliers = $this->paginated($suppliersQuery, $request);
+
+        return ApiResponseMiddleware::listResponse(
             SupplierResource::collection($suppliers),
-            SuccessMessages::RESOURCE_RETRIEVED,
+            'supplier',
+            $totalCount
         );
     }
 
@@ -48,25 +56,21 @@ class SupplierController extends BaseController
     public function store(SupplierRequest $request): JsonResponse
     {
         if ($request->get('type') === 'relationship' || $request->has('item_id')) {
-            try {
-                $relationship = $this->supplierService->createItemSupplier($request->validated());
+            $relationship = $this->supplierService->createItemSupplier($request->validated());
 
-                return $this->successResponse(
-                    new SupplierResource($relationship),
-                    SuccessMessages::RESOURCE_CREATED,
-                    HttpStatus::HTTP_CREATED,
-                );
-            } catch (\Exception $e) {
-                return $this->errorResponse($e->getMessage(), HttpStatus::HTTP_CONFLICT);
-            }
+            return ApiResponseMiddleware::createResponse(
+                new SupplierResource($relationship),
+                'supplier_relationship',
+                $relationship->toArray()
+            );
         }
 
         $supplier = $this->supplierService->create($request->validated());
 
-        return $this->successResponse(
+        return ApiResponseMiddleware::createResponse(
             new SupplierResource($supplier),
-            SuccessMessages::RESOURCE_CREATED,
-            HttpStatus::HTTP_CREATED,
+            'supplier',
+            $supplier->toArray()
         );
     }
 
@@ -75,35 +79,17 @@ class SupplierController extends BaseController
      */
     public function show(Request $request, string $id): JsonResponse
     {
-        try {
-            if ($request->get('type') === 'relationship') {
-                $relationship = $this->supplierService->findItemSupplierById($id);
+        if ($request->get('type') === 'relationship') {
+            $relationship = $this->supplierService->findItemSupplierById((int) $id);
 
-                if (! $relationship) {
-                    return $this->errorResponse(ErrorMessages::NOT_FOUND, HttpStatus::HTTP_NOT_FOUND);
-                }
-
-                return $this->successResponse(
-                    new SupplierResource($relationship),
-                    SuccessMessages::RESOURCE_RETRIEVED,
-                );
-            }
-
-            // return supplier
-            $with = $request->get('with') ? explode(',', $request->get('with')) : [];
-            $supplier = $this->supplierService->findById($id, ['*'], $with);
-
-            if (! $supplier) {
-                return $this->errorResponse(ErrorMessages::NOT_FOUND, HttpStatus::HTTP_NOT_FOUND);
-            }
-
-            return $this->successResponse(
-                new SupplierResource($supplier),
-                SuccessMessages::RESOURCE_RETRIEVED,
-            );
-        } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), HttpStatus::HTTP_INTERNAL_SERVER_ERROR);
+            return ApiResponseMiddleware::success(new SupplierResource($relationship));
         }
+
+        // return supplier
+        $with = $request->get('with') ? explode(',', $request->get('with')) : [];
+        $supplier = $this->supplierService->findById($id, ['*'], $with);
+
+        return ApiResponseMiddleware::success(new SupplierResource($supplier));
     }
 
     /**
@@ -111,25 +97,23 @@ class SupplierController extends BaseController
      */
     public function update(SupplierRequest $request, string $id): JsonResponse
     {
-        try {
-            if ($request->get('type') === 'relationship') {
-                $relationship = $this->supplierService->updateItemSupplier($id, $request->validated());
+        if ($request->get('type') === 'relationship') {
+            $relationship = $this->supplierService->updateItemSupplier((int) $id, $request->validated());
 
-                return $this->successResponse(
-                    new SupplierResource($relationship),
-                    SuccessMessages::RESOURCE_UPDATED,
-                );
-            }
-
-            $supplier = $this->supplierService->update($id, $request->validated());
-
-            return $this->successResponse(
-                new SupplierResource($supplier),
-                SuccessMessages::RESOURCE_UPDATED,
+            return ApiResponseMiddleware::updateResponse(
+                new SupplierResource($relationship),
+                'supplier_relationship',
+                $relationship->toArray()
             );
-        } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), HttpStatus::HTTP_NOT_FOUND);
         }
+
+        $supplier = $this->supplierService->update($id, $request->validated());
+
+        return ApiResponseMiddleware::updateResponse(
+            new SupplierResource($supplier),
+            'supplier',
+            $supplier->toArray()
+        );
     }
 
     /**
@@ -137,19 +121,16 @@ class SupplierController extends BaseController
      */
     public function destroy(Request $request, string $id): JsonResponse
     {
-        try {
-            if ($request->get('type') === 'relationship') {
-                $this->supplierService->deleteItemSupplier($id);
-            } else {
-                $this->supplierService->delete($id);
-            }
+        if ($request->get('type') === 'relationship') {
+            $relationship = $this->supplierService->findItemSupplierById((int) $id);
+            $this->supplierService->deleteItemSupplier((int) $id);
 
-            return $this->successResponse(
-                null,
-                SuccessMessages::RESOURCE_DELETED,
-            );
-        } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), HttpStatus::HTTP_NOT_FOUND);
+            return ApiResponseMiddleware::deleteResponse('supplier_relationship', $relationship->toArray());
+        } else {
+            $supplier = $this->supplierService->findById($id);
+            $this->supplierService->delete($id);
+
+            return ApiResponseMiddleware::deleteResponse('supplier', $supplier->toArray());
         }
     }
 }

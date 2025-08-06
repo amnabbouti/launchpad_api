@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\EntityId;
 use Illuminate\Http\Request;
 
 class LocationResource extends BaseResource
@@ -11,6 +12,7 @@ class LocationResource extends BaseResource
         $data = [
             'id' => $this->public_id,
             'org_id' => $this->org_id,
+            'parent_id' => $this->parent_id ? EntityId::getPublicId($this->parent_id, 'location', $this->org_id) : null,
             'name' => $this->name,
             'code' => $this->code,
             'path' => $this->path,
@@ -20,7 +22,7 @@ class LocationResource extends BaseResource
             'updated_at' => $this->updated_at,
             'organization' => $this->whenLoaded('organization', fn() => new OrganizationResource($this->organization)),
             'children' => $this->whenLoaded('childrenRecursive', fn() => LocationResource::collection($this->childrenRecursive)),
-            'items' => $this->whenLoaded('items', fn() => ItemResource::collection($this->items)),
+            'items' => $this->whenLoaded('items', fn() => ItemResource::collection($this->items)) ?? null,
         ];
 
         return $this->addCommonData($data, $request);

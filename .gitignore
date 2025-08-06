@@ -28,10 +28,14 @@ yarn-error.log
 .env.testing
 .env.local
 /docker
-
+.ddev/config.yaml
 .vemto_settings
 /.ddev
+
 package-lock.json
 composer.lock
 /tests
 /scripts
+./dist
+/.phpunit
+/.phpunit.xml

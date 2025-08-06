@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Constants\AppConstants;
 use App\Traits\HasAttachments;
 use App\Traits\HasOrganizationScope;
 use App\Traits\HasPublicId;
@@ -57,8 +58,8 @@ class Supplier extends Model
     public static function rules(): array
     {
         return [
-            'name' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255',
+            'name' => 'required|string|max:'.AppConstants::NAME_MAX_LENGTH,
+            'email' => 'nullable|email|max:'.AppConstants::EMAIL_MAX_LENGTH,
             'phone' => 'nullable|string|max:50',
         ];
     }

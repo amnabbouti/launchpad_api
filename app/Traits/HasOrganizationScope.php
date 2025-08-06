@@ -56,6 +56,7 @@ trait HasOrganizationScope
     public function canAccess(string $action): bool
     {
         $resource = static::getResourceName();
+
         return AuthorizationEngine::can($action, $resource, $this);
     }
 
@@ -64,7 +65,7 @@ trait HasOrganizationScope
     {
         $user = AuthorizationEngine::getCurrentUser();
 
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -79,7 +80,8 @@ trait HasOrganizationScope
     protected static function getResourceName(): string
     {
         $className = class_basename(static::class);
-        return strtolower($className) . 's';
+
+        return strtolower($className).'s';
     }
 
     // Skip authorization for auth routes and console commands
@@ -101,4 +103,4 @@ trait HasOrganizationScope
             ))
             || app()->runningInConsole();
     }
-} 
+}

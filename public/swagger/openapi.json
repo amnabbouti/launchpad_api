@@ -1442,7 +1442,7 @@
             "type": "string",
             "enum": [
               "abstract",
-              "bulk",
+              "standard",
               "serialized"
             ],
             "example": "serialized",
@@ -1456,11 +1456,11 @@
             "type": "string",
             "enum": [
               "abstract",
-              "bulk",
+              "standard",
               "serialized"
             ],
             "example": "serialized",
-            "description": "Abstract: No tracking, Bulk: Track by quantity, Serialized: Track individual items"
+            "description": "Abstract: No tracking, Standard: Track by quantity, Serialized: Track individual items with serial numbers"
           },
           "price": {
             "type": "number",
@@ -1689,7 +1689,7 @@
             "type": "string",
             "enum": [
               "abstract",
-              "bulk",
+              "standard",
               "serialized"
             ],
             "example": "serialized"
@@ -5425,7 +5425,7 @@
           "Item Locations"
         ],
         "summary": "Create a new item location",
-        "description": "Assign an item to a location with a specific quantity. This tracks the distribution of items across multiple storage locations. When an item is first assigned to a location, its tracking mode may change from 'abstract' to 'bulk'.",
+        "description": "Assign an item to a location with a specific quantity. This tracks the distribution of items across multiple storage locations. When an item is first assigned to a location, its tracking mode may change from 'abstract' to 'standard'.",
         "operationId": "createItemLocation",
         "security": [
           {
@@ -5928,7 +5928,7 @@
               "type": "string",
               "enum": [
                 "abstract",
-                "bulk",
+                "standard",
                 "serialized"
               ]
             },
@@ -8133,7 +8133,7 @@
           {
             "name": "with",
             "in": "query",
-            "description": "Include related models (comma-separated). For suppliers: items, itemSuppliers, stocks. For relationships: organization, item, supplier",
+            "description": "Include related models (comma-separated). For suppliers: items, itemSuppliers, batches. For relationships: organization, item, supplier",
             "required": false,
             "schema": {
               "type": "string"
@@ -8403,7 +8403,7 @@
           {
             "name": "with",
             "in": "query",
-            "description": "Include related models (comma-separated). For suppliers: items, itemSuppliers, stocks. For relationships: organization, item, supplier",
+            "description": "Include related models (comma-separated). For suppliers: items, itemSuppliers, batches. For relationships: organization, item, supplier",
             "required": false,
             "schema": {
               "type": "string"

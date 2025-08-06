@@ -1,10 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
+use App\Constants\ErrorMessages;
 use App\Models\Location;
-use Illuminate\Database\Eloquent\Collection;
+use App\Models\Organization;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use InvalidArgumentException;
 
 class LocationService extends BaseService
 {
@@ -19,14 +24,13 @@ class LocationService extends BaseService
     /**
      * Get filtered locations for the current organization.
      */
-    public function getFiltered(array $filters = []): Collection
+    public function getFiltered(array $filters = []): Builder
     {
         $query = $this->getQuery();
 
-        // Apply filters
-        $query->when($filters['name'] ?? null, fn($q, $value) => $q->where('name', 'like', "%{$value}%"))
-            ->when($filters['code'] ?? null, fn($q, $value) => $q->where('code', 'like', "%{$value}%"))
-            ->when($filters['description'] ?? null, fn($q, $value) => $q->where('description', 'like', "%{$value}%"))
+        $query->when($filters['name'] ?? null, fn($q, $value) => $q->where('name', 'like', "%$value%"))
+            ->when($filters['code'] ?? null, fn($q, $value) => $q->where('code', 'like', "%$value%"))
+            ->when($filters['description'] ?? null, fn($q, $value) => $q->where('description', 'like', "%$value%"))
             ->when(isset($filters['is_active']), fn($q) => $q->where('is_active', $filters['is_active']))
             ->when(isset($filters['parent_id']), function ($q) use ($filters) {
                 if ($filters['parent_id'] === 'null' || $filters['parent_id'] === null) {
@@ -37,10 +41,17 @@ class LocationService extends BaseService
             })
             ->when($filters['with'] ?? null, fn($q, $relations) => $q->with($relations));
 
-        // Load nested children
-        $query->with('childrenRecursive');
+        if ($filters['hierarchy'] ?? true) {
+            if (in_array('items', $filters['with'] ?? [])) {
+                $query->with(['childrenRecursive.items', 'childrenRecursive' => function ($query) {
+                    $query->with('childrenRecursive.items');
+                }]);
+            } else {
+                $query->with('childrenRecursive');
+            }
+        }
 
-        return $query->get();
+        return $query;
     }
 
     /**
@@ -48,7 +59,6 @@ class LocationService extends BaseService
      */
     public function createLocation(array $data): Model
     {
-        // Apply business rules and validation
         $data = $this->applyLocationBusinessRules($data);
         $this->validateLocationBusinessRules($data);
 
@@ -69,13 +79,12 @@ class LocationService extends BaseService
      */
     public function update($id, array $data): Model
     {
-        // Apply business rules and validation
-        $data = $this->applyLocationBusinessRules($data, $id);
+        $data = $this->applyLocationBusinessRules($data);
         $this->validateLocationBusinessRules($data, $id);
 
-        $location = $this->findById($id);
+//        $location = $this->findById($id);
 
-        // Update the path for hierarchical locations if parent changed
+        // Update the path for hierarchical locations if the parent changed
         if (isset($data['parent_id'])) {
             if (! empty($data['parent_id'])) {
                 $parent = $this->findById($data['parent_id']);
@@ -89,75 +98,14 @@ class LocationService extends BaseService
     }
 
     /**
-     * Get locations with their related items.
-     */
-    public function getWithItems(): Collection
-    {
-        return $this->getQuery()
-            ->with('items')
-            ->get();
-    }
-
-    /**
-     * Get only active locations.
-     */
-    public function getActive(): Collection
-    {
-        return $this->getQuery()
-            ->where('is_active', true)
-            ->get();
-    }
-
-    /**
-     * Get locations by parent.
-     */
-    public function getByParent(int $parentId): Collection
-    {
-        return $this->getQuery()
-            ->where('parent_id', $parentId)
-            ->get();
-    }
-
-    /**
-     * Get locations by code.
-     */
-    public function getByCode(string $code): Collection
-    {
-        return $this->getQuery()
-            ->where('code', $code)
-            ->get();
-    }
-
-    /**
-     * Get locations with nested children
-     */
-    public function getWithNestedChildren(): Collection
-    {
-        return $this->getQuery()
-            ->whereNull('parent_id')
-            ->with('childrenRecursive')
-            ->get();
-    }
-
-    /**
      * Get a single location with its full hierarchy.
      */
     public function findWithHierarchy($id): Model
     {
         $location = $this->findById($id);
         $location->load('childrenRecursive');
-        return $location;
-    }
 
-    /**
-     * Get root locations with full nested hierarchy.
-     */
-    public function getRootLocationsWithHierarchy(): Collection
-    {
-        return $this->getQuery()
-            ->whereNull('parent_id')
-            ->with('childrenRecursive')
-            ->get();
+        return $location;
     }
 
     /**
@@ -165,7 +113,7 @@ class LocationService extends BaseService
      */
     public function processRequestParams(array $params): array
     {
-        // Validate parameters against whitelist
+        // Validate parameters against the allowlist
         $this->validateParams($params);
 
         return [
@@ -174,6 +122,7 @@ class LocationService extends BaseService
             'description' => $this->toString($params['description'] ?? null),
             'is_active' => $this->toBool($params['is_active'] ?? null),
             'parent_id' => $this->toInt($params['parent_id'] ?? null),
+            'hierarchy' => $this->toBool($params['hierarchy'] ?? true),
             'with' => $this->processWithParameter($params['with'] ?? null),
         ];
     }
@@ -184,17 +133,37 @@ class LocationService extends BaseService
     protected function getAllowedParams(): array
     {
         return array_merge(parent::getAllowedParams(), [
-            'org_id', 'name', 'code', 'description', 'is_active', 'parent_id',
+            'org_id',
+            'name',
+            'code',
+            'description',
+            'is_active',
+            'parent_id',
+            'hierarchy',
         ]);
+    }
+
+    /**
+     * Get valid relations for eager loading.
+     */
+    protected function getValidRelations(): array
+    {
+        return [
+            'organization',
+            'parent',
+            'children',
+            'childrenRecursive',
+            'items',
+        ];
     }
 
     /**
      * Apply business rules for location operations.
      */
-    private function applyLocationBusinessRules(array $data, $locationId = null): array
+    private function applyLocationBusinessRules(array $data): array
     {
-        // Set default active status if not provided
-        if (!isset($data['is_active'])) {
+        // Set the default active status if not provided
+        if (! isset($data['is_active'])) {
             $data['is_active'] = true;
         }
 
@@ -206,47 +175,46 @@ class LocationService extends BaseService
      */
     private function validateLocationBusinessRules(array $data, $locationId = null): void
     {
-        // Validate required fields
         if (empty($data['name'])) {
-            throw new \InvalidArgumentException('The location name is required and cannot be empty');
+            throw new InvalidArgumentException(__(ErrorMessages::LOCATION_NAME_REQUIRED));
         }
 
         if (empty($data['code'])) {
-            throw new \InvalidArgumentException('The location code is required and cannot be empty');
+            throw new InvalidArgumentException(__(ErrorMessages::LOCATION_CODE_REQUIRED));
         }
 
         if (empty($data['org_id'])) {
-            throw new \InvalidArgumentException('Organization ID is required');
+            throw new InvalidArgumentException(__(ErrorMessages::ORG_REQUIRED));
         }
 
         // Validate organization exists
-        $organization = \App\Models\Organization::find($data['org_id']);
-        if (!$organization) {
-            throw new \InvalidArgumentException('The specified organization does not exist');
+        $organization = Organization::find($data['org_id']);
+        if (! $organization) {
+            throw new InvalidArgumentException(__(ErrorMessages::INVALID_ORG));
         }
 
         // Validate code uniqueness within organization
         $query = Location::where('code', $data['code'])
-                         ->where('org_id', $data['org_id']);
-        
+            ->where('org_id', $data['org_id']);
+
         if ($locationId) {
             $query->where('id', '!=', $locationId);
         }
-        
+
         if ($query->exists()) {
-            throw new \InvalidArgumentException('This location code already exists in your organization');
+            throw new InvalidArgumentException(__(ErrorMessages::LOCATION_CODE_EXISTS));
         }
 
         // Validate parent location exists if provided
-        if (isset($data['parent_id']) && !empty($data['parent_id'])) {
+        if (! empty($data['parent_id'])) {
             $parent = Location::find($data['parent_id']);
-            if (!$parent) {
-                throw new \InvalidArgumentException('The selected parent location does not exist in your organization');
+            if (! $parent) {
+                throw new InvalidArgumentException(__(ErrorMessages::LOCATION_PARENT_NOT_EXISTS));
             }
 
             // Prevent circular references
             if ($locationId && $data['parent_id'] == $locationId) {
-                throw new \InvalidArgumentException('A location cannot be its own parent');
+                throw new InvalidArgumentException(__(ErrorMessages::LOCATION_CIRCULAR_REFERENCE));
             }
         }
     }

@@ -75,7 +75,7 @@ class Location extends Model
     protected static function booted(): void
     {
         static::created(function ($location) {
-            $path = ($location->parent->path ?? '/').$location->id.'/';
+            $path = ($location->parent->path ?? '/') . $location->id . '/';
             $location->path = $path;
             $location->saveQuietly();
         });

@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Constants\ValidationMessages;
+
 class MaintenanceDetailRequest extends BaseRequest
 {
     /**
@@ -25,12 +27,12 @@ class MaintenanceDetailRequest extends BaseRequest
     public function messages(): array
     {
         return [
-            'maintenance_condition_id.required' => 'The maintenance condition is required',
-            'maintenance_condition_id.exists' => 'The selected maintenance condition is invalid',
-            'maintenance_id.required' => 'The maintenance record is required',
-            'maintenance_id.exists' => 'The selected maintenance record is invalid',
-            'value.required' => 'The value is required',
-            'value.numeric' => 'The value must be a number',
+            'maintenance_condition_id.required' => __(ValidationMessages::MAINTENANCE_CONDITION_FIELD_REQUIRED),
+            'maintenance_condition_id.exists' => __(ValidationMessages::MAINTENANCE_CONDITION_NOT_FOUND),
+            'maintenance_id.required' => __(ValidationMessages::MAINTENANCE_FIELD_REQUIRED),
+            'maintenance_id.exists' => __(ValidationMessages::MAINTENANCE_NOT_FOUND),
+            'value.required' => __(ValidationMessages::MAINTENANCE_DETAIL_VALUE_REQUIRED),
+            'value.numeric' => __(ValidationMessages::MAINTENANCE_DETAIL_VALUE_NUMERIC),
         ];
     }
 }

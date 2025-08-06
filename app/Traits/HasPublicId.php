@@ -2,8 +2,11 @@
 
 namespace App\Traits;
 
+use App\Models\EntityId;
 use App\Services\EntityIdService;
+use Exception;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Log;
 
 trait HasPublicId
 {
@@ -20,7 +23,7 @@ trait HasPublicId
             $model->entityId()?->delete();
         });
     }
-    
+
     /**
      * Generate public ID
      */
@@ -35,13 +38,14 @@ trait HasPublicId
                 $orgId = $model->id;
             }
             // For global entities (plans, licenses) that don't have org_id - use 0
-            elseif (!isset($model->org_id) || $model->org_id === null) {
+            elseif (! isset($model->org_id) || $model->org_id === null) {
                 // Skip public ID generation for super admin users
                 if ($entityType === 'user') {
-                    \Log::info('Skipping public ID generation for super admin user', [
+                    Log::info('Skipping public ID generation for super admin user', [
                         'user_id' => $model->id,
-                        'email' => $model->email ?? 'unknown'
+                        'email' => $model->email ?? 'unknown',
                     ]);
+
                     return;
                 }
                 // For other global entities like plans, use org_id = 0
@@ -53,12 +57,12 @@ trait HasPublicId
             }
 
             $entityIdService->generatePublicId($orgId, $entityType, $model->id);
-        } catch (\Exception $e) {
-            \Log::warning('Failed to generate public ID', [
+        } catch (Exception $e) {
+            Log::warning('Failed to generate public ID', [
                 'model' => get_class($model),
                 'model_id' => $model->id,
                 'org_id' => $orgId ?? $model->org_id ?? 'unknown',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
         }
     }
@@ -70,6 +74,7 @@ trait HasPublicId
     {
         // can be overridden in each model
         $className = class_basename(static::class);
+
         return strtolower($className);
     }
 
@@ -78,7 +83,7 @@ trait HasPublicId
      */
     public function entityId(): HasOne
     {
-        return $this->hasOne(\App\Models\EntityId::class, 'entity_internal_id')
+        return $this->hasOne(EntityId::class, 'entity_internal_id')
             ->where('entity_type', static::getEntityType());
     }
 
@@ -108,9 +113,9 @@ trait HasPublicId
      */
     public static function findByPublicId(string $publicId, ?int $orgId): ?static
     {
-        $entityId = \App\Models\EntityId::findByPublicId($publicId, $orgId);
+        $entityId = EntityId::findByPublicId($publicId, $orgId);
 
-        if (!$entityId || $entityId->entity_type !== static::getEntityType()) {
+        if (! $entityId || $entityId->entity_type !== static::getEntityType()) {
             return null;
         }
 
@@ -127,10 +132,10 @@ trait HasPublicId
      */
     public function scopeByPublicId($query, string $publicId, ?int $orgId)
     {
-        $entityId = \App\Models\EntityId::findByPublicId($publicId, $orgId);
+        $entityId = EntityId::findByPublicId($publicId, $orgId);
 
-        if (!$entityId || $entityId->entity_type !== static::getEntityType()) {
-            return $query->whereRaw('1 = 0'); 
+        if (! $entityId || $entityId->entity_type !== static::getEntityType()) {
+            return $query->whereRaw('1 = 0');
         }
 
         $query = $query->where('id', $entityId->entity_internal_id);

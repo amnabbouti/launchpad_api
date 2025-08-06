@@ -4,14 +4,14 @@ use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Route;
 
 // API Documentation
-Route::get('/', fn() => response()->file(public_path('dist/docs.html')));
+Route::get('/', fn () => response()->file(public_path('dist/docs.html')));
 
-Route::get('/docs', fn() => response()->file(public_path('dist/docs.html')));
+Route::get('/docs', fn () => response()->file(public_path('dist/docs.html')));
 
 Route::get('/assets/{file}', function ($file) {
     $path = public_path("dist/assets/{$file}");
 
-    if (!file_exists($path)) {
+    if (! file_exists($path)) {
         return response()->json(['error' => 'Asset not found'], 404);
     }
 

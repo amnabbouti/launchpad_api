@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Constants\AppConstants;
 use Illuminate\Foundation\Http\FormRequest;
 
 class PlanRequest extends FormRequest
@@ -15,10 +16,10 @@ class PlanRequest extends FormRequest
      * Validation rules for Plan operations.
      * Plans are global resources managed by super admin.
      */
-    protected function getValidationRules(): array
+    public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:' . AppConstants::NAME_MAX_LENGTH,
             'price' => 'required|numeric|min:0',
             'user_limit' => 'nullable|integer|min:1',
             'features' => 'nullable|array',
