@@ -12,8 +12,6 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            // These columns were for Cashier on users; not needed in licenses-only model
-            // Leaving migration empty to avoid adding columns
         });
     }
 
