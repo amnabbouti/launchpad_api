@@ -43,7 +43,7 @@ class LicensePaymentService
                     'invoice_id' => $existingInvoiceId,
                     'hosted_invoice_url' => $invoice->hosted_invoice_url ?? ($meta['hosted_invoice_url'] ?? null),
                     'status' => $invoice->status,
-                    'paid' => (bool) ($invoice->paid ?? false),
+                    'paid' => $invoice->paid ?? false,
                 ],
             ];
         }
@@ -87,7 +87,7 @@ class LicensePaymentService
             ],
         ]);
 
-        // Create invoice with metadata and send
+        // Create an invoice with metadata and send
         $invoice = $this->stripe->invoices->create([
             'customer' => $organization->stripe_id,
             'collection_method' => 'send_invoice',

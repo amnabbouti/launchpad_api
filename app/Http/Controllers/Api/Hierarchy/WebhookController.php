@@ -28,8 +28,7 @@ class WebhookController extends BaseController
         $eventType = $payload['type'] ?? '';
 
         $result = match ($eventType) {
-            'invoice.payment_succeeded' => $this->webhookService->handlePaymentSucceeded($payload),
-            'invoice.paid' => $this->webhookService->handlePaymentSucceeded($payload),
+            'invoice.payment_succeeded', 'invoice.paid' => $this->webhookService->handlePaymentSucceeded($payload),
             'invoice.payment_failed' => $this->webhookService->handlePaymentFailed($payload),
             default => true
         };
