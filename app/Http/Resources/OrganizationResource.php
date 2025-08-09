@@ -9,7 +9,7 @@ class OrganizationResource extends BaseResource
     public function toArray(Request $request): array
     {
         $data = [
-            'id' => $this->public_id,
+            'id' => $this->when(auth()->user()->isSuperAdmin(), $this->id, $this->public_id),
             'name' => $this->name,
             'email' => $this->email,
             'telephone' => $this->telephone,
@@ -26,10 +26,6 @@ class OrganizationResource extends BaseResource
             'timezone' => $this->timezone,
             'status' => $this->status,
             'licenses' => LicenseResource::collection($this->licenses),
-            'plan_id' => $this->plan_id,
-            'plan' => $this->plan ? new PlanResource($this->plan) : null,
-            'subscription_starts_at' => $this->subscription_starts_at?->toISOString(),
-            'subscription_ends_at' => $this->subscription_ends_at?->toISOString(),
             'settings' => $this->settings,
             'created_by' => $this->created_by,
             'deleted_at' => $this->deleted_at?->toISOString(),

@@ -2,29 +2,38 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
-
-class LicenseRequest extends FormRequest
+class LicenseRequest extends BaseRequest
 {
-    public function authorize()
+    protected function getValidationRules(): array
     {
-        return true;
-    }
+        // Create vs Update: require minimal fields on update to support status-only transitions
+        if ($this->isMethod('POST')) {
+            return [
+                'org_id' => 'required|exists:organizations,id',
+                'seats' => 'required|integer|min:1',
+                'license_key' => 'nullable|string|max:255',
+                'starts_at' => 'nullable|date',
+                'ends_at' => 'nullable|date|after:starts_at',
+                'status' => 'nullable|string|in:active,inactive,expired,suspended',
+                'price' => 'nullable|numeric|min:0',
+                'name' => 'nullable|string|max:255',
+                'features' => 'nullable|array',
+                'meta' => 'nullable|array',
+            ];
+        }
 
-    /**
-     * Validation rules
-     */
-    public function rules(): array
-    {
+        // PATCH/PUT: allow partial updates (status, seats, etc.)
         return [
-            'organization_id' => 'required|exists:organizations,id',
-            'plan_id' => 'required|exists:plans,id',
-            'seats' => 'required|integer|min:1',
-            'license_key' => 'nullable|string|max:255',
-            'starts_at' => 'required|date',
-            'ends_at' => 'nullable|date|after:starts_at',
-            'status' => 'nullable|string|in:active,inactive,expired,suspended',
-            'meta' => 'nullable|array',
+            'org_id' => 'sometimes|integer|exists:organizations,id',
+            'seats' => 'sometimes|integer|min:1',
+            'license_key' => 'sometimes|string|max:255',
+            'starts_at' => 'sometimes|date|nullable',
+            'ends_at' => 'sometimes|date|after:starts_at|nullable',
+            'status' => 'sometimes|string|in:active,inactive,expired,suspended',
+            'price' => 'sometimes|numeric|min:0|nullable',
+            'name' => 'sometimes|string|max:255|nullable',
+            'features' => 'sometimes|array|nullable',
+            'meta' => 'sometimes|array|nullable',
         ];
     }
 }

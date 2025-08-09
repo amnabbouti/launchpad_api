@@ -49,7 +49,6 @@ class Permissions
         'reports.view' => 'View reports',
         'reports.generate' => 'Generate reports',
         'analytics.view' => 'View analytics',
-        'plans.view' => 'View available plans',
         'licenses.view' => 'View organization licenses',
     ];
 
@@ -65,9 +64,6 @@ class Permissions
         'users.delete.manager' => 'Delete managers',
         'organizations.create' => 'Create new organizations',
         'organizations.billing' => 'Access billing',
-        'plans.create' => 'Create new plans',
-        'plans.update' => 'Update plan definitions',
-        'plans.delete' => 'Delete plans',
         'licenses.create' => 'Create licenses',
         'licenses.update' => 'Update licenses',
         'licenses.delete' => 'Delete licenses',
@@ -94,10 +90,7 @@ class Permissions
         'roles.update' => 'Update roles',
         'roles.delete' => 'Delete roles',
         'roles.system.modify' => 'Modify system roles',
-        'plans.view' => 'View plans',
-        'plans.create' => 'Create new plans',
-        'plans.update' => 'Update plan definitions',
-        'plans.delete' => 'Delete plans',
+        // plans removed
         'licenses.view' => 'View licenses',
         'licenses.create' => 'Create licenses',
         'licenses.update' => 'Update licenses',

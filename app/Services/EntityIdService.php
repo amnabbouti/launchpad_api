@@ -23,6 +23,7 @@ class EntityIdService extends BaseService
         'user' => ['prefix' => 'USR', 'table' => 'users'],
         'status' => ['prefix' => 'STA', 'table' => 'statuses'],
         'organization' => ['prefix' => 'ORG', 'table' => 'organizations'],
+        'license' => ['prefix' => 'LIC', 'table' => 'licenses'],
         'role' => ['prefix' => 'ROL', 'table' => 'roles'],
         'unit_of_measure' => ['prefix' => 'UOM', 'table' => 'unit_of_measures'],
         'item_supplier' => ['prefix' => 'ISU', 'table' => 'item_suppliers'],

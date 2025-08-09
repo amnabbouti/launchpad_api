@@ -19,6 +19,7 @@ use App\Models\MaintenanceCategory;
 use App\Models\MaintenanceCondition;
 use App\Models\MaintenanceDetail;
 use App\Models\Organization;
+use App\Models\License;
 use App\Models\Role;
 use App\Models\Status;
 use App\Models\Supplier;
@@ -89,6 +90,7 @@ class PublicIdResolver
             'STS' => 'status',
             'ROL' => 'role',
             'ORG' => 'organization',
+            'LIC' => 'license',
             'ATT' => 'attachment',
             'MCD' => 'maintenancecondition',
             'MCT' => 'maintenancecategory',
@@ -157,6 +159,7 @@ class PublicIdResolver
             'status' => Status::class,
             'role' => Role::class,
             'organization' => Organization::class,
+            'license' => License::class,
             'attachment' => Attachment::class,
             'maintenancecondition' => MaintenanceCondition::class,
             'maintenancecategory' => MaintenanceCategory::class,

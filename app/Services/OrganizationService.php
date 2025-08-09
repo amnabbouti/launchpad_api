@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Organization;
-use App\Models\Plan;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -81,7 +80,7 @@ class OrganizationService extends BaseService
             ->when($filters['country'] ?? null, fn($q, $value) => $q->where('country', 'like', "%$value%"))
             ->when($filters['status'] ?? null, fn($q, $value) => $q->where('status', $value))
             ->when(isset($filters['is_active']), fn($q) => $q->where('is_active', $filters['is_active']))
-            ->when($filters['plan_id'] ?? null, fn($q, $value) => $q->where('plan_id', $value))
+            // plans removed
             ->when($filters['with'] ?? null, fn($q, $relations) => $q->with($relations));
 
         return $query;
@@ -100,7 +99,7 @@ class OrganizationService extends BaseService
             'country' => $this->toString($params['country'] ?? null),
             'status' => $this->toString($params['status'] ?? null),
             'is_active' => $this->toBool($params['is_active'] ?? null),
-            'plan_id' => $this->toInt($params['plan_id'] ?? null),
+            // plans removed
             'with' => $this->processWithParameter($params['with'] ?? null),
         ];
     }
@@ -117,7 +116,6 @@ class OrganizationService extends BaseService
         // all available relationships
         if ($withParam === 'all') {
             return [
-                'plan',
                 'licenses',
                 'users',
                 'items',
@@ -142,7 +140,6 @@ class OrganizationService extends BaseService
 
         // Define allowed relationships
         $allowedRelations = [
-            'plan',
             'licenses',
             'users',
             'items',
@@ -174,7 +171,7 @@ class OrganizationService extends BaseService
             'country',
             'status',
             'is_active',
-            'plan_id',
+            // plans removed
         ]);
     }
 
@@ -197,7 +194,6 @@ class OrganizationService extends BaseService
             'maintenances',
             'checkInOuts',
             'attachments',
-            'plan',
             'licenses',
         ];
     }
@@ -224,7 +220,7 @@ class OrganizationService extends BaseService
     private function validateOrganizationBusinessRules(array $data): void
     {
         // Validate required fields
-        $requiredFields = ['name', 'email', 'country', 'billing_address', 'tax_id', 'plan_id'];
+        $requiredFields = ['name', 'email', 'country', 'billing_address', 'tax_id'];
 
         foreach ($requiredFields as $field) {
             if (empty($data[$field])) {
@@ -241,24 +237,6 @@ class OrganizationService extends BaseService
         if (! empty($data['website'])) {
             if (! filter_var($data['website'], FILTER_VALIDATE_URL)) {
                 throw new InvalidArgumentException('The website must be a valid URL');
-            }
-        }
-
-        // Validate subscription date relationship
-        if (isset($data['subscription_starts_at']) && isset($data['subscription_ends_at'])) {
-            $startDate = Carbon::parse($data['subscription_starts_at']);
-            $endDate = Carbon::parse($data['subscription_ends_at']);
-
-            if ($endDate->isBefore($startDate)) {
-                throw new InvalidArgumentException('The subscription end date must be after or equal to the subscription start date');
-            }
-        }
-
-        // Validate plan exists
-        if (isset($data['plan_id'])) {
-            $plan = Plan::find($data['plan_id']);
-            if (! $plan) {
-                throw new InvalidArgumentException('The selected plan ID is invalid');
             }
         }
 

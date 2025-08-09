@@ -30,11 +30,8 @@ return new class extends Migration
             $table->string('country')->nullable();
             $table->string('timezone')->nullable();
             $table->string('status')->default('active');
-            $table->unsignedBigInteger('plan_id')->nullable();
-            $table->timestamp('subscription_ends_at')->nullable();
-            $table->timestamp('subscription_starts_at')->nullable();
             $table->json('settings')->nullable();
-            $table->unsignedBigInteger('created_by')->nullable(); // Only the column, no FK
+            $table->unsignedBigInteger('created_by')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

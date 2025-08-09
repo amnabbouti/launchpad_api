@@ -37,7 +37,7 @@ trait HasPublicId
             if ($entityType === 'organization') {
                 $orgId = $model->id;
             }
-            // For global entities (plans, licenses) that don't have org_id - use 0
+            // For global entities without org_id - use 0
             elseif (! isset($model->org_id) || $model->org_id === null) {
                 // Skip public ID generation for super admin users
                 if ($entityType === 'user') {
@@ -48,12 +48,12 @@ trait HasPublicId
 
                     return;
                 }
-                // For other global entities like plans, use org_id = 0
+                // For other global entities
                 $orgId = 0;
             }
             // For organization-scoped entities
             else {
-                $orgId = $model->org_id;
+                $orgId = $model->org_id ?? 0;
             }
 
             $entityIdService->generatePublicId($orgId, $entityType, $model->id);

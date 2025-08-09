@@ -34,11 +34,10 @@ class Organization extends Model
         'country',
         'timezone',
         'status',
-        'plan_id',
-        'subscription_starts_at',
-        'subscription_ends_at',
+        'license_id',
         'settings',
         'created_by',
+        'stripe_id',
     ];
 
     protected static function getEntityType(): string
@@ -49,19 +48,17 @@ class Organization extends Model
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
-        'subscription_starts_at' => 'datetime',
-        'subscription_ends_at' => 'datetime',
         'settings' => 'array',
-        'plan_id' => 'integer',
+        'license_id' => 'integer',
         'created_by' => 'integer',
     ];
 
     /**
-     * The plan this organization is assigned to (direct assignment).
+     * The current license assigned to this organization.
      */
-    public function plan()
+    public function license()
     {
-        return $this->belongsTo(Plan::class);
+        return $this->belongsTo(License::class);
     }
 
     /**
@@ -69,7 +66,7 @@ class Organization extends Model
      */
     public function licenses()
     {
-        return $this->hasMany(License::class);
+        return $this->hasMany(License::class, 'org_id');
     }
 
     /**
@@ -140,31 +137,25 @@ class Organization extends Model
         return $this->hasMany(Attachment::class, 'org_id');
     }
 
-    /**
-     * Total seats from active licenses (started, not expired)
-     */
-    public function activeLicenseSeatCount(): int
-    {
-        $now = now();
-
-        return $this->licenses()
-            ->where('status', 'active')
-            ->where('starts_at', '<=', $now)
-            ->where(function ($q) use ($now) {
-                $q->whereNull('ends_at')->orWhere('ends_at', '>', $now);
-            })
-            ->sum('seats');
-    }
+    // In a one-current-license model, seat checks use current license only
 
     /**
-     * Total available seats = plan user_limit + additional license seats
+     * Total available seats from current license
      */
     public function totalAvailableSeats(): int
     {
-        $planSeats = $this->plan ? $this->plan->user_limit : 0;
-        $licenseSeats = $this->activeLicenseSeatCount();
+        if (! $this->license) {
+            return 0;
+        }
 
-        return $planSeats + $licenseSeats;
+        $license = $this->license;
+        $now = now();
+
+        $isActive = $license->status === 'active'
+            && $license->starts_at && $license->starts_at <= $now
+            && (! $license->ends_at || $license->ends_at > $now);
+
+        return $isActive ? (int) $license->seats : 0;
     }
 
     /**
@@ -181,5 +172,24 @@ class Organization extends Model
     public function hasAvailableSeats(): bool
     {
         return $this->activeUserCount() < $this->totalAvailableSeats();
+    }
+
+    // Cashier-related methods and traits removed
+
+    /**
+     * Does the organization currently have an active license?
+     */
+    public function hasActiveLicense(): bool
+    {
+        if (! $this->license) {
+            return false;
+        }
+
+        $license = $this->license;
+        $now = now();
+
+        return $license->status === 'active'
+            && $license->starts_at && $license->starts_at <= $now
+            && (! $license->ends_at || $license->ends_at > $now);
     }
 }

@@ -31,7 +31,7 @@ yarn-error.log
 .ddev/config.yaml
 .vemto_settings
 /.ddev
-
+./*.ddev
 package-lock.json
 composer.lock
 /tests

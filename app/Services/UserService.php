@@ -22,6 +22,28 @@ class UserService extends BaseService
         parent::__construct($user);
     }
 
+    /**
+     * Base query with correct organization scoping for users.
+     */
+    protected function getQuery(): Builder
+    {
+        $query = $this->model->newQuery();
+        $currentUser = AuthorizationEngine::getCurrentUser();
+
+        // Super admin can see all users
+        if ($currentUser && AuthorizationEngine::isSuperAdmin($currentUser)) {
+            return $query;
+        }
+
+        // Regular users can only see users in their own organization
+        if ($currentUser && $currentUser->org_id) {
+            return $query->where('org_id', $currentUser->org_id);
+        }
+
+        // No organization context
+        return $query->whereRaw('1 = 0');
+    }
+
     // Create a new user with password hashing and role assignment
     public function createUser(array $data): User
     {
@@ -29,10 +51,10 @@ class UserService extends BaseService
         $this->validateUserBusinessRules($data);
         $data = $this->applyUserBusinessRules($data);
 
-        // 🔥 CRITICAL FIX: Check license seat limits before creating user
-        $currentUser = AuthorizationEngine::getCurrentUser();
-        if ($currentUser && $currentUser->org_id) {
-            $organization = Organization::find($currentUser->org_id);
+        // Enforce license seat limits before creating user
+        $targetOrgId = $data['org_id'] ?? AuthorizationEngine::getCurrentUser()?->org_id;
+        if ($targetOrgId) {
+            $organization = Organization::find($targetOrgId);
             if ($organization) {
                 $licenseService = app(LicenseService::class);
                 $licenseService->assertCanAddUser($organization);
@@ -61,6 +83,16 @@ class UserService extends BaseService
 
         if (isset($data['name'])) {
             $this->convertNameToFirstLastName($data);
+        }
+
+        // Disallow changing a user's organization
+        if (array_key_exists('org_id', $data)) {
+            $existing = User::findOrFail($userId);
+            if ((int) $data['org_id'] !== (int) $existing->org_id) {
+                throw new InvalidArgumentException('Users cannot be moved to a different organization');
+            }
+            // If unchanged, drop the field to avoid unintended side effects
+            unset($data['org_id']);
         }
 
         return DB::transaction(fn() => $this->update($userId, $data));

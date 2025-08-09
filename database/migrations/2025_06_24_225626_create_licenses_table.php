@@ -13,19 +13,20 @@ return new class extends Migration
     {
         Schema::create('licenses', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('organization_id');
-            $table->unsignedBigInteger('plan_id');
+            $table->unsignedBigInteger('org_id');
+            $table->string('name');
+            $table->decimal('price', 10, 2)->default(0);
             $table->unsignedInteger('seats')->default(1);
             $table->string('license_key')->unique();
             $table->timestamp('starts_at');
             $table->timestamp('ends_at')->nullable();
-            $table->string('status')->default('active');
+            $table->string('status')->default('inactive');
+            $table->json('features')->nullable();
             $table->json('meta')->nullable();
             $table->timestamps();
 
-            $table->foreign('organization_id')->references('id')->on('organizations')->onDelete('cascade');
-            $table->foreign('plan_id')->references('id')->on('plans')->onDelete('cascade');
-            $table->index(['organization_id', 'plan_id']);
+            $table->foreign('org_id')->references('id')->on('organizations')->onDelete('cascade');
+            $table->index('org_id');
         });
     }
 

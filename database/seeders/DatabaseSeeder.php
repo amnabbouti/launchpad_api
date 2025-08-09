@@ -422,7 +422,7 @@ class DatabaseSeeder extends Seeder
                     if (! $item->suppliers()->where('supplier_id', $supplier->id)->exists()) {
                         $item->suppliers()->attach($supplier->id, [
                             'org_id' => $org->id,
-                            'supplier_part_number' => 'SP'.rand(1000, 9999),
+                            'supplier_part_number' => 'SP' . rand(1000, 9999),
                             'price' => $item->price * (rand(80, 95) / 100),
                             'lead_time_days' => rand(1, 30),
                             'is_preferred' => rand(0, 1),
@@ -519,7 +519,7 @@ class DatabaseSeeder extends Seeder
                     $maintenanceRecord = Maintenance::create([
                         'org_id' => $org->id,
                         'is_repair' => $isRepair,
-                        'remarks' => $isRepair ? 'Repair needed for '.$item->name : 'Routine maintenance for '.$item->name,
+                        'remarks' => $isRepair ? 'Repair needed for ' . $item->name : 'Routine maintenance for ' . $item->name,
                         'cost' => rand(50, 500),
                         'date_expected_back_from_maintenance' => $expectedBackDate,
                         'date_back_from_maintenance' => $actualBackDate,
@@ -542,31 +542,102 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        // Seed at least one Plan
-        $plan = \App\Models\Plan::firstOrCreate([
-            'name' => 'Pro',
-        ], [
-            'name' => 'Pro',
-            'price' => 99.99,
-            'user_limit' => 25,
-            'features' => json_encode(['priority_support', 'advanced_reports', 'api_access']),
-            'interval' => 'monthly',
-            'is_active' => true,
-        ]);
+        // --- Minimal seeding for a second organization (org 2) ---
+        $org2 = Organization::skip(1)->first();
+        if ($org2) {
+            // Ensure at least one employee user in org 2
+            $org2User = User::factory()->create([
+                'first_name' => 'Org2',
+                'last_name' => 'Employee',
+                'email' => 'employee.org2@example.com',
+                'password' => Hash::make('password'),
+                'org_id' => $org2->id,
+                'org_role' => 'employee',
+                'role_id' => $employeeRole->id,
+            ]);
 
-        // Seed at least one License for the org and plan
-        $license = \App\Models\License::firstOrCreate([
-            'organization_id' => $org->id,
-            'plan_id' => $plan->id,
-        ], [
-            'organization_id' => $org->id,
-            'plan_id' => $plan->id,
-            'seats' => 10,
-            'license_key' => strtoupper(uniqid('LIC-')),
-            'starts_at' => now()->subMonth(),
-            'ends_at' => now()->addYear(),
-            'status' => 'active',
-            'meta' => json_encode(['note' => 'Seeded license']),
-        ]);
+            // Ensure minimal units for org 2
+            $org2Each = UnitOfMeasure::firstOrCreate([
+                'name' => 'Each',
+                'org_id' => $org2->id,
+            ], [
+                'code' => 'ea',
+                'symbol' => 'ea',
+                'type' => UnitOfMeasure::TYPE_QUANTITY,
+                'is_active' => true,
+            ]);
+
+            // Ensure simple categories for org 2
+            $org2Root = Category::firstOrCreate(['name' => 'Root', 'parent_id' => null, 'org_id' => $org2->id]);
+            $org2Electronics = Category::firstOrCreate(['name' => 'Electronics', 'parent_id' => $org2Root->id, 'org_id' => $org2->id]);
+
+            // Ensure a default location for org 2
+            $org2Location = Location::firstOrCreate(['name' => 'HQ', 'code' => 'HQ', 'is_active' => true, 'parent_id' => null, 'org_id' => $org2->id]);
+
+            // Ensure a supplier for org 2
+            $org2Supplier = Supplier::firstOrCreate([
+                'name' => 'Org2 Supplier',
+                'org_id' => $org2->id,
+            ], [
+                'code' => 'ORG2SUP',
+                'email' => 'supplier.org2@example.com',
+                'phone' => '555-999-8888',
+                'is_active' => true,
+            ]);
+
+            // Seed a couple of items for org 2
+            $org2ItemsData = [
+                [
+                    'name' => 'Org2 Laptop',
+                    'code' => 'O2-COMP-001',
+                    'description' => 'Laptop for Org2',
+                    'price' => 1100.00,
+                    'unit_id' => $org2Each->id,
+                    'category_id' => $org2Electronics->id,
+                    'user_id' => $org2User->id,
+                    'tracking_mode' => 'serialized',
+                    'is_active' => true,
+                ],
+                [
+                    'name' => 'Org2 Mouse',
+                    'code' => 'O2-ACC-001',
+                    'description' => 'Accessory for Org2',
+                    'price' => 20.00,
+                    'unit_id' => $org2Each->id,
+                    'category_id' => $org2Electronics->id,
+                    'user_id' => $org2User->id,
+                    'tracking_mode' => 'standard',
+                    'is_active' => true,
+                ],
+            ];
+
+            $org2ItemModels = [];
+            foreach ($org2ItemsData as $data) {
+                $data['org_id'] = $org2->id;
+                $org2ItemModels[] = Item::firstOrCreate(
+                    ['code' => $data['code']],
+                    $data
+                );
+            }
+
+            // Attach to default location and supplier
+            foreach ($org2ItemModels as $item) {
+                if (! $item->locations()->where('location_id', $org2Location->id)->exists()) {
+                    $item->locations()->attach($org2Location->id, [
+                        'org_id' => $org2->id,
+                        'quantity' => $item->isStandard() ? 5 : 1,
+                    ]);
+                }
+                if (! $item->suppliers()->where('supplier_id', $org2Supplier->id)->exists()) {
+                    $item->suppliers()->attach($org2Supplier->id, [
+                        'org_id' => $org2->id,
+                        'supplier_part_number' => 'O2SP' . rand(1000, 9999),
+                        'price' => $item->price * 0.9,
+                        'lead_time_days' => 7,
+                        'is_preferred' => true,
+                    ]);
+                }
+            }
+        }
     }
 }

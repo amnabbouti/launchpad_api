@@ -384,7 +384,7 @@ class AuthorizationEngine
      */
     public static function applyOrganizationScope(Builder $query, string $resource): Builder
     {
-        if (in_array($resource, ['users', 'roles', 'plans'])) {
+        if (in_array($resource, ['users', 'roles', 'organizations'])) {
             return $query;
         }
 
@@ -402,7 +402,7 @@ class AuthorizationEngine
         }
 
         if ($resource === 'licenses') {
-            return $query->where($query->getModel()->getTable() . '.organization_id', $user->org_id);
+            return $query->where($query->getModel()->getTable() . '.org_id', $user->org_id);
         }
 
         return $query->where($query->getModel()->getTable() . '.org_id', $user->org_id);
@@ -501,9 +501,7 @@ class AuthorizationEngine
             return true;
         }
 
-        if ($resource === 'plans') {
-            return true;
-        }
+        // No special handling for plans in licenses-only model
 
         if ($resource === 'licenses') {
             return static::hasLicenseAccess($targetModel, $user);
@@ -527,6 +525,14 @@ class AuthorizationEngine
     {
         if ($resource === 'users' && $action === 'delete' && $targetModel && $targetModel->id === $user->id) {
             return false;
+        }
+
+        // Only managers (of their org) and super admins can list/view licenses
+        if ($resource === 'licenses' && in_array($action, ['view', 'list'])) {
+            if (static::isSuperAdmin($user)) {
+                return true;
+            }
+            return method_exists($user, 'isManager') && $user->isManager();
         }
 
         return true;
@@ -573,6 +579,6 @@ class AuthorizationEngine
             return true;
         }
 
-        return isset($targetLicense->organization_id) && $targetLicense->organization_id === $user->org_id;
+        return isset($targetLicense->org_id) && $targetLicense->org_id === $user->org_id;
     }
 }

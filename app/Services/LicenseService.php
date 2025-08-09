@@ -4,13 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Exceptions\LicenseLimitExceededException;
 use App\Models\License;
 use App\Models\Organization;
-use App\Models\Plan;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class LicenseService extends BaseService
 {
@@ -21,7 +17,7 @@ class LicenseService extends BaseService
 
     /**
      * Create a new license with business rules.
-     * Licenses are organization-scoped resources (organizations purchase/activate plans).
+     * Licenses are organization-scoped resources.
      */
     public function createLicense(array $data): License
     {
@@ -55,12 +51,12 @@ class LicenseService extends BaseService
     /**
      * Get filtered licenses.
      */
-    public function getFiltered(array $filters = []): Collection
+    public function getFiltered(array $filters = []): \Illuminate\Database\Eloquent\Builder
     {
         $query = $this->getQuery();
 
-        $query->when($filters['organization_id'] ?? null, fn($q, $value) => $q->where('organization_id', $value))
-            ->when($filters['plan_id'] ?? null, fn($q, $value) => $q->where('plan_id', $value))
+        $query->when($filters['organization_id'] ?? null, fn($q, $value) => $q->where('org_id', $value))
+            ->when($filters['org_id'] ?? null, fn($q, $value) => $q->where('org_id', $value))
             ->when($filters['status'] ?? null, fn($q, $value) => $q->where('status', $value))
             ->when($filters['active_only'] ?? null, function ($q, $value) {
                 if ($value) {
@@ -89,7 +85,7 @@ class LicenseService extends BaseService
             })
             ->when($filters['with'] ?? null, fn($q, $relations) => $q->with($relations));
 
-        return $query->get();
+        return $query;
     }
 
     /**
@@ -102,44 +98,16 @@ class LicenseService extends BaseService
         }
     }
 
-    /**
-     * Returns true if the organization has at least one active license.
-     */
-    public function hasActiveLicense(Organization $organization): bool
-    {
-        $now = now();
+    
 
-        return $organization->licenses()
-            ->where('status', 'active')
-            ->where('starts_at', '<=', $now)
-            ->where(function ($q) use ($now) {
-                $q->whereNull('ends_at')->orWhere('ends_at', '>', $now);
-            })
-            ->exists();
-    }
-
-    /**
-     * Get all active licenses for the organization.
-     */
-    public function getActiveLicenses(Organization $organization)
-    {
-        $now = now();
-
-        return $organization->licenses()
-            ->where('status', 'active')
-            ->where('starts_at', '<=', $now)
-            ->where(function ($q) use ($now) {
-                $q->whereNull('ends_at')->orWhere('ends_at', '>', $now);
-            })
-            ->get();
-    }
+    
 
     /**
      * Activate a license (set status to active and starts_at to now if not set).
      */
-    public function activateLicense(int $licenseId): License
+    public function activateLicense($licenseIdentifier): License
     {
-        $license = $this->findById($licenseId);
+        $license = $this->resolveLicense($licenseIdentifier);
 
         $updateData = [
             'status' => 'active',
@@ -150,33 +118,81 @@ class LicenseService extends BaseService
             $updateData['starts_at'] = now();
         }
 
-        return $this->updateLicense($licenseId, $updateData);
+        $updated = $this->updateLicense($license->id, $updateData);
+
+        // Ensure this license is assigned as the organization's current license
+        $organization = Organization::find($updated->org_id);
+        if ($organization && $organization->license_id !== $updated->id) {
+            $organization->license_id = $updated->id;
+            $organization->save();
+        }
+
+        return $updated;
     }
 
     /**
      * Suspend a license (set status to suspended).
      */
-    public function suspendLicense(int $licenseId): License
+    public function suspendLicense($licenseIdentifier): License
     {
-        return $this->updateLicense($licenseId, ['status' => 'suspended']);
+        $license = $this->resolveLicense($licenseIdentifier);
+        $updated = $this->updateLicense($license->id, ['status' => 'suspended']);
+
+        // Optional: clear current license pointer if suspended license is assigned
+        $organization = Organization::find($updated->org_id);
+        if ($organization && $organization->license_id === $updated->id) {
+            $organization->license_id = null;
+            $organization->save();
+        }
+
+        return $updated;
     }
 
     /**
      * Expire a license (set status to expired and ends_at to now).
      */
-    public function expireLicense(int $licenseId): License
+    public function expireLicense($licenseIdentifier): License
     {
-        return $this->updateLicense($licenseId, [
+        $license = $this->resolveLicense($licenseIdentifier);
+        $updated = $this->updateLicense($license->id, [
             'status' => 'expired',
             'ends_at' => now(),
         ]);
+
+        // Clear current license pointer if expired license is assigned
+        $organization = Organization::find($updated->org_id);
+        if ($organization && $organization->license_id === $updated->id) {
+            $organization->license_id = null;
+            $organization->save();
+        }
+
+        return $updated;
+    }
+
+    /**
+     * Resolve a license by numeric id, public id, or license_key.
+     */
+    private function resolveLicense($identifier): License
+    {
+        // Try numeric id or public id
+        try {
+            return $this->findById($identifier);
+        } catch (\Throwable $e) {
+            // Fallback to license_key lookup
+        }
+
+        $license = License::where('license_key', (string) $identifier)->first();
+        if (! $license) {
+            throw new \InvalidArgumentException('License not found');
+        }
+
+        return $license;
     }
 
     protected function getAllowedParams(): array
     {
         return array_merge(parent::getAllowedParams(), [
-            'organization_id',
-            'plan_id',
+            'org_id',
             'status',
             'active_only',
             'expired_only',
@@ -187,7 +203,6 @@ class LicenseService extends BaseService
     {
         return [
             'organization',
-            'plan',
         ];
     }
 
@@ -196,8 +211,7 @@ class LicenseService extends BaseService
         $this->validateParams($params);
 
         return [
-            'organization_id' => $this->toInt($params['organization_id'] ?? null),
-            'plan_id' => $this->toInt($params['plan_id'] ?? null),
+            'organization_id' => $this->toInt($params['org_id'] ?? $params['organization_id'] ?? null),
             'status' => $this->toString($params['status'] ?? null),
             'active_only' => $this->toBool($params['active_only'] ?? null),
             'expired_only' => $this->toBool($params['expired_only'] ?? null),
@@ -210,19 +224,14 @@ class LicenseService extends BaseService
      */
     private function applyLicenseBusinessRules(array $data, $licenseId = null): array
     {
-        // Generate a license key if not provided
-        if (! isset($data['license_key']) || empty($data['license_key'])) {
-            $data['license_key'] = $this->generateLicenseKey();
-        }
-
-        // Set default status
-        if (! isset($data['status'])) {
-            $data['status'] = 'active';
-        }
-
-        // Set default seats
-        if (! isset($data['seats'])) {
+        // Set default seats only on create
+        if ($licenseId === null && ! isset($data['seats'])) {
             $data['seats'] = 1;
+        }
+
+        // Default start date to now if not provided
+        if (! isset($data['starts_at']) || empty($data['starts_at'])) {
+            $data['starts_at'] = now();
         }
 
         return $data;
@@ -237,16 +246,8 @@ class LicenseService extends BaseService
 
         // For CREATE operations, validate required fields
         if (!$isUpdate) {
-            if (empty($data['organization_id'])) {
+            if (empty($data['org_id'])) {
                 throw new \InvalidArgumentException('The organization_id field is required');
-            }
-
-            if (empty($data['plan_id'])) {
-                throw new \InvalidArgumentException('The plan_id field is required');
-            }
-
-            if (empty($data['starts_at'])) {
-                throw new \InvalidArgumentException('The starts_at field is required');
             }
         }
 
@@ -256,28 +257,13 @@ class LicenseService extends BaseService
         }
 
         // For both CREATE and UPDATE, validate organization exists if provided
-        if (isset($data['organization_id']) && !Organization::find($data['organization_id'])) {
+        if (isset($data['org_id']) && !Organization::find($data['org_id'])) {
             throw new \InvalidArgumentException('The selected organization does not exist');
         }
 
-        // For both CREATE and UPDATE, validate plan exists and is active if provided
-        if (isset($data['plan_id'])) {
-            $plan = Plan::find($data['plan_id']);
-            if (!$plan) {
-                throw new \InvalidArgumentException('The selected plan does not exist');
-            }
+        // No plan validation in licenses-only model
 
-            if (!$plan->is_active) {
-                throw new \InvalidArgumentException('Cannot create license for inactive plan');
-            }
-
-            // Validate seats against plan user_limit if both are provided
-            if (isset($data['seats']) && $plan->user_limit && $data['seats'] > $plan->user_limit) {
-                throw new \InvalidArgumentException("Seats cannot exceed plan's user limit of {$plan->user_limit}");
-            }
-        }
-
-        // For both CREATE and UPDATE, validate license key uniqueness if provided
+        // For both CREATE and UPDATE, validate license key uniqueness if provided (model auto-generates when absent)
         if (isset($data['license_key'])) {
             $query = License::where('license_key', $data['license_key']);
             if ($licenseId) {
@@ -299,25 +285,5 @@ class LicenseService extends BaseService
         if (isset($data['status']) && !in_array($data['status'], ['active', 'inactive', 'expired', 'suspended'])) {
             throw new \InvalidArgumentException('Invalid status. Must be active, inactive, expired, or suspended');
         }
-    }
-
-    /**
-     * Generate a unique license key.
-     */
-    private function generateLicenseKey(): string
-    {
-        do {
-            $key = 'LIC-' . strtoupper(Str::random(16));
-        } while (License::where('license_key', $key)->exists());
-
-        return $key;
-    }
-
-    /**
-     * Throw license limit exceeded exception.
-     */
-    private function throwLicenseLimitExceeded(): void
-    {
-        throw new LicenseLimitExceededException('Organization has reached its license seat limit');
     }
 }

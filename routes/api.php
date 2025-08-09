@@ -9,9 +9,9 @@ use App\Http\Controllers\Api\Attachment\AttachmentController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Hierarchy\LicenseController;
 use App\Http\Controllers\Api\Hierarchy\OrganizationController;
-use App\Http\Controllers\Api\Hierarchy\PlanController;
 use App\Http\Controllers\Api\Hierarchy\RoleController;
 use App\Http\Controllers\Api\Hierarchy\UserController;
+use App\Http\Controllers\Api\Hierarchy\WebhookController;
 use App\Http\Controllers\Api\Location\ItemLocationController;
 use App\Http\Controllers\Api\Location\LocationController;
 use App\Http\Controllers\Api\Maintenance\MaintenanceCategoryController;
@@ -172,18 +172,15 @@ Route::prefix('v1')->group(function () {
         Route::get('/threats', [ThreatDetectionController::class, 'overview']);
     });
 
-    // Plans routes
-    Route::middleware(['auth:sanctum', VerifyOrganizationAccess::class])->prefix('plans')->group(function () {
-        Route::apiResource('/', PlanController::class, ['as' => 'plans', 'parameters' => ['' => 'plan']])->except(['put']);
-    });
 
-    // Licenses routes
+
+    // Licenses routes (resource + invoice creation)
     Route::middleware(['auth:sanctum', VerifyOrganizationAccess::class])->prefix('licenses')->group(function () {
-        Route::post('/{id}/activate', [LicenseController::class, 'activate']);
-        Route::post('/{id}/suspend', [LicenseController::class, 'suspend']);
-        Route::post('/{id}/expire', [LicenseController::class, 'expire']);
+        Route::post('/{license}/invoice', [LicenseController::class, 'invoice']);
         Route::apiResource('/', LicenseController::class, ['as' => 'licenses', 'parameters' => ['' => 'license']])->except(['put']);
     });
+
+    // Subscription routes removed (Cashier removed)
 
     // Auth routes
     Route::middleware(['session.validation', 'auth:sanctum'])->group(function () {
@@ -196,6 +193,11 @@ Route::prefix('v1')->group(function () {
         Route::post('/logout', [AdminAuthController::class, 'logout']);
         Route::get('/user', [AdminAuthController::class, 'user']);
     });
+});
+
+// Stripe webhooks (outside auth middleware)
+Route::prefix('webhooks')->group(function () {
+    Route::post('/stripe', [WebhookController::class, 'handleWebhook']);
 });
 
 // Fallback route
