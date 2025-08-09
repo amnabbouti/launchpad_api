@@ -36,6 +36,11 @@ package-lock.json
 composer.lock
 /tests
 /scripts
-./dist
 /.phpunit
 /.phpunit.xml
+public/dist/*
+cloudbuild.yaml
+Dockerfile
+database/factories/*
+database/seeders/*
+.gcloudignore
