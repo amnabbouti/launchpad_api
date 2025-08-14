@@ -170,6 +170,7 @@
   "err.license.already_suspended": "Licentie is al opgeschort",
   "err.license.already_expired": "Licentie is al verlopen",
   "succ.organization.list": "U heeft :count organisaties in uw systeem",
+  "err.license.required": "Uw organisatie heeft geen actieve licentie. Koop of activeer een abonnement om verder te gaan.",
   "succ.organization.list.empty": "Geen organisaties gevonden in uw systeem",
   "succ.organization.created": "Organisatie succesvol aangemaakt",
   "succ.organization.updated": "Organisatie succesvol bijgewerkt",

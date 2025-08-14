@@ -1,77 +1,70 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
-use App\Http\Controllers\Api\Admin\AdminAuthController;
-use App\Http\Controllers\Api\Admin\ApiKeyController;
-use App\Http\Controllers\Api\Admin\ThreatDetectionController;
-use App\Http\Controllers\Api\Attachment\AttachmentController;
-use App\Http\Controllers\Api\Auth\AuthController;
-use App\Http\Controllers\Api\Hierarchy\LicenseController;
-use App\Http\Controllers\Api\Hierarchy\OrganizationController;
-use App\Http\Controllers\Api\Hierarchy\RoleController;
-use App\Http\Controllers\Api\Hierarchy\UserController;
-use App\Http\Controllers\Api\Hierarchy\WebhookController;
-use App\Http\Controllers\Api\Location\ItemLocationController;
-use App\Http\Controllers\Api\Location\LocationController;
-use App\Http\Controllers\Api\Maintenance\MaintenanceCategoryController;
-use App\Http\Controllers\Api\Maintenance\MaintenanceConditionController;
-use App\Http\Controllers\Api\Maintenance\MaintenanceController;
-use App\Http\Controllers\Api\Maintenance\MaintenanceDetailController;
-use App\Http\Controllers\Api\Operations\CheckInOutController;
-use App\Http\Controllers\Api\Operations\EventsController;
-use App\Http\Controllers\Api\Operations\ItemMovementController;
-use App\Http\Controllers\Api\Operations\StatusController;
-use App\Http\Controllers\Api\Operations\SupplierController;
-use App\Http\Controllers\Api\Stock\BatchController;
-use App\Http\Controllers\Api\Stock\CategoryController;
-use App\Http\Controllers\Api\Stock\ItemController;
-use App\Http\Controllers\Api\Stock\UnitOfMeasureController;
-use App\Http\Controllers\Api\TranslationController;
-use App\Http\Middleware\VerifyOrganizationAccess;
+use App\Http\Controllers\ApiKeyController;
+use App\Http\Controllers\AttachmentController;
+use App\Http\Controllers\Auth\AdminAuthController;
+use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\BatchController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CheckInOutController;
+use App\Http\Controllers\EventsController;
+use App\Http\Controllers\ItemController;
+use App\Http\Controllers\ItemLocationController;
+use App\Http\Controllers\ItemMovementController;
+use App\Http\Controllers\LabelController;
+use App\Http\Controllers\LicenseController;
+use App\Http\Controllers\LocationController;
+use App\Http\Controllers\MaintenanceCategoryController;
+use App\Http\Controllers\MaintenanceConditionController;
+use App\Http\Controllers\MaintenanceController;
+use App\Http\Controllers\MaintenanceDetailController;
+use App\Http\Controllers\OrganizationController;
+use App\Http\Controllers\PrinterController;
+use App\Http\Controllers\PrintJobController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\StatusController;
+use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\ThreatDetectionController;
+use App\Http\Controllers\TranslationController;
+use App\Http\Controllers\UnitOfMeasureController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/get-env-key', fn() => response()->json([
+Route::get('/get-env-key', static fn () => response()->json([
     'apiKey' => env('OPENROUTER_API_KEY', ''),
 ]));
 
-Route::get('/test', fn() => response()->json(['message' => 'API is working']));
+Route::get('/test', static fn () => response()->json(['message' => 'API is working']));
 
-// V1 API Routes
-Route::prefix('v1')->group(function () {
-    // Authentication routes
+Route::prefix('v1')->group(static function (): void {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/admin/login', [AdminAuthController::class, 'login']);
 
-    // Translation routes
     Route::get('/translations/{locale?}', [TranslationController::class, 'getTranslations']);
     Route::get('/translations/{locale}/{key}', [TranslationController::class, 'getTranslation']);
 
-    // Organization routes
-    Route::middleware(['auth:sanctum', VerifyOrganizationAccess::class])->prefix('organizations')->group(function () {
+    Route::middleware(['auth:sanctum'])->prefix('organizations')->group(static function (): void {
         Route::get('/active', [OrganizationController::class, 'getActive']);
         Route::apiResource('/', OrganizationController::class, ['as' => 'organizations', 'parameters' => ['' => 'organization']])->except(['put']);
     });
 
-    // Users routes
-    Route::middleware(['auth:sanctum', VerifyOrganizationAccess::class])->prefix('users')->group(function () {
+    Route::middleware(['auth:sanctum', 'tenancy.context', 'license.active'])->prefix('users')->group(static function (): void {
         Route::apiResource('/', UserController::class, ['as' => 'users', 'parameters' => ['' => 'user']])->except(['put']);
     });
 
-    // Roles routes
-    Route::middleware(['auth:sanctum', VerifyOrganizationAccess::class])->prefix('roles')->group(function () {
+    Route::middleware(['auth:sanctum'])->prefix('roles')->group(static function (): void {
         Route::get('/all', [RoleController::class, 'all']);
         Route::get('/organization', [RoleController::class, 'organizationRoles']);
         Route::apiResource('/', RoleController::class, ['as' => 'roles', 'parameters' => ['' => 'role']])->except(['put']);
     });
 
-    // Locations routes
-    Route::middleware(['auth:sanctum', VerifyOrganizationAccess::class])->prefix('locations')->group(function () {
+    Route::middleware(['auth:sanctum', 'tenancy.context', 'license.active'])->prefix('locations')->group(static function (): void {
         Route::apiResource('/', LocationController::class, ['as' => 'locations', 'parameters' => ['' => 'location']])->except(['put']);
     });
 
-    // Maintenances routes
-    Route::middleware(['auth:sanctum', VerifyOrganizationAccess::class])->prefix('maintenances')->group(function () {
+    Route::middleware(['auth:sanctum', 'tenancy.context', 'license.active'])->prefix('maintenances')->group(static function (): void {
         Route::post('/item', [MaintenanceController::class, 'createItemMaintenance']);
         Route::post('/condition', [MaintenanceController::class, 'createFromCondition']);
 
@@ -83,28 +76,23 @@ Route::prefix('v1')->group(function () {
         Route::patch('/{maintenance}/complete', [MaintenanceController::class, 'completeMaintenance']);
     });
 
-    // Item status routes
-    Route::middleware(['auth:sanctum', VerifyOrganizationAccess::class])->prefix('statuses')->group(function () {
+    Route::middleware(['auth:sanctum', 'tenancy.context', 'license.active'])->prefix('statuses')->group(static function (): void {
         Route::apiResource('/', StatusController::class, ['as' => 'statuses', 'parameters' => ['' => 'status']])->except(['put']);
     });
 
-    // Item routes
-    Route::middleware(['auth:sanctum', VerifyOrganizationAccess::class])->prefix('items')->group(function () {
+    Route::middleware(['auth:sanctum', 'tenancy.context', 'license.active'])->prefix('items')->group(static function (): void {
         Route::apiResource('/', ItemController::class, ['as' => 'items', 'parameters' => ['' => 'item']])->except(['put']);
     });
 
-    // Batches routes
-    Route::middleware(['auth:sanctum', VerifyOrganizationAccess::class])->prefix('batches')->group(function () {
+    Route::middleware(['auth:sanctum', 'tenancy.context', 'license.active'])->prefix('batches')->group(static function (): void {
         Route::apiResource('/', BatchController::class, ['as' => 'batches', 'parameters' => ['' => 'batch']])->except(['put']);
     });
 
-    // ItemLocation routes
-    Route::middleware(['auth:sanctum', VerifyOrganizationAccess::class])->prefix('item-locations')->group(function () {
+    Route::middleware(['auth:sanctum', 'tenancy.context', 'license.active'])->prefix('item-locations')->group(static function (): void {
         Route::apiResource('/', ItemLocationController::class, ['as' => 'item-locations', 'parameters' => ['' => 'id']])->except(['put', 'delete']);
     });
 
-    // Movement routes
-    Route::middleware(['auth:sanctum', VerifyOrganizationAccess::class])->prefix('movements')->group(function () {
+    Route::middleware(['auth:sanctum', 'tenancy.context', 'license.active'])->prefix('movements')->group(static function (): void {
         Route::post('/move', [ItemMovementController::class, 'move']);
         Route::post('/initial-placement', [ItemMovementController::class, 'initialPlacement']);
         Route::post('/adjust-quantity', [ItemMovementController::class, 'adjustQuantity']);
@@ -112,8 +100,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/validate-integrity', [ItemMovementController::class, 'validateIntegrity']);
     });
 
-    // Events routes
-    Route::middleware(['auth:sanctum', VerifyOrganizationAccess::class])->prefix('events')->group(function () {
+    Route::middleware(['auth:sanctum', 'tenancy.context', 'license.active'])->prefix('events')->group(static function (): void {
         Route::get('/', [EventsController::class, 'index'])->name('events.index');
         Route::get('/items/{itemId}', [EventsController::class, 'itemHistory']);
         Route::get('/items/{itemId}/movements', [EventsController::class, 'itemMovements']);
@@ -123,8 +110,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/system', [EventsController::class, 'systemEvents']);
     });
 
-    // CheckInOut routes
-    Route::middleware(['auth:sanctum', VerifyOrganizationAccess::class])->prefix('checks')->group(function () {
+    Route::middleware(['auth:sanctum', 'tenancy.context', 'license.active'])->prefix('checks')->group(static function (): void {
         Route::get('/', [CheckInOutController::class, 'index'])->name('checks.index');
         Route::post('out/{itemLocationId}', [CheckInOutController::class, 'checkout']);
         Route::post('in/{itemLocationId}', [CheckInOutController::class, 'checkin']);
@@ -132,30 +118,37 @@ Route::prefix('v1')->group(function () {
         Route::get('availability/{itemLocationId}', [CheckInOutController::class, 'checkAvailability']);
     });
 
-    // Units of measure routes
-    Route::middleware(['auth:sanctum', VerifyOrganizationAccess::class])->prefix('uom')->group(function () {
+    Route::middleware(['auth:sanctum', 'tenancy.context', 'license.active'])->prefix('uom')->group(static function (): void {
         Route::apiResource('/', UnitOfMeasureController::class, ['as' => 'uom', 'parameters' => ['' => 'unit_of_measure']])->except(['put']);
     });
 
-    // Category routes
-    Route::middleware(['auth:sanctum', VerifyOrganizationAccess::class])->prefix('categories')->group(function () {
+    Route::middleware(['auth:sanctum', 'tenancy.context', 'license.active'])->prefix('categories')->group(static function (): void {
         Route::apiResource('/', CategoryController::class, ['as' => 'categories', 'parameters' => ['' => 'category']])->except(['put']);
     });
 
-    // Suppliers routes
-    Route::middleware(['auth:sanctum', VerifyOrganizationAccess::class])->prefix('suppliers')->group(function () {
+    Route::middleware(['auth:sanctum', 'tenancy.context', 'license.active'])->prefix('suppliers')->group(static function (): void {
         Route::apiResource('/', SupplierController::class, ['as' => 'suppliers', 'parameters' => ['' => 'supplier']])->except(['put']);
     });
 
-    // Attachments routes
-    Route::middleware(['auth:sanctum', VerifyOrganizationAccess::class])->prefix('attachments')->group(function () {
+    Route::middleware(['auth:sanctum', 'tenancy.context', 'license.active'])->prefix('attachments')->group(static function (): void {
         Route::get('/type-options', [AttachmentController::class, 'getTypeOptions']);
         Route::get('/{attachment}/stats', [AttachmentController::class, 'getStats']);
         Route::apiResource('/', AttachmentController::class, ['as' => 'attachments', 'parameters' => ['' => 'attachment']])->except(['put']);
     });
 
-    // API Key Management routes
-    Route::middleware(['auth:sanctum', VerifyOrganizationAccess::class])->prefix('admin/api-keys')->group(function () {
+    Route::middleware(['auth:sanctum', 'tenancy.context', 'license.active'])->prefix('printers')->group(static function (): void {
+        Route::apiResource('/', PrinterController::class, ['as' => 'printers', 'parameters' => ['' => 'printer']])->except(['put']);
+    });
+
+    Route::middleware(['auth:sanctum', 'tenancy.context', 'license.active'])->prefix('printjobs')->group(static function (): void {
+        Route::apiResource('/', PrintJobController::class, ['as' => 'printjobs', 'parameters' => ['' => 'printjob']])->except(['put']);
+    });
+
+    Route::middleware(['auth:sanctum', 'tenancy.context', 'license.active'])->group(static function (): void {
+        Route::post('/labels/generate', [LabelController::class, 'generate']);
+    });
+
+    Route::middleware(['auth:sanctum'])->prefix('admin/api-keys')->group(static function (): void {
         Route::get('/', [ApiKeyController::class, 'index'])->name('admin.api-keys.index');
         Route::post('/', [ApiKeyController::class, 'store']);
         Route::get('/{id}', [ApiKeyController::class, 'show']);
@@ -167,38 +160,24 @@ Route::prefix('v1')->group(function () {
         Route::get('/overview', [ApiKeyController::class, 'overview']);
     });
 
-    // Admin security routes
-    Route::middleware(['auth:sanctum', VerifyOrganizationAccess::class])->prefix('admin/security')->group(function () {
+    Route::middleware(['auth:sanctum'])->prefix('admin/security')->group(static function (): void {
         Route::get('/threats', [ThreatDetectionController::class, 'overview']);
     });
 
-
-
-    // Licenses routes (resource + invoice creation)
-    Route::middleware(['auth:sanctum', VerifyOrganizationAccess::class])->prefix('licenses')->group(function () {
-        Route::post('/{license}/invoice', [LicenseController::class, 'invoice']);
+    Route::middleware(['auth:sanctum', 'tenancy.context'])->prefix('licenses')->group(static function (): void {
+        Route::post('/{id}/invoice', [LicenseController::class, 'invoice']);
         Route::apiResource('/', LicenseController::class, ['as' => 'licenses', 'parameters' => ['' => 'license']])->except(['put']);
     });
 
-    // Subscription routes removed (Cashier removed)
-
-    // Auth routes
-    Route::middleware(['session.validation', 'auth:sanctum'])->group(function () {
+    Route::middleware(['session.validation', 'auth:sanctum'])->group(static function (): void {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/user', [AuthController::class, 'user']);
     });
 
-    // Admin auth routes
-    Route::middleware(['session.validation', 'auth:sanctum'])->prefix('admin')->group(function () {
+    Route::middleware(['session.validation', 'auth:sanctum'])->prefix('admin')->group(static function (): void {
         Route::post('/logout', [AdminAuthController::class, 'logout']);
         Route::get('/user', [AdminAuthController::class, 'user']);
     });
 });
 
-// Stripe webhooks (outside auth middleware)
-Route::prefix('webhooks')->group(function () {
-    Route::post('/stripe', [WebhookController::class, 'handleWebhook']);
-});
-
-// Fallback route
-Route::fallback(fn() => response()->json(['error' => 'API resource not found'], 404));
+Route::fallback(static fn () => response()->json(['error' => 'API resource not found'], 404));

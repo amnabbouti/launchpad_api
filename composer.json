@@ -10,10 +10,14 @@
   "license": "MIT",
   "require": {
     "php": "^8.2",
+    "dompdf/dompdf": "^2.0",
     "laravel/framework": "^12.0",
     "laravel/sanctum": "^4.1",
     "laravel/tinker": "^2.10.1",
-    "stripe/stripe-php": "^16.0"
+    "picqer/php-barcode-generator": "^2.4",
+    "smalot/cups-ipp": "^0.5.0",
+    "stripe/stripe-php": "^16.0",
+    "symfony/uid": "^7.3"
   },
   "require-dev": {
     "fakerphp/faker": "^1.23",
@@ -21,6 +25,8 @@
     "laravel/pint": "^1.22",
     "mockery/mockery": "^1.6",
     "nunomaduro/collision": "^8.6",
+    "nunomaduro/larastan": "^3.0@dev",
+    "phpstan/phpstan": "^2.1",
     "phpunit/phpunit": "^11.5.3"
   },
   "autoload": {
@@ -61,6 +67,39 @@
     ],
     "format": [
       "./vendor/bin/pint"
+    ],
+    "format:check": [
+      "./vendor/bin/pint --test"
+    ],
+    "format:fix": [
+      "./vendor/bin/pint"
+    ],
+    "elegant": [
+      "./vendor/bin/pint --verbose"
+    ],
+    "clean": [
+      "./vendor/bin/pint --test",
+      "./vendor/bin/pint"
+    ],
+    "analyse": [
+      "./vendor/bin/phpstan analyse"
+    ],
+    "analyse:strict": [
+      "./vendor/bin/phpstan analyse --level=8"
+    ],
+    "ide-helper": [
+      "@php artisan ide-helper:generate",
+      "@php artisan ide-helper:models --nowrite",
+      "@php artisan ide-helper:meta"
+    ],
+    "quality": [
+      "@format:check",
+      "@analyse",
+      "@test"
+    ],
+    "quality:fix": [
+      "@format:fix",
+      "@analyse"
     ]
   },
   "extra": {

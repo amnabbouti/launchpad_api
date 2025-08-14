@@ -271,6 +271,7 @@
   "err.license.already_suspended": "Lizenz ist bereits gesperrt",
   "err.license.already_expired": "Lizenz ist bereits abgelaufen",
   "succ.organization.list": "Sie haben :count Organisationen in Ihrem System",
+  "err.license.required": "Ihre Organisation hat keine aktive Lizenz. Bitte kaufen oder aktivieren Sie einen Plan, um fortzufahren.",
   "succ.organization.list.empty": "Keine Organisationen in Ihrem System gefunden",
   "succ.organization.created": "Organisation erfolgreich erstellt",
   "succ.organization.updated": "Organisation erfolgreich aktualisiert",

@@ -170,6 +170,7 @@
   "err.license.already_suspended": "La licencia ya está suspendida",
   "err.license.already_expired": "La licencia ya está expirada",
   "succ.organization.list": "Tienes :count organizaciones en tu sistema",
+  "err.license.required": "Tu organización no tiene una licencia activa. Por favor compra o activa un plan para continuar.",
   "succ.organization.list.empty": "No se encontraron organizaciones en tu sistema",
   "succ.organization.created": "Organización creada exitosamente",
   "succ.organization.updated": "Organización actualizada exitosamente",

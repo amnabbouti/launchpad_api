@@ -338,5 +338,6 @@
   "err.attachment.file_type_invalid": "The file must be a valid type: :allowed_types",
   "err.attachment.entity_required": "The entity this attachment belongs to is required",
   "err.attachment.entity_invalid": "You must specify what entity this attachment belongs to. Use GET /api/attachments/supported-types to see available options",
-  "err.attachment.org_required": "Organization ID is required"
+  "err.attachment.org_required": "Organization ID is required",
+  "err.license.required": "Your organization has no active license. Please purchase or activate a plan to continue."
 }

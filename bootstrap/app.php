@@ -1,16 +1,17 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 use App\Constants\ErrorMessages;
 use App\Http\Middleware\ApiKeyMiddleware;
 use App\Http\Middleware\ApiResponseMiddleware;
+use App\Http\Middleware\EnsureActiveLicense;
 use App\Http\Middleware\ForceJsonResponse;
 use App\Http\Middleware\LogApiUsageMiddleware;
 use App\Http\Middleware\RateLimitMiddleware;
 use App\Http\Middleware\SessionValidation;
 use App\Http\Middleware\SetLocaleMiddleware;
-use App\Http\Middleware\VerifyOrganizationAccess;
+use App\Http\Middleware\TenancyContextMiddleware;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
@@ -27,18 +28,19 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__ . '/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware) {
+    ->withMiddleware(static function (Middleware $middleware): void {
         $middleware->api(prepend: [
             EnsureFrontendRequestsAreStateful::class,
         ]);
 
         $middleware->alias([
-            'api.key' => ApiKeyMiddleware::class,
-            'rate.limit' => RateLimitMiddleware::class,
+            'api.key'            => ApiKeyMiddleware::class,
+            'rate.limit'         => RateLimitMiddleware::class,
             'session.validation' => SessionValidation::class,
-            'org.verify' => VerifyOrganizationAccess::class,
-            'log.usage' => LogApiUsageMiddleware::class,
-            'set.locale' => SetLocaleMiddleware::class,
+            'log.usage'          => LogApiUsageMiddleware::class,
+            'set.locale'         => SetLocaleMiddleware::class,
+            'tenancy.context'    => TenancyContextMiddleware::class,
+            'license.active'     => EnsureActiveLicense::class,
         ]);
 
         // Prepend ForceJsonResponse, SetLocale, SessionValidation, and LogApiUsage to API middleware
@@ -55,37 +57,37 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         // Customize redirect for unauthenticated guests
-        $middleware->redirectGuestsTo(function (Request $request) {
+        $middleware->redirectGuestsTo(static function (Request $request) {
             if ($request->is('api/*')) {
                 return response()->json([
-                    'status' => 'error',
+                    'status'  => 'error',
                     'message' => (__(ErrorMessages::UNAUTHORIZED)),
-                    'data' => null,
+                    'data'    => null,
                 ], 401);
-            } else {
-                return route('login');
             }
+
+            return route('login');
         });
     })
-    ->withExceptions(function (Exceptions $exceptions) {
+    ->withExceptions(static function (Exceptions $exceptions): void {
         // Model Not Found Exception (404)
-        $exceptions->render(function (ModelNotFoundException $e, Request $request) {
+        $exceptions->render(static function (ModelNotFoundException $e, Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
                 return response()->json([
-                    'status' => 'error',
+                    'status'  => 'error',
                     'message' => (__(ErrorMessages::NOT_FOUND)),
-                    'data' => null,
+                    'data'    => null,
                 ], 404);
             }
         });
 
         // Validation Exception (422)
-        $exceptions->render(function (ValidationException $e, Request $request) {
+        $exceptions->render(static function (ValidationException $e, Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
                 return response()->json([
-                    'status' => 'error',
+                    'status'  => 'error',
                     'message' => (__(ErrorMessages::VALIDATION_FAILED)),
-                    'data' => [
+                    'data'    => [
                         'errors' => $e->errors(),
                     ],
                 ], 422);
@@ -93,88 +95,88 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         // Invalid Argument Exception (400/404)
-        $exceptions->render(function (InvalidArgumentException $e, Request $request) {
+        $exceptions->render(static function (InvalidArgumentException $e, Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
                 $message = $e->getMessage() ?: ErrorMessages::VALIDATION_FAILED;
 
                 // Handle resource didn't found cases
                 if (str_contains($message, 'not found')) {
                     return response()->json([
-                        'status' => 'error',
+                        'status'  => 'error',
                         'message' => (__($message)),
-                        'data' => null,
+                        'data'    => null,
                     ], 404);
                 }
 
                 // Handle unknown query parameters
                 if (str_contains($message, 'Unknown query parameter')) {
                     return response()->json([
-                        'status' => 'error',
+                        'status'  => 'error',
                         'message' => (__($message)),
-                        'data' => null,
+                        'data'    => null,
                     ], 400);
                 }
 
                 // Otherwise, return 400 for other validation/argument errors
                 return response()->json([
-                    'status' => 'error',
+                    'status'  => 'error',
                     'message' => (__($message)),
-                    'data' => null,
+                    'data'    => null,
                 ], 400);
             }
         });
 
         // Runtime Exception (500)
-        $exceptions->render(function (RuntimeException $e, Request $request) {
+        $exceptions->render(static function (RuntimeException $e, Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
                 return response()->json([
-                    'status' => 'error',
+                    'status'  => 'error',
                     'message' => (__(ErrorMessages::SERVER_ERROR)),
-                    'data' => null,
+                    'data'    => null,
                 ], 500);
             }
         });
 
         // Authentication exceptions (401)
-        $exceptions->render(function (AuthenticationException $e, Request $request) {
+        $exceptions->render(static function (AuthenticationException $e, Request $request) {
             if ($request->is('api/*')) {
                 return response()->json([
-                    'status' => 'error',
+                    'status'  => 'error',
                     'message' => (__(ErrorMessages::UNAUTHORIZED)),
-                    'data' => null,
+                    'data'    => null,
                 ], 401);
             }
         });
 
         // Unauthorized Access Exception (403)
-        $exceptions->render(function (\App\Exceptions\UnauthorizedAccessException $e, Request $request) {
+        $exceptions->render(static function (App\Exceptions\UnauthorizedAccessException $e, Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
                 return response()->json([
-                    'status' => 'error',
+                    'status'  => 'error',
                     'message' => $e->getMessage() ?: (__(ErrorMessages::FORBIDDEN)),
-                    'data' => null,
+                    'data'    => null,
                 ], 403);
             }
         });
 
         // General Exception fallback (500)
-        $exceptions->render(function (Exception $e, Request $request) {
+        $exceptions->render(static function (Exception $e, Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
                 if (
-                    $e instanceof InvalidArgumentException ||
-                    $e instanceof RuntimeException ||
-                    $e instanceof AuthenticationException
+                    $e instanceof InvalidArgumentException
+                    || $e instanceof RuntimeException
+                    || $e instanceof AuthenticationException
                 ) {
-                    return null;
+                    return;
                 }
 
                 return response()->json([
-                    'status' => 'error',
+                    'status'  => 'error',
                     'message' => (__(ErrorMessages::SERVER_ERROR)),
-                    'data' => null,
+                    'data'    => null,
                 ], 500);
             }
         });
 
-        $exceptions->shouldRenderJsonWhen(fn(Request $request, Throwable $e) => $request->is('api/*') || $request->expectsJson());
+        $exceptions->shouldRenderJsonWhen(static fn (Request $request, Throwable $e) => $request->is('api/*') || $request->expectsJson());
     })->create();

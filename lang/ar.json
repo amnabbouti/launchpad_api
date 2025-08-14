@@ -170,6 +170,7 @@
   "err.license.already_suspended": "الترخيص معلق بالفعل",
   "err.license.already_expired": "انتهت صلاحية الترخيص بالفعل",
   "succ.organization.list": "لديك :count منظمات في نظامك",
+  "err.license.required": "مؤسستك ليس لديها ترخيص نشط. يرجى شراء أو تفعيل خطة للمتابعة.",
   "succ.organization.list.empty": "لم يتم العثور على منظمات في نظامك",
   "succ.organization.created": "تم إنشاء المنظمة بنجاح",
   "succ.organization.updated": "تم تحديث المنظمة بنجاح",
