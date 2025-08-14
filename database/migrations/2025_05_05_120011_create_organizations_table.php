@@ -1,18 +1,26 @@
 <?php
 
+declare(strict_types = 1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void {
+        Schema::dropIfExists('organizations');
+    }
+
     /**
      * Run the migrations.
      */
-    public function up(): void
-    {
-        Schema::create('organizations', function (Blueprint $table) {
-            $table->id();
+    public function up(): void {
+        Schema::create('organizations', static function (Blueprint $table): void {
+            $table->uuid('id');
+            $table->primary('id');
             $table->string('name');
             $table->string('email')->nullable();
             $table->string('telephone')->nullable();
@@ -30,18 +38,10 @@ return new class extends Migration
             $table->string('country')->nullable();
             $table->string('timezone')->nullable();
             $table->string('status')->default('active');
-            $table->json('settings')->nullable();
-            $table->unsignedBigInteger('created_by')->nullable();
+            $table->jsonb('settings')->nullable();
+            $table->uuid('created_by')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('organizations');
     }
 };

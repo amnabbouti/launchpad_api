@@ -1,19 +1,27 @@
 <?php
 
+declare(strict_types = 1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void {
+        Schema::dropIfExists('licenses');
+    }
+
     /**
      * Run the migrations.
      */
-    public function up(): void
-    {
-        Schema::create('licenses', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('org_id');
+    public function up(): void {
+        Schema::create('licenses', static function (Blueprint $table): void {
+            $table->uuid('id');
+            $table->primary('id');
+            $table->foreignUuid('org_id')->constrained('organizations')->cascadeOnDelete();
             $table->string('name');
             $table->decimal('price', 10, 2)->default(0);
             $table->unsignedInteger('seats')->default(1);
@@ -21,20 +29,11 @@ return new class extends Migration
             $table->timestamp('starts_at');
             $table->timestamp('ends_at')->nullable();
             $table->string('status')->default('inactive');
-            $table->json('features')->nullable();
-            $table->json('meta')->nullable();
+            $table->jsonb('features')->nullable();
+            $table->jsonb('meta')->nullable();
             $table->timestamps();
 
-            $table->foreign('org_id')->references('id')->on('organizations')->onDelete('cascade');
             $table->index('org_id');
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('licenses');
     }
 };

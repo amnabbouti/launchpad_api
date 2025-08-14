@@ -1,17 +1,24 @@
 <?php
 
+declare(strict_types = 1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void {
+        Schema::dropIfExists('api_key_usage');
+    }
+
     /**
      * Run the migrations.
      */
-    public function up(): void
-    {
-        Schema::create('api_key_usage', function (Blueprint $table) {
+    public function up(): void {
+        Schema::create('api_key_usage', static function (Blueprint $table): void {
             $table->id();
             $table->unsignedBigInteger('token_id');
             $table->string('endpoint')->nullable();
@@ -28,13 +35,5 @@ return new class extends Migration
             $table->index(['token_id', 'usage_date']);
             $table->index('endpoint');
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('api_key_usage');
     }
 };

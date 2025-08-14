@@ -1,54 +1,29 @@
 <?php
 
+declare(strict_types = 1);
+
 use App\Constants\Permissions;
 use App\Services\AuthorizationEngine;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
-return new class extends Migration
-{
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
-    {
-        // Get system roles from AuthorizationEngine for basic info
-        $systemRoles = AuthorizationEngine::getSystemRoles();
-
-        foreach ($systemRoles as $slug => $roleData) {
-            // Get actual forbidden permissions from Permissions constants
-            $forbiddenPermissions = Permissions::getSystemRoleForbiddenPermissions($slug);
-
-            DB::table('roles')
-                ->where('slug', $slug)
-                ->update([
-                    'title' => $roleData['title'],
-                    'description' => $roleData['description'],
-                    'forbidden' => json_encode($forbiddenPermissions),
-                    'org_id' => null,
-                    'is_system' => true,
-                    'updated_at' => now(),
-                ]);
-        }
-    }
-
+return new class extends Migration {
     /**
      * Reverse the migrations.
      */
-    public function down(): void
-    {
+    public function down(): void {
         // Revert to a basic system roles state (this is rarely used but should be functional)
         $basicRoles = [
             'super_admin' => [
-                'title' => 'Super Administrator',
+                'title'       => 'Super Administrator',
                 'description' => 'Full system access - can manage everything',
-                'forbidden' => [],
-                'is_system' => true,
+                'forbidden'   => [],
+                'is_system'   => true,
             ],
             'manager' => [
-                'title' => 'Manager',
+                'title'       => 'Manager',
                 'description' => 'Organization manager',
-                'forbidden' => [
+                'forbidden'   => [
                     'users.delete.self',
                     'organizations.delete',
                     'users.promote.super_admin',
@@ -63,9 +38,9 @@ return new class extends Migration
                 'is_system' => true,
             ],
             'employee' => [
-                'title' => 'Employee',
+                'title'       => 'Employee',
                 'description' => 'Employee with basic access',
-                'forbidden' => [
+                'forbidden'   => [
                     'users.delete.self',
                     'organizations.delete',
                     'users.create',
@@ -94,11 +69,35 @@ return new class extends Migration
             DB::table('roles')
                 ->where('slug', $slug)
                 ->update([
-                    'title' => $roleData['title'],
+                    'title'       => $roleData['title'],
                     'description' => $roleData['description'],
-                    'forbidden' => json_encode($roleData['forbidden']),
-                    'is_system' => $roleData['is_system'],
-                    'updated_at' => now(),
+                    'forbidden'   => json_encode($roleData['forbidden']),
+                    'is_system'   => $roleData['is_system'],
+                    'updated_at'  => now(),
+                ]);
+        }
+    }
+
+    /**
+     * Run the migrations.
+     */
+    public function up(): void {
+        // Get system roles from AuthorizationEngine for basic info
+        $systemRoles = AuthorizationEngine::getSystemRoles();
+
+        foreach ($systemRoles as $slug => $roleData) {
+            // Get actual forbidden permissions from Permissions constants
+            $forbiddenPermissions = Permissions::getSystemRoleForbiddenPermissions($slug);
+
+            DB::table('roles')
+                ->where('slug', $slug)
+                ->update([
+                    'title'       => $roleData['title'],
+                    'description' => $roleData['description'],
+                    'forbidden'   => json_encode($forbiddenPermissions),
+                    'org_id'      => null,
+                    'is_system'   => true,
+                    'updated_at'  => now(),
                 ]);
         }
     }

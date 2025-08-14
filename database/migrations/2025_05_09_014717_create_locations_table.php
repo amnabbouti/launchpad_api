@@ -1,22 +1,30 @@
 <?php
 
+declare(strict_types = 1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void {
+        Schema::dropIfExists('locations');
+    }
+
     /**
      * Run the migrations.
      */
-    public function up(): void
-    {
-        Schema::create('locations', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('org_id')->constrained('organizations')->onDelete('cascade');
+    public function up(): void {
+        Schema::create('locations', static function (Blueprint $table): void {
+            $table->uuid('id');
+            $table->primary('id');
+            $table->foreignUuid('org_id')->constrained('organizations')->cascadeOnDelete();
             $table->string('name', 255);
             $table->string('code', 50);
-            $table->foreignId('parent_id')->nullable()->constrained('locations')->onDelete('set null');
+            $table->foreignUuid('parent_id')->nullable()->constrained('locations')->nullOnDelete();
             $table->string('path', 500)->nullable();
             $table->text('description')->nullable();
             $table->boolean('is_active')->default(true);
@@ -25,13 +33,5 @@ return new class extends Migration
             $table->index('org_id');
             $table->index('parent_id');
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('locations');
     }
 };

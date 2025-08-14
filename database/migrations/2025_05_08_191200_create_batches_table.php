@@ -1,23 +1,31 @@
 <?php
 
+declare(strict_types = 1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void {
+        Schema::dropIfExists('batches');
+    }
+
     /**
      * Run the migrations.
      */
-    public function up(): void
-    {
-        Schema::create('batches', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('org_id')->constrained('organizations')->onDelete('cascade');
+    public function up(): void {
+        Schema::create('batches', static function (Blueprint $table): void {
+            $table->uuid('id');
+            $table->primary('id');
+            $table->foreignUuid('org_id')->constrained('organizations')->cascadeOnDelete();
             $table->string('batch_number')->nullable();
             $table->date('received_date')->nullable();
             $table->date('expiry_date')->nullable();
-            $table->foreignId('supplier_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignUuid('supplier_id')->nullable()->constrained('suppliers')->nullOnDelete();
             $table->decimal('unit_cost', 10, 2)->nullable();
             $table->text('notes')->nullable();
             $table->boolean('is_active')->default(true);
@@ -30,13 +38,5 @@ return new class extends Migration
             $table->index(['org_id', 'expiry_date']);
             $table->index(['org_id', 'supplier_id']);
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('batches');
     }
 };
