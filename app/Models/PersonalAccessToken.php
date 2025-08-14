@@ -1,11 +1,30 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Models;
 
 use Laravel\Sanctum\PersonalAccessToken as SanctumPersonalAccessToken;
 
-class PersonalAccessToken extends SanctumPersonalAccessToken
-{
+class PersonalAccessToken extends SanctumPersonalAccessToken {
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'abilities'            => 'json',
+        'last_used_at'         => 'datetime',
+        'expires_at'           => 'datetime',
+        'allowed_ips'          => 'json',
+        'allowed_origins'      => 'json',
+        'metadata'             => 'json',
+        'is_active'            => 'boolean',
+        'rate_limit_per_hour'  => 'integer',
+        'rate_limit_per_day'   => 'integer',
+        'rate_limit_per_month' => 'integer',
+    ];
+
     /**
      * The attributes that are mass assignable.
      *
@@ -31,36 +50,16 @@ class PersonalAccessToken extends SanctumPersonalAccessToken
     ];
 
     /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
+     * Get the organization that owns this token
      */
-    protected $casts = [
-        'abilities' => 'json',
-        'last_used_at' => 'datetime',
-        'expires_at' => 'datetime',
-        'allowed_ips' => 'json',
-        'allowed_origins' => 'json',
-        'metadata' => 'json',
-        'is_active' => 'boolean',
-        'rate_limit_per_hour' => 'integer',
-        'rate_limit_per_day' => 'integer',
-        'rate_limit_per_month' => 'integer',
-    ];
+    public function organization() {
+        return $this->belongsTo(Organization::class);
+    }
 
     /**
      * Get the usage logs for this token
      */
-    public function usageLogs()
-    {
+    public function usageLogs() {
         return $this->hasMany(ApiKeyUsage::class, 'token_id');
-    }
-
-    /**
-     * Get the organization that owns this token
-     */
-    public function organization()
-    {
-        return $this->belongsTo(Organization::class);
     }
 }

@@ -1,37 +1,34 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Models;
 
-use App\Traits\HasOrganizationScope;
-use App\Traits\HasPublicId;
+use App\Traits\HasUuidv7;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ItemMovement extends Model
-{
+class ItemMovement extends Model {
     use HasFactory;
-    use HasOrganizationScope;
-    use HasPublicId;
+    use HasUuidv7;
 
-    /**
-     * ID prefix for ItemMovements
-     */
-    protected string $publicIdPrefix = 'IMV';
+    public const MOVEMENT_ADJUSTMENT = 'adjustment';
+
+    public const MOVEMENT_INITIAL_PLACEMENT = 'initial_placement';
 
     /**
      * Movement type constants
      */
-    const MOVEMENT_TRANSFER = 'transfer';
+    public const MOVEMENT_TRANSFER = 'transfer';
 
-    const MOVEMENT_INITIAL_PLACEMENT = 'initial_placement';
-
-    const MOVEMENT_ADJUSTMENT = 'adjustment';
-
-    protected static function getEntityType(): string
-    {
-        return 'item_movement';
-    }
+    /**
+     * The attributes that should be cast.
+     */
+    protected $casts = [
+        'moved_at' => 'datetime',
+        'quantity' => 'float',
+    ];
 
     /**
      * The attributes that are mass assignable.
@@ -54,42 +51,30 @@ class ItemMovement extends Model
     ];
 
     /**
-     * The attributes that should be cast.
+     * Get the source location
      */
-    protected $casts = [
-        'moved_at' => 'datetime',
-        'quantity' => 'float',
-    ];
+    public function fromLocation(): BelongsTo {
+        return $this->belongsTo(Location::class, 'from_location_id');
+    }
 
     /**
      * Get the item that was moved
      */
-    public function item(): BelongsTo
-    {
+    public function item(): BelongsTo {
         return $this->belongsTo(Item::class);
-    }
-
-    /**
-     * Get the source location
-     */
-    public function fromLocation(): BelongsTo
-    {
-        return $this->belongsTo(Location::class, 'from_location_id');
     }
 
     /**
      * Get the destination location
      */
-    public function toLocation(): BelongsTo
-    {
+    public function toLocation(): BelongsTo {
         return $this->belongsTo(Location::class, 'to_location_id');
     }
 
     /**
      * Get the user who moved the item
      */
-    public function user(): BelongsTo
-    {
+    public function user(): BelongsTo {
         return $this->belongsTo(User::class);
     }
 }

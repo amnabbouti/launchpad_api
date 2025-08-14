@@ -1,22 +1,31 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Models;
 
 use App\Constants\AppConstants;
 use App\Traits\HasAttachments;
-use App\Traits\HasOrganizationScope;
-use App\Traits\HasPublicId;
+use App\Traits\HasUuidv7;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-class Supplier extends Model
-{
+class Supplier extends Model {
     use HasAttachments;
     use HasFactory;
-    use HasOrganizationScope;
-    use HasPublicId;
+    use HasUuidv7;
+
+    protected $appends = [
+        'active',
+    ];
+
+    protected $casts = [
+        'is_active'  => 'boolean',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
 
     protected $fillable = [
         'org_id',
@@ -35,54 +44,34 @@ class Supplier extends Model
         'is_active',
     ];
 
-    protected $casts = [
-        'is_active' => 'boolean',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-    ];
-
-    protected static function getEntityType(): string
-    {
-        return 'supplier';
-    }
-
-    protected $appends = [
-        'active',
-    ];
-
     protected $hidden = [
         'created_at',
         'updated_at',
     ];
 
-    public static function rules(): array
-    {
+    public static function rules(): array {
         return [
-            'name' => 'required|string|max:'.AppConstants::NAME_MAX_LENGTH,
-            'email' => 'nullable|email|max:'.AppConstants::EMAIL_MAX_LENGTH,
+            'name'  => 'required|string|max:' . AppConstants::NAME_MAX_LENGTH,
+            'email' => 'nullable|email|max:' . AppConstants::EMAIL_MAX_LENGTH,
             'phone' => 'nullable|string|max:50',
         ];
     }
 
-    public function getActiveAttribute(): bool
-    {
+    public function getActiveAttribute(): bool {
         return (bool) $this->is_active;
     }
 
-    public function organization(): BelongsTo
-    {
-        return $this->belongsTo(Organization::class, 'org_id');
-    }
-
-    public function items(): BelongsToMany
-    {
+    public function items(): BelongsToMany {
         return $this->belongsToMany(Item::class, 'item_supplier', 'supplier_id', 'item_id')
             ->withPivot('supplier_part_number', 'price', 'lead_time', 'is_preferred')
             ->withTimestamps();
     }
 
-    protected static function booted(): void
-    {
+    public function organization(): BelongsTo {
+        return $this->belongsTo(Organization::class, 'org_id');
+    }
+
+    protected static function booted(): void {
         // Future events can be added here
     }
 }

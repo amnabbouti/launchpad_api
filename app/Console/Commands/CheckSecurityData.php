@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Console\Commands;
 
 use App\Models\ApiKeyUsage;
@@ -8,14 +10,12 @@ use App\Models\UserToken;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
-class CheckSecurityData extends Command
-{
-    protected $signature = 'security:check-data';
-
+final class CheckSecurityData extends Command {
     protected $description = 'Check if security analytics data exists in the database';
 
-    public function handle()
-    {
+    protected $signature = 'security:check-data';
+
+    public function handle() {
         $this->info('🔍 Checking Security Analytics Data...');
         $this->newLine();
 

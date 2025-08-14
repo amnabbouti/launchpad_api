@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Services;
 
@@ -8,19 +8,16 @@ use App\Constants\ErrorMessages;
 use App\Models\ItemSupplier;
 use App\Models\Supplier;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 
-class SupplierService extends BaseService
-{
+class SupplierService extends BaseService {
     protected ItemSupplier $itemSupplierModel;
 
     /**
      * Create a new service instance.
      */
-    public function __construct(Supplier $supplier, ItemSupplier $itemSupplier)
-    {
+    public function __construct(Supplier $supplier, ItemSupplier $itemSupplier) {
         parent::__construct($supplier);
         $this->itemSupplierModel = $itemSupplier;
     }
@@ -28,8 +25,7 @@ class SupplierService extends BaseService
     /**
      * Create a supplier with business logic validation.
      */
-    public function create(array $data): Model
-    {
+    public function create(array $data): Model {
         $data = $this->applySupplierBusinessRules($data);
         $this->validateSupplierBusinessRules($data);
 
@@ -37,57 +33,43 @@ class SupplierService extends BaseService
     }
 
     /**
-     * Update supplier with business logic validation.
+     * Create an item-supplier relationship with business logic validation.
      */
-    public function update($id, array $data): Model
-    {
-        $data = $this->applySupplierBusinessRules($data, $id);
-        $this->validateSupplierBusinessRules($data, $id);
+    public function createItemSupplier(array $data): Model {
+        // Apply business rules and validation
+        $data = $this->applyItemSupplierBusinessRules($data);
+        $this->validateItemSupplierBusinessRules($data);
 
-        return parent::update($id, $data);
+        return $this->itemSupplierModel->create($data);
     }
 
     /**
-     * Get filtered suppliers with optional relationships.
+     * Delete item-supplier relationship.
      */
-    public function getFiltered(array $filters = []): Builder
-    {
-        $query = $this->getQuery();
+    public function deleteItemSupplier(string $id): bool {
+        $itemSupplier = $this->itemSupplierModel->findOrFail($id);
 
-        $query->when($filters['name'] ?? null, fn($q, $value) => $q->where('name', 'like', "%$value%"))
-            ->when($filters['code'] ?? null, fn($q, $value) => $q->where('code', 'like', "%$value%"))
-            ->when($filters['email'] ?? null, fn($q, $value) => $q->where('email', 'like', "%$value%"))
-            ->when($filters['city'] ?? null, fn($q, $value) => $q->where('city', 'like', "%$value%"))
-            ->when($filters['country'] ?? null, fn($q, $value) => $q->where('country', 'like', "%$value%"))
-            ->when(isset($filters['is_active']), fn($q) => $q->where('is_active', $filters['is_active']))
-            ->when($filters['with'] ?? null, fn($q, $relations) => $q->with($relations));
-
-        return $query;
+        return $itemSupplier->delete();
     }
 
     /**
-     * Get filtered item-supplier relationships.
+     * Determine an operation type from request data.
      */
-    public function getItemSuppliers(array $filters = []): Builder
-    {
-        $query = $this->itemSupplierModel->query();
+    public function determineOperationType(array $data): string {
+        // Check for relationship type parameter
+        $type = $data['type'] ?? null;
 
-        $query->when($filters['item_id'] ?? null, fn($q, $id) => $q->where('item_id', $id))
-            ->when($filters['supplier_id'] ?? null, fn($q, $id) => $q->where('supplier_id', $id))
-            ->when(isset($filters['is_preferred']), fn($q) => $q->where('is_preferred', $filters['is_preferred']))
-            ->when($filters['min_price'] ?? null, fn($q, $price) => $q->where('price', '>=', $price))
-            ->when($filters['max_price'] ?? null, fn($q, $price) => $q->where('price', '<=', $price))
-            ->when($filters['currency'] ?? null, fn($q, $currency) => $q->where('currency', $currency))
-            ->when($filters['with'] ?? null, fn($q, $relations) => $q->with($relations));
+        if ($type === 'relationship' || isset($data['item_id'])) {
+            return 'item_supplier_relationship';
+        }
 
-        return $query;
+        return 'supplier';
     }
 
     /**
      * Find an item-supplier relationship by ID.
      */
-    public function findItemSupplierById(int $id, array $with = []): ?Model
-    {
+    public function findItemSupplierById(string $id, array $with = []): ?Model {
         $query = $this->itemSupplierModel->query();
 
         if (! empty($with)) {
@@ -98,47 +80,76 @@ class SupplierService extends BaseService
     }
 
     /**
-     * Create an item-supplier relationship with business logic validation.
+     * Get filtered suppliers with optional relationships.
      */
-    public function createItemSupplier(array $data): Model
-    {
-        // Apply business rules and validation
-        $data = $this->applyItemSupplierBusinessRules($data);
-        $this->validateItemSupplierBusinessRules($data);
+    public function getFiltered(array $filters = []): Builder {
+        $query = $this->getQuery();
 
-        return $this->itemSupplierModel->create($data);
+        $query->when($filters['name'] ?? null, static fn ($q, $value) => $q->where('name', 'like', "%{$value}%"))
+            ->when($filters['code'] ?? null, static fn ($q, $value) => $q->where('code', 'like', "%{$value}%"))
+            ->when($filters['email'] ?? null, static fn ($q, $value) => $q->where('email', 'like', "%{$value}%"))
+            ->when($filters['city'] ?? null, static fn ($q, $value) => $q->where('city', 'like', "%{$value}%"))
+            ->when($filters['country'] ?? null, static fn ($q, $value) => $q->where('country', 'like', "%{$value}%"))
+            ->when(isset($filters['is_active']), static fn ($q) => $q->where('is_active', $filters['is_active']))
+            ->when($filters['with'] ?? null, static fn ($q, $relations) => $q->with($relations));
+
+        return $query;
     }
 
     /**
-     * Update the item-supplier relationship with business logic validation.
+     * Get filtered item-supplier relationships.
      */
-    public function updateItemSupplier(int $id, array $data): Model
-    {
-        // Apply business rules and validation
-        $data = $this->applyItemSupplierBusinessRules($data, $id);
-        $this->validateItemSupplierBusinessRules($data, $id);
+    public function getItemSuppliers(array $filters = []): Builder {
+        $query = $this->itemSupplierModel->query();
 
-        $itemSupplier = $this->itemSupplierModel->findOrFail($id);
-        $itemSupplier->update($data);
+        $query->when($filters['item_id'] ?? null, static fn ($q, $id) => $q->where('item_id', $id))
+            ->when($filters['supplier_id'] ?? null, static fn ($q, $id) => $q->where('supplier_id', $id))
+            ->when(isset($filters['is_preferred']), static fn ($q) => $q->where('is_preferred', $filters['is_preferred']))
+            ->when($filters['min_price'] ?? null, static fn ($q, $price) => $q->where('price', '>=', $price))
+            ->when($filters['max_price'] ?? null, static fn ($q, $price) => $q->where('price', '<=', $price))
+            ->when($filters['currency'] ?? null, static fn ($q, $currency) => $q->where('currency', $currency))
+            ->when($filters['with'] ?? null, static fn ($q, $relations) => $q->with($relations));
 
-        return $itemSupplier->fresh();
+        return $query;
     }
 
     /**
-     * Delete item-supplier relationship.
+     * Process request parameters for item supplier relationships.
      */
-    public function deleteItemSupplier(int $id): bool
-    {
-        $itemSupplier = $this->itemSupplierModel->findOrFail($id);
+    public function processItemSupplierParams(array $params): array {
+        return [
+            'item_id'      => $this->toString($params['item_id'] ?? null),
+            'supplier_id'  => $this->toString($params['supplier_id'] ?? null),
+            'is_preferred' => $this->toBool($params['is_preferred'] ?? null),
+            'min_price'    => isset($params['min_price']) && is_numeric($params['min_price']) ? (float) $params['min_price'] : null,
+            'max_price'    => isset($params['max_price']) && is_numeric($params['max_price']) ? (float) $params['max_price'] : null,
+            'currency'     => $this->toString($params['currency'] ?? null),
+            'with'         => $this->processWithParameter($params['with'] ?? null),
+        ];
+    }
 
-        return $itemSupplier->delete();
+    /**
+     * Process request parameters with validation and type conversion.
+     */
+    public function processRequestParams(array $params): array {
+        // Validate parameters against the allowlist
+        $this->validateParams($params);
+
+        return [
+            'name'      => $this->toString($params['name'] ?? null),
+            'code'      => $this->toString($params['code'] ?? null),
+            'email'     => $this->toString($params['email'] ?? null),
+            'city'      => $this->toString($params['city'] ?? null),
+            'country'   => $this->toString($params['country'] ?? null),
+            'is_active' => $this->toBool($params['is_active'] ?? null),
+            'with'      => $this->processWithParameter($params['with'] ?? null),
+        ];
     }
 
     /**
      * Set a preferred supplier for an item.
      */
-    public function setPreferredSupplier(int $itemId, int $supplierId): bool
-    {
+    public function setPreferredSupplier(string $itemId, string $supplierId): bool {
         // Unset all preferred
         $this->itemSupplierModel->where('item_id', $itemId)
             ->update(['is_preferred' => false]);
@@ -151,45 +162,33 @@ class SupplierService extends BaseService
     }
 
     /**
-     * Process request parameters with validation and type conversion.
+     * Update supplier with business logic validation.
      */
-    public function processRequestParams(array $params): array
-    {
-        // Validate parameters against the allowlist
-        $this->validateParams($params);
+    public function update($id, array $data): Model {
+        $data = $this->applySupplierBusinessRules($data);
+        $this->validateSupplierBusinessRules($data, $id);
 
-        return [
-            'name' => $this->toString($params['name'] ?? null),
-            'code' => $this->toString($params['code'] ?? null),
-            'email' => $this->toString($params['email'] ?? null),
-            'city' => $this->toString($params['city'] ?? null),
-            'country' => $this->toString($params['country'] ?? null),
-            'is_active' => $this->toBool($params['is_active'] ?? null),
-            'with' => $this->processWithParameter($params['with'] ?? null),
-        ];
+        return parent::update($id, $data);
     }
 
     /**
-     * Process request parameters for item supplier relationships.
+     * Update the item-supplier relationship with business logic validation.
      */
-    public function processItemSupplierParams(array $params): array
-    {
-        return [
-            'item_id' => $this->toInt($params['item_id'] ?? null),
-            'supplier_id' => $this->toInt($params['supplier_id'] ?? null),
-            'is_preferred' => $this->toBool($params['is_preferred'] ?? null),
-            'min_price' => isset($params['min_price']) && is_numeric($params['min_price']) ? (float) $params['min_price'] : null,
-            'max_price' => isset($params['max_price']) && is_numeric($params['max_price']) ? (float) $params['max_price'] : null,
-            'currency' => $this->toString($params['currency'] ?? null),
-            'with' => $this->processWithParameter($params['with'] ?? null),
-        ];
+    public function updateItemSupplier(string $id, array $data): Model {
+        // Apply business rules and validation
+        $data = $this->applyItemSupplierBusinessRules($data);
+        $this->validateItemSupplierBusinessRules($data);
+
+        $itemSupplier = $this->itemSupplierModel->findOrFail($id);
+        $itemSupplier->update($data);
+
+        return $itemSupplier->fresh();
     }
 
     /**
      * Get allowed query parameters.
      */
-    protected function getAllowedParams(): array
-    {
+    protected function getAllowedParams(): array {
         return array_merge(parent::getAllowedParams(), [
             'name',
             'code',
@@ -203,50 +202,48 @@ class SupplierService extends BaseService
     /**
      * Get valid relations for the model.
      */
-    protected function getValidRelations(): array
-    {
+    protected function getValidRelations(): array {
         return ['items', 'itemSuppliers', 'stocks'];
     }
 
     /**
-     * Determine an operation type from request data.
+     * Apply business rules for item-supplier relationship operations.
      */
-    public function determineOperationType(array $data): string
-    {
-        // Check for relationship type parameter
-        $type = $data['type'] ?? null;
-
-        if ($type === 'relationship' || isset($data['item_id'])) {
-            return 'item_supplier_relationship';
-        }
-
-        return 'supplier';
+    private function applyItemSupplierBusinessRules(array $data): array {
+        return $data;
     }
 
     /**
      * Apply business rules for supplier operations.
      */
-    private function applySupplierBusinessRules(array $data, $supplierId = null): array
-    {
+    private function applySupplierBusinessRules(array $data): array {
         return $data;
+    }
+
+    /**
+     * Validate business rules for item-supplier relationship operations.
+     */
+    private function validateItemSupplierBusinessRules(array $data): void {
+        if (empty($data['item_id'])) {
+            throw new InvalidArgumentException(__(ErrorMessages::ITEM_REQUIRED));
+        }
+
+        if (empty($data['supplier_id'])) {
+            throw new InvalidArgumentException(__(ErrorMessages::SUPPLIER_REQUIRED));
+        }
     }
 
     /**
      * Validate business rules for supplier operations.
      */
-    private function validateSupplierBusinessRules(array $data, $supplierId = null): void
-    {
-        $user = AuthorizationEngine::getCurrentUser();
-        $orgId = $user->org_id;
-
+    private function validateSupplierBusinessRules(array $data, $supplierId = null): void {
         if (empty($data['name'])) {
             throw new InvalidArgumentException(__(ErrorMessages::SUPPLIER_NAME_REQUIRED));
         }
 
-        // Validate code uniqueness within an organization (if provided)
+        // Validate code uniqueness if provided (RLS handles org scoping)
         if (! empty($data['code'])) {
-            $query = Supplier::where('code', $data['code'])
-                ->where('org_id', $orgId);
+            $query = Supplier::where('code', $data['code']);
 
             if ($supplierId) {
                 $query->where('id', '!=', $supplierId);
@@ -255,28 +252,6 @@ class SupplierService extends BaseService
             if ($query->exists()) {
                 throw new InvalidArgumentException(__(ErrorMessages::SUPPLIER_CODE_EXISTS));
             }
-        }
-    }
-
-    /**
-     * Apply business rules for item-supplier relationship operations.
-     */
-    private function applyItemSupplierBusinessRules(array $data, $relationshipId = null): array
-    {
-        return $data;
-    }
-
-    /**
-     * Validate business rules for item-supplier relationship operations.
-     */
-    private function validateItemSupplierBusinessRules(array $data, $relationshipId = null): void
-    {
-        if (empty($data['item_id'])) {
-            throw new InvalidArgumentException(__(ErrorMessages::ITEM_REQUIRED));
-        }
-
-        if (empty($data['supplier_id'])) {
-            throw new InvalidArgumentException(__(ErrorMessages::SUPPLIER_REQUIRED));
         }
     }
 }

@@ -1,32 +1,30 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Http\Requests;
 
-class AttachmentStatsRequest extends BaseRequest
-{
+class AttachmentStatsRequest extends BaseRequest {
     /**
-     * Validation rules
+     * Custom attributes for validator errors
      */
-    protected function getValidationRules(): array
-    {
-        // No additional validation needed for GET request to fetch stats
-        // The attachment ID is validated in the route parameter
+    public function attributes(): array {
         return [];
     }
 
     /**
      * Error messages
      */
-    public function messages(): array
-    {
+    public function messages(): array {
         return [];
     }
 
     /**
-     * Custom attributes for validator errors
+     * Validation rules
      */
-    public function attributes(): array
-    {
+    protected function getValidationRules(): array {
+        // No additional validation needed for GET request to fetch stats
+        // The attachment ID is validated in the route parameter
         return [];
     }
 }

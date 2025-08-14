@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace App\Services;
 
@@ -11,111 +11,47 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use InvalidArgumentException;
 
-class EventService extends BaseService
-{
-    public function __construct()
-    {
-        parent::__construct(new ItemHistoryEvent);
-    }
+use function in_array;
 
+class EventService extends BaseService {
     public const EVENT_TYPES = [
-        'movement' => 'movement',
-        'check_in' => 'check_in',
-        'check_out' => 'check_out',
-        'maintenance_start' => 'maintenance_start',
-        'maintenance_end' => 'maintenance_end',
-        'status_change' => 'status_change',
+        'movement'            => 'movement',
+        'check_in'            => 'check_in',
+        'check_out'           => 'check_out',
+        'maintenance_start'   => 'maintenance_start',
+        'maintenance_end'     => 'maintenance_end',
+        'status_change'       => 'status_change',
         'quantity_adjustment' => 'quantity_adjustment',
-        'initial_placement' => 'initial_placement',
-        'transfer' => 'transfer',
-        'system_update' => 'system_update',
+        'initial_placement'   => 'initial_placement',
+        'transfer'            => 'transfer',
+        'system_update'       => 'system_update',
     ];
 
-    public function createEvent(
-        string $itemId,
-        string $eventType,
-        string $description,
-        array $metadata = [],
-        ?string $userId = null
-    ): ItemHistoryEvent {
-        if (! in_array($eventType, self::EVENT_TYPES)) {
-            throw new InvalidArgumentException("Invalid event type: $eventType");
-        }
-
-        $itemData = $this->resolvePublicIds(['item_id' => $itemId]);
-        $item = Item::findOrFail($itemData['item_id']);
-
-        $user = null;
-        if ($userId) {
-            $userData = $this->resolvePublicIds(['user_id' => $userId]);
-            $user = User::findOrFail($userData['user_id']);
-        } elseif (Auth::check()) {
-            $user = Auth::user();
-        }
-
-        return ItemHistoryEvent::create([
-            'item_id' => $item->id,
-            'user_id' => $user?->id,
-            'org_id' => $item->org_id,
-            'event_type' => $this->mapEventTypeToEnum($eventType),
-            'old_values' => $metadata['old_values'] ?? null,
-            'new_values' => $metadata['new_values'] ?? null,
-            'reason' => $description,
-        ]);
-    }
-
-    public function createMovementEvent(
-        string $itemId,
-        ?string $fromLocation,
-        string $toLocation,
-        float $oldQuantity,
-        float $newQuantity,
-        string $movementType,
-        ?string $notes = null
-    ): ItemHistoryEvent {
-        $description = $this->buildMovementDescription($fromLocation, $toLocation, $oldQuantity, $newQuantity, $movementType);
-
-        $metadata = [
-            'old_values' => [
-                'location' => $fromLocation,
-                'quantity' => $oldQuantity,
-            ],
-            'new_values' => [
-                'location' => $toLocation,
-                'quantity' => $newQuantity,
-                'movement_type' => $movementType,
-                'notes' => $notes,
-            ],
-        ];
-
-        return $this->createEvent(
-            $itemId,
-            self::EVENT_TYPES['movement'],
-            $description,
-            $metadata
-        );
+    public function __construct() {
+        parent::__construct(new ItemHistoryEvent);
     }
 
     public function createCheckInEvent(
         string $itemId,
         string $location,
-        float $quantity,
+        float | string $quantity,
         ?string $notes = null,
-        ?string $checkedInBy = null
+        ?string $checkedInBy = null,
     ): ItemHistoryEvent {
-        $description = "Item checked in at $location (Quantity: $quantity)";
+        $quantity    = (float) $quantity;
+        $description = "Item checked in at {$location} (Quantity: {$quantity})";
 
         $metadata = [
             'old_values' => [
-                'status' => 'checked_out',
+                'status'   => 'checked_out',
                 'location' => null,
             ],
             'new_values' => [
-                'status' => 'checked_in',
-                'location' => $location,
-                'quantity' => $quantity,
-                'notes' => $notes,
-                'checked_in_by' => $checkedInBy ?: Auth::user()?->public_id,
+                'status'        => 'checked_in',
+                'location'      => $location,
+                'quantity'      => $quantity,
+                'notes'         => $notes,
+                'checked_in_by' => $checkedInBy ?: Auth::id(),
             ],
         ];
 
@@ -124,30 +60,31 @@ class EventService extends BaseService
             self::EVENT_TYPES['check_in'],
             $description,
             $metadata,
-            $checkedInBy
+            $checkedInBy,
         );
     }
 
     public function createCheckOutEvent(
         string $itemId,
         string $location,
-        float $quantity,
+        float | string $quantity,
         ?string $notes = null,
-        ?string $checkedOutBy = null
+        ?string $checkedOutBy = null,
     ): ItemHistoryEvent {
-        $description = "Item checked out from $location (Quantity: $quantity)";
+        $quantity    = (float) $quantity;
+        $description = "Item checked out from {$location} (Quantity: {$quantity})";
 
         $metadata = [
             'old_values' => [
-                'status' => 'available',
+                'status'   => 'available',
                 'location' => $location,
             ],
             'new_values' => [
-                'status' => 'checked_out',
-                'location' => $location,
-                'quantity' => $quantity,
-                'notes' => $notes,
-                'checked_out_by' => $checkedOutBy ?: Auth::user()?->public_id,
+                'status'         => 'checked_out',
+                'location'       => $location,
+                'quantity'       => $quantity,
+                'notes'          => $notes,
+                'checked_out_by' => $checkedOutBy ?: Auth::id(),
             ],
         ];
 
@@ -156,8 +93,39 @@ class EventService extends BaseService
             self::EVENT_TYPES['check_out'],
             $description,
             $metadata,
-            $checkedOutBy
+            $checkedOutBy,
         );
+    }
+
+    public function createEvent(
+        string $itemId,
+        string $eventType,
+        string $description,
+        array $metadata = [],
+        ?string $userId = null,
+    ): ItemHistoryEvent {
+        if (! in_array($eventType, self::EVENT_TYPES, true)) {
+            throw new InvalidArgumentException("Invalid event type: {$eventType}");
+        }
+
+        $item = Item::findOrFail($itemId);
+
+        $user = null;
+        if ($userId !== null) {
+            $user = User::findOrFail($userId);
+        } elseif (Auth::check()) {
+            $user = Auth::user();
+        }
+
+        return ItemHistoryEvent::create([
+            'org_id'     => $item->org_id,
+            'item_id'    => $item->id,
+            'user_id'    => $user?->id,
+            'event_type' => $this->mapEventTypeToEnum($eventType),
+            'old_values' => $metadata['old_values'] ?? null,
+            'new_values' => $metadata['new_values'] ?? null,
+            'reason'     => $description,
+        ]);
     }
 
     public function createMaintenanceEvent(
@@ -165,14 +133,18 @@ class EventService extends BaseService
         string $maintenanceType,
         string $description,
         string $maintenanceId,
-        ?string $expectedReturnDate = null,
-        ?string $dateInMaintenance = null,
-        ?string $dateBackFromMaintenance = null,
+        mixed $expectedReturnDate = null,
+        mixed $dateInMaintenance = null,
+        mixed $dateBackFromMaintenance = null,
         ?string $maintenanceConditionId = null,
         ?string $maintenanceCategory = null,
         ?string $triggerValue = null,
-        ?string $userId = null
+        ?string $userId = null,
     ): ItemHistoryEvent {
+        $expectedReturnDate      = $expectedReturnDate ? (string) $expectedReturnDate : null;
+        $dateInMaintenance       = $dateInMaintenance ? (string) $dateInMaintenance : null;
+        $dateBackFromMaintenance = $dateBackFromMaintenance ? (string) $dateBackFromMaintenance : null;
+
         $eventType = $maintenanceType === 'start' ? self::EVENT_TYPES['maintenance_start'] : self::EVENT_TYPES['maintenance_end'];
 
         $metadata = [
@@ -180,7 +152,7 @@ class EventService extends BaseService
                 'status' => $maintenanceType === 'start' ? 'available' : 'in_maintenance',
             ],
             'new_values' => [
-                'status' => $maintenanceType === 'start' ? 'in_maintenance' : 'available',
+                'status'         => $maintenanceType === 'start' ? 'in_maintenance' : 'available',
                 'maintenance_id' => $maintenanceId,
             ],
         ];
@@ -220,19 +192,49 @@ class EventService extends BaseService
             $eventType,
             $description,
             $metadata,
-            $userId
+            $userId,
+        );
+    }
+
+    public function createMovementEvent(
+        string $itemId,
+        ?string $fromLocation,
+        string $toLocation,
+        float $oldQuantity,
+        float $newQuantity,
+        string $movementType,
+        ?string $notes = null,
+    ): ItemHistoryEvent {
+        $description = $this->buildMovementDescription($fromLocation, $toLocation, $oldQuantity, $newQuantity, $movementType);
+
+        $metadata = [
+            'old_values' => [
+                'location' => $fromLocation,
+                'quantity' => $oldQuantity,
+            ],
+            'new_values' => [
+                'location'      => $toLocation,
+                'quantity'      => $newQuantity,
+                'movement_type' => $movementType,
+                'notes'         => $notes,
+            ],
+        ];
+
+        return $this->createEvent(
+            $itemId,
+            self::EVENT_TYPES['movement'],
+            $description,
+            $metadata,
         );
     }
 
     public function getItemEventHistory(
-        ?string $itemId = null,
+        null | int | string $itemId = null,
         array $eventTypes = [],
-        array $filters = []
+        array $filters = [],
     ): Builder {
-        if ($itemId) {
-            $itemData = $this->resolvePublicIds(['item_id' => $itemId]);
-            $item = Item::findOrFail($itemData['item_id']);
-            $query = ItemHistoryEvent::where('item_id', $item->id);
+        if ($itemId !== null) {
+            $query = ItemHistoryEvent::where('item_id', $itemId);
         } else {
             // System-wide events
             $query = $this->getQuery();
@@ -261,50 +263,46 @@ class EventService extends BaseService
         return $query;
     }
 
+    public function mapEventTypeToEnum(string $eventType): string {
+        $mapping = [
+            'movement'            => 'moved',
+            'check_in'            => 'updated',
+            'check_out'           => 'updated',
+            'maintenance_start'   => 'maintenance_in',
+            'maintenance_end'     => 'maintenance_out',
+            'status_change'       => 'updated',
+            'quantity_adjustment' => 'updated',
+            'initial_placement'   => 'created',
+            'transfer'            => 'moved',
+            'system_update'       => 'updated',
+        ];
+
+        return $mapping[$eventType] ?? 'updated';
+    }
+
     private function buildMovementDescription(
         ?string $fromLocation,
         string $toLocation,
         float $oldQuantity,
         float $newQuantity,
-        string $movementType
+        string $movementType,
     ): string {
         switch ($movementType) {
             case 'initial':
-                return "Initial placement at $toLocation (Quantity: $newQuantity)";
-
+                return "Initial placement at {$toLocation} (Quantity: {$newQuantity})";
             case 'move':
                 if ($fromLocation && $fromLocation !== $toLocation) {
-                    return "Moved from $fromLocation to $toLocation (Quantity: $newQuantity)";
-                } else {
-                    return "Quantity adjusted at $toLocation (From: $oldQuantity to $newQuantity)";
+                    return "Moved from {$fromLocation} to {$toLocation} (Quantity: {$newQuantity})";
                 }
 
+                return "Quantity adjusted at {$toLocation} (From: {$oldQuantity} to {$newQuantity})";
             case 'adjust':
-                $change = $newQuantity - $oldQuantity;
-                $changeText = $change > 0 ? "+$change" : (string) $change;
+                $change     = $newQuantity - $oldQuantity;
+                $changeText = $change > 0 ? "+{$change}" : (string) $change;
 
-                return "Quantity adjusted at $toLocation ($changeText, Total: $newQuantity)";
-
+                return "Quantity adjusted at {$toLocation} ({$changeText}, Total: {$newQuantity})";
             default:
-                return "Item movement at $toLocation (Quantity: $newQuantity)";
+                return "Item movement at {$toLocation} (Quantity: {$newQuantity})";
         }
-    }
-
-    public function mapEventTypeToEnum(string $eventType): string
-    {
-        $mapping = [
-            'movement' => 'moved',
-            'check_in' => 'updated',
-            'check_out' => 'updated',
-            'maintenance_start' => 'maintenance_in',
-            'maintenance_end' => 'maintenance_out',
-            'status_change' => 'updated',
-            'quantity_adjustment' => 'updated',
-            'initial_placement' => 'created',
-            'transfer' => 'moved',
-            'system_update' => 'updated',
-        ];
-
-        return $mapping[$eventType] ?? 'updated';
     }
 }

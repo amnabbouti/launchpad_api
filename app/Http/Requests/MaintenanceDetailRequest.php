@@ -1,38 +1,37 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Http\Requests;
 
 use App\Constants\ValidationMessages;
 
-class MaintenanceDetailRequest extends BaseRequest
-{
+class MaintenanceDetailRequest extends BaseRequest {
     /**
-     * validation rules.
+     * error messages.
      */
-    protected function getValidationRules(): array
-    {
-        $detailId = $this->route('maintenance_detail')?->id ?? null;
-
+    public function messages(): array {
         return [
-            'org_id' => 'required|exists:organizations,id',
-            'maintenance_condition_id' => 'required|exists:maintenance_conditions,id',
-            'maintenance_id' => 'required|exists:maintenances,id',
-            'value' => 'required|numeric',
+            'maintenance_condition_id.required' => __(ValidationMessages::MAINTENANCE_CONDITION_FIELD_REQUIRED),
+            'maintenance_condition_id.exists'   => __(ValidationMessages::MAINTENANCE_CONDITION_NOT_FOUND),
+            'maintenance_id.required'           => __(ValidationMessages::MAINTENANCE_FIELD_REQUIRED),
+            'maintenance_id.exists'             => __(ValidationMessages::MAINTENANCE_NOT_FOUND),
+            'value.required'                    => __(ValidationMessages::MAINTENANCE_DETAIL_VALUE_REQUIRED),
+            'value.numeric'                     => __(ValidationMessages::MAINTENANCE_DETAIL_VALUE_NUMERIC),
         ];
     }
 
     /**
-     * error messages.
+     * validation rules.
      */
-    public function messages(): array
-    {
+    protected function getValidationRules(): array {
+        $detailId = $this->route('maintenance_detail')?->id ?? null;
+
         return [
-            'maintenance_condition_id.required' => __(ValidationMessages::MAINTENANCE_CONDITION_FIELD_REQUIRED),
-            'maintenance_condition_id.exists' => __(ValidationMessages::MAINTENANCE_CONDITION_NOT_FOUND),
-            'maintenance_id.required' => __(ValidationMessages::MAINTENANCE_FIELD_REQUIRED),
-            'maintenance_id.exists' => __(ValidationMessages::MAINTENANCE_NOT_FOUND),
-            'value.required' => __(ValidationMessages::MAINTENANCE_DETAIL_VALUE_REQUIRED),
-            'value.numeric' => __(ValidationMessages::MAINTENANCE_DETAIL_VALUE_NUMERIC),
+            'org_id'                   => 'required|exists:organizations,id',
+            'maintenance_condition_id' => 'required|exists:maintenance_conditions,id',
+            'maintenance_id'           => 'required|exists:maintenances,id',
+            'value'                    => 'required|numeric',
         ];
     }
 }

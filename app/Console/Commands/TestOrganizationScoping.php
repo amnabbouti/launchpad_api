@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Console\Commands;
 
 use App\Models\Item;
@@ -7,17 +9,18 @@ use App\Models\Organization;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\AuthorizationEngine;
+use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Builder;
 
-class TestOrganizationScoping extends Command
-{
-    protected $signature = 'test:organization-scoping';
+use function in_array;
 
+final class TestOrganizationScoping extends Command {
     protected $description = 'Test organization scoping logic and authorization';
 
-    public function handle()
-    {
+    protected $signature = 'test:organization-scoping';
+
+    public function handle() {
         $this->info('=== ORGANIZATION SCOPING ANALYSIS ===');
         $this->newLine();
 
@@ -27,15 +30,15 @@ class TestOrganizationScoping extends Command
 
             // Test resources that should NOT have org scoping
             $noScopeResources = ['users', 'roles', 'plans'];
-            $this->info('Resources without org scoping: '.implode(', ', $noScopeResources));
+            $this->info('Resources without org scoping: ' . implode(', ', $noScopeResources));
 
             // Test with a mock query builder
-            $userQuery = User::query();
+            $userQuery       = User::query();
             $originalUserSql = $userQuery->toSql();
 
             // Apply organization scope to users (should not change query)
             $scopedUserQuery = AuthorizationEngine::applyOrganizationScope($userQuery, 'users');
-            $scopedUserSql = $scopedUserQuery->toSql();
+            $scopedUserSql   = $scopedUserQuery->toSql();
 
             if ($originalUserSql === $scopedUserSql) {
                 $this->info('✓ Users are excluded from applyOrganizationScope()');
@@ -44,11 +47,11 @@ class TestOrganizationScoping extends Command
             }
 
             // Test with roles
-            $roleQuery = Role::query();
+            $roleQuery       = Role::query();
             $originalRoleSql = $roleQuery->toSql();
 
             $scopedRoleQuery = AuthorizationEngine::applyOrganizationScope($roleQuery, 'roles');
-            $scopedRoleSql = $scopedRoleQuery->toSql();
+            $scopedRoleSql   = $scopedRoleQuery->toSql();
 
             if ($originalRoleSql === $scopedRoleSql) {
                 $this->info('✓ Roles are excluded from applyOrganizationScope()');
@@ -58,14 +61,14 @@ class TestOrganizationScoping extends Command
 
             // Test with items (should have org scoping applied)
             if (class_exists(Item::class)) {
-                $itemQuery = Item::query();
+                $itemQuery       = Item::query();
                 $originalItemSql = $itemQuery->toSql();
 
                 // Mock a user with organization
-                $mockUser = new User;
-                $mockUser->id = 1;
+                $mockUser         = new User;
+                $mockUser->id     = 1;
                 $mockUser->org_id = 123;
-                $mockUser->role = new Role(['slug' => 'manager']);
+                $mockUser->role   = new Role(['slug' => 'manager']);
 
                 // Temporarily set current user
                 $originalUser = AuthorizationEngine::getCurrentUser();
@@ -83,7 +86,7 @@ class TestOrganizationScoping extends Command
 
             foreach ($assignableRoles as $role) {
                 $canAssign = $this->testRoleAssignment($role);
-                $this->info("Role '$role': $canAssign");
+                $this->info("Role '{$role}': {$canAssign}");
             }
 
             $this->newLine();
@@ -98,7 +101,7 @@ class TestOrganizationScoping extends Command
 
             foreach ($testPermissions as $permission) {
                 $validation = $this->testPermissionValidation($permission);
-                $this->info("Permission '$permission': $validation");
+                $this->info("Permission '{$permission}': {$validation}");
             }
 
             $this->newLine();
@@ -107,9 +110,9 @@ class TestOrganizationScoping extends Command
             $this->info('  - Automatic scoping for inventory resources');
             $this->info('  - Manual scoping + permissions for users/roles');
             $this->info('  - Proper validation of manager permissions');
-        } catch (\Exception $e) {
-            $this->error('Error during analysis: '.$e->getMessage());
-            $this->error('Stack trace: '.$e->getTraceAsString());
+        } catch (Exception $e) {
+            $this->error('Error during analysis: ' . $e->getMessage());
+            $this->error('Stack trace: ' . $e->getTraceAsString());
 
             return 1;
         }
@@ -117,30 +120,7 @@ class TestOrganizationScoping extends Command
         return 0;
     }
 
-    private function testRoleAssignment(string $roleSlug): string
-    {
-        try {
-            // Test with different user types
-            $testCases = [
-                'super_admin' => 'Super Admin can assign any role',
-                'manager' => 'Manager has restricted assignment rights',
-                'employee' => 'Employee cannot assign roles',
-            ];
-
-            $results = [];
-            foreach ($testCases as $userType => $description) {
-                // We can't easily create test users here, so we'll just describe the logic
-                $results[] = "$userType: ".$this->describeRoleAssignmentLogic($roleSlug, $userType);
-            }
-
-            return implode(', ', $results);
-        } catch (\Exception $e) {
-            return 'Error testing role assignment: '.$e->getMessage();
-        }
-    }
-
-    private function describeRoleAssignmentLogic(string $roleSlug, string $userType): string
-    {
+    private function describeRoleAssignmentLogic(string $roleSlug, string $userType): string {
         switch ($userType) {
             case 'super_admin':
                 return 'Can assign';
@@ -157,19 +137,39 @@ class TestOrganizationScoping extends Command
         }
     }
 
-    private function testPermissionValidation(string $permission): string
-    {
+    private function testPermissionValidation(string $permission): string {
         try {
             // Check if permission is in manager forbidden list
             $forbiddenPermissions = \App\Constants\Permissions::getRequiredForbiddenKeys();
 
-            if (in_array($permission, $forbiddenPermissions)) {
+            if (in_array($permission, $forbiddenPermissions, true)) {
                 return 'Forbidden for managers (correct)';
-            } else {
-                return 'Allowed for custom roles (correct)';
             }
-        } catch (\Exception $e) {
-            return 'Error validating permission: '.$e->getMessage();
+
+            return 'Allowed for custom roles (correct)';
+        } catch (Exception $e) {
+            return 'Error validating permission: ' . $e->getMessage();
+        }
+    }
+
+    private function testRoleAssignment(string $roleSlug): string {
+        try {
+            // Test with different user types
+            $testCases = [
+                'super_admin' => 'Super Admin can assign any role',
+                'manager'     => 'Manager has restricted assignment rights',
+                'employee'    => 'Employee cannot assign roles',
+            ];
+
+            $results = [];
+            foreach ($testCases as $userType => $description) {
+                // We can't easily create test users here, so we'll just describe the logic
+                $results[] = "{$userType}: " . $this->describeRoleAssignmentLogic($roleSlug, $userType);
+            }
+
+            return implode(', ', $results);
+        } catch (Exception $e) {
+            return 'Error testing role assignment: ' . $e->getMessage();
         }
     }
 }

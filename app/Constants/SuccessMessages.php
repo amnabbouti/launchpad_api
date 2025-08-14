@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Constants;
 
 /**
@@ -14,39 +16,38 @@ namespace App\Constants;
  * - Custom business logic operations
  * - Non-standard naming patterns
  */
-class SuccessMessages
-{
-    // ==================================================
-    // AUTHENTICATION & AUTHORIZATION
-    // ==================================================
-    public const LOGIN_SUCCESS = 'succ.auth.login';
-
-    public const LOGOUT_SUCCESS = 'succ.auth.logout';
-
+final class SuccessMessages {
     public const ACCESS_GRANTED = 'succ.auth.access_granted';
+
+    public const ACTION_ALLOWED = 'succ.auth.action_allowed';
 
     public const ACTION_FORBIDDEN = 'succ.auth.action_forbidden';
 
-    public const ACTION_ALLOWED = 'succ.auth.action_allowed';
+    public const ITEM_CHECKIN = 'succ.item.checkin';
+
+    public const ITEM_CHECKOUT = 'succ.item.checkout';
+
+    public const ITEM_INITIAL_PLACEMENT = 'succ.item.initial_placement';
+
+    public const ITEM_MAINTENANCE_IN = 'succ.item.maintenance.in';
+
+    public const ITEM_MAINTENANCE_OUT = 'succ.item.maintenance.out';
 
     // ==================================================
     // SPECIAL ITEM OPERATIONS (not standard CRUD)
     // ==================================================
     public const ITEM_MOVED = 'succ.item.moved';
 
-    public const ITEM_INITIAL_PLACEMENT = 'succ.item.initial_placement';
-
     public const ITEM_QUANTITY_ADJUSTED = 'succ.item.quantity_adjusted';
 
     public const ITEM_SCANNED = 'succ.item.scanned';
 
-    public const ITEM_MAINTENANCE_IN = 'succ.item.maintenance.in';
+    // ==================================================
+    // AUTHENTICATION & AUTHORIZATION
+    // ==================================================
+    public const LOGIN_SUCCESS = 'succ.auth.login';
 
-    public const ITEM_MAINTENANCE_OUT = 'succ.item.maintenance.out';
-
-    public const ITEM_CHECKOUT = 'succ.item.checkout';
-
-    public const ITEM_CHECKIN = 'succ.item.checkin';
+    public const LOGOUT_SUCCESS = 'succ.auth.logout';
 
     // ==================================================
     // SPECIAL MAINTENANCE OPERATIONS (not standard CRUD)
@@ -56,6 +57,11 @@ class SuccessMessages
     public const MAINTENANCE_STARTED = 'succ.maintenance.started';
 
     // ==================================================
+    // CONFIGURATION & OPTIONS
+    // ==================================================
+    public const OPTIONS_RETRIEVED = 'succ.config.options_retrieved';
+
+    // ==================================================
     // ORGANIZATION (non-standard naming pattern)
     // ==================================================
     public const ORG_CREATED = 'succ.org.created';
@@ -63,21 +69,16 @@ class SuccessMessages
     public const ORG_UPDATED = 'succ.org.updated';
 
     // ==================================================
-    // CONFIGURATION & OPTIONS
-    // ==================================================
-    public const OPTIONS_RETRIEVED = 'succ.config.options_retrieved';
-
-    // ==================================================
     // GENERIC FALLBACK MESSAGES
     // ==================================================
     // Note: These should rarely be used. Prefer MessageGeneratorService for CRUD operations.
     public const RESOURCE_CREATED = 'succ.resource.created';
 
+    public const RESOURCE_DELETED = 'succ.resource.deleted';
+
     public const RESOURCE_RETRIEVED = 'succ.resource.retrieved';
 
     public const RESOURCE_UPDATED = 'succ.resource.updated';
-
-    public const RESOURCE_DELETED = 'succ.resource.deleted';
 
     public const RESOURCES_RETRIEVED = 'succ.resource.list';
 }

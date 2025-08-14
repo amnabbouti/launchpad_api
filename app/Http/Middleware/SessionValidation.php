@@ -1,20 +1,20 @@
 <?php
-declare(strict_types=1);
+
+declare(strict_types = 1);
 
 namespace App\Http\Middleware;
 
 use Closure;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\Response;
 
-class SessionValidation
-{
+final class SessionValidation {
     /**
      * Validate session key and device fingerprint for enhanced security.
      */
-    public function handle(Request $request, Closure $next): Response
-    {
+    public function handle(Request $request, Closure $next): Response {
         $authHeader = $request->header('Authorization');
 
         if ($authHeader && str_starts_with($authHeader, 'Bearer ')) {
@@ -70,11 +70,11 @@ class SessionValidation
                     Cache::put("session_key_{$sessionKey}", $cachedSessionData, now()->addHours(24));
                 }
                 */
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Session validation failed',
-                    'data' => null,
+                    'data'    => null,
                 ], 401);
             }
         }
@@ -85,8 +85,7 @@ class SessionValidation
     /**
      * Generate device fingerprint for enhanced security.
      */
-    private function generateDeviceFingerprint(Request $request): string
-    {
+    private function generateDeviceFingerprint(Request $request): string {
         $components = [
             $request->ip(),
             $request->header('X-Forwarded-For', ''),

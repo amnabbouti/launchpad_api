@@ -1,20 +1,26 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Models;
 
 use App\Traits\HasAttachments;
-use App\Traits\HasOrganizationScope;
-use App\Traits\HasPublicId;
+use App\Traits\HasUuidv7;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ItemLocation extends Model
-{
+class ItemLocation extends Model {
     use HasAttachments;
     use HasFactory;
-    use HasOrganizationScope;
-    use HasPublicId;
+    use HasUuidv7;
+
+    protected $casts = [
+        'quantity'   => 'decimal:2',
+        'moved_date' => 'date',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
 
     protected $fillable = [
         'org_id',
@@ -25,30 +31,15 @@ class ItemLocation extends Model
         'notes',
     ];
 
-    protected static function getEntityType(): string
-    {
-        return 'item_location';
-    }
-
-    protected $casts = [
-        'quantity' => 'decimal:2',
-        'moved_date' => 'date',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-    ];
-
-    public function organization(): BelongsTo
-    {
-        return $this->belongsTo(Organization::class, 'org_id');
-    }
-
-    public function item(): BelongsTo
-    {
+    public function item(): BelongsTo {
         return $this->belongsTo(Item::class, 'item_id');
     }
 
-    public function location(): BelongsTo
-    {
+    public function location(): BelongsTo {
         return $this->belongsTo(Location::class, 'location_id');
+    }
+
+    public function organization(): BelongsTo {
+        return $this->belongsTo(Organization::class, 'org_id');
     }
 }

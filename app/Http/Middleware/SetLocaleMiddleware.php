@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Http\Middleware;
 
 use Closure;
@@ -7,18 +9,18 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Symfony\Component\HttpFoundation\Response;
 
-class SetLocaleMiddleware
-{
+use function in_array;
+
+final class SetLocaleMiddleware {
     /**
      * Handle an incoming request.
      */
-    public function handle(Request $request, Closure $next): Response
-    {
+    public function handle(Request $request, Closure $next): Response {
         $acceptLanguage = $request->header('Accept-Language');
         if ($acceptLanguage) {
             $preferredLanguage = $this->parseAcceptLanguage($acceptLanguage);
-            $supportedLocales = ['en', 'fr', 'de', 'es', 'nl', 'it', 'ar'];
-            if (in_array($preferredLanguage, $supportedLocales)) {
+            $supportedLocales  = ['en', 'fr', 'de', 'es', 'nl', 'it', 'ar'];
+            if (in_array($preferredLanguage, $supportedLocales, true)) {
                 App::setLocale($preferredLanguage);
             }
         }
@@ -29,20 +31,19 @@ class SetLocaleMiddleware
     /**
      * Parse Accept-Language
      */
-    private function parseAcceptLanguage(string $acceptLanguage): string
-    {
+    private function parseAcceptLanguage(string $acceptLanguage): string {
         $languages = array_map('trim', explode(',', $acceptLanguage));
 
         $parsed = [];
         foreach ($languages as $language) {
-            if (strpos($language, ';') !== false) {
+            if (str_contains($language, ';')  ) {
                 [$lang, $quality] = explode(';', $language, 2);
-                $quality = floatval(str_replace('q=', '', $quality));
+                $quality          = (float) (str_replace('q=', '', $quality));
             } else {
-                $lang = $language;
+                $lang    = $language;
                 $quality = 1.0;
             }
-            $langCode = strtolower(explode('-', trim($lang))[0]);
+            $langCode          = mb_strtolower(explode('-', mb_trim($lang))[0]);
             $parsed[$langCode] = $quality;
         }
         arsort($parsed);
