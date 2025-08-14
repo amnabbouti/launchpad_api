@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "052b60cdc4698b1ad4daab25b3c508a3",
+    "content-hash": "23fa08c3813ca1c17eccf9e8da31955f",
     "packages": [
         {
             "name": "brick/math",
@@ -1183,16 +1183,16 @@
         },
         {
             "name": "laravel/framework",
-            "version": "v12.22.1",
+            "version": "v12.24.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/framework.git",
-                "reference": "d33ee45184126f32f593d4b809a846ed88a1dc43"
+                "reference": "6dcf2c46da23d159f35d6246234953a74b740d83"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/framework/zipball/d33ee45184126f32f593d4b809a846ed88a1dc43",
-                "reference": "d33ee45184126f32f593d4b809a846ed88a1dc43",
+                "url": "https://api.github.com/repos/laravel/framework/zipball/6dcf2c46da23d159f35d6246234953a74b740d83",
+                "reference": "6dcf2c46da23d159f35d6246234953a74b740d83",
                 "shasum": ""
             },
             "require": {
@@ -1233,6 +1233,8 @@
                 "symfony/mailer": "^7.2.0",
                 "symfony/mime": "^7.2.0",
                 "symfony/polyfill-php83": "^1.31",
+                "symfony/polyfill-php84": "^1.31",
+                "symfony/polyfill-php85": "^1.31",
                 "symfony/process": "^7.2.0",
                 "symfony/routing": "^7.2.0",
                 "symfony/uid": "^7.2.0",
@@ -1300,7 +1302,7 @@
                 "league/flysystem-read-only": "^3.25.1",
                 "league/flysystem-sftp-v3": "^3.25.1",
                 "mockery/mockery": "^1.6.10",
-                "orchestra/testbench-core": "^10.0.0",
+                "orchestra/testbench-core": "^10.6.0",
                 "pda/pheanstalk": "^5.0.6|^7.0.0",
                 "php-http/discovery": "^1.15",
                 "phpstan/phpstan": "^2.0",
@@ -1394,7 +1396,7 @@
                 "issues": "https://github.com/laravel/framework/issues",
                 "source": "https://github.com/laravel/framework"
             },
-            "time": "2025-08-08T13:58:03+00:00"
+            "time": "2025-08-13T20:30:36+00:00"
         },
         {
             "name": "laravel/prompts",
@@ -2625,16 +2627,16 @@
         },
         {
             "name": "nikic/php-parser",
-            "version": "v5.6.0",
+            "version": "v5.6.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nikic/PHP-Parser.git",
-                "reference": "221b0d0fdf1369c71047ad1d18bb5880017bbc56"
+                "reference": "f103601b29efebd7ff4a1ca7b3eeea9e3336a2a2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/221b0d0fdf1369c71047ad1d18bb5880017bbc56",
-                "reference": "221b0d0fdf1369c71047ad1d18bb5880017bbc56",
+                "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/f103601b29efebd7ff4a1ca7b3eeea9e3336a2a2",
+                "reference": "f103601b29efebd7ff4a1ca7b3eeea9e3336a2a2",
                 "shasum": ""
             },
             "require": {
@@ -2653,7 +2655,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "5.0-dev"
+                    "dev-master": "5.x-dev"
                 }
             },
             "autoload": {
@@ -2677,9 +2679,9 @@
             ],
             "support": {
                 "issues": "https://github.com/nikic/PHP-Parser/issues",
-                "source": "https://github.com/nikic/PHP-Parser/tree/v5.6.0"
+                "source": "https://github.com/nikic/PHP-Parser/tree/v5.6.1"
             },
-            "time": "2025-07-27T20:03:57+00:00"
+            "time": "2025-08-13T20:13:15+00:00"
         },
         {
             "name": "nunomaduro/termwind",
@@ -5879,6 +5881,158 @@
             "time": "2024-09-09T11:45:10+00:00"
         },
         {
+            "name": "symfony/polyfill-php84",
+            "version": "v1.32.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/polyfill-php84.git",
+                "reference": "000df7860439609837bbe28670b0be15783b7fbf"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/polyfill-php84/zipball/000df7860439609837bbe28670b0be15783b7fbf",
+                "reference": "000df7860439609837bbe28670b0be15783b7fbf",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.2"
+            },
+            "type": "library",
+            "extra": {
+                "thanks": {
+                    "url": "https://github.com/symfony/polyfill",
+                    "name": "symfony/polyfill"
+                }
+            },
+            "autoload": {
+                "files": [
+                    "bootstrap.php"
+                ],
+                "psr-4": {
+                    "Symfony\\Polyfill\\Php84\\": ""
+                },
+                "classmap": [
+                    "Resources/stubs"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nicolas Grekas",
+                    "email": "p@tchwork.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Symfony polyfill backporting some PHP 8.4+ features to lower PHP versions",
+            "homepage": "https://symfony.com",
+            "keywords": [
+                "compatibility",
+                "polyfill",
+                "portable",
+                "shim"
+            ],
+            "support": {
+                "source": "https://github.com/symfony/polyfill-php84/tree/v1.32.0"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2025-02-20T12:04:08+00:00"
+        },
+        {
+            "name": "symfony/polyfill-php85",
+            "version": "v1.32.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/polyfill-php85.git",
+                "reference": "6fedf31ce4e3648f4ff5ca58bfd53127d38f05fd"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/polyfill-php85/zipball/6fedf31ce4e3648f4ff5ca58bfd53127d38f05fd",
+                "reference": "6fedf31ce4e3648f4ff5ca58bfd53127d38f05fd",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.2"
+            },
+            "type": "library",
+            "extra": {
+                "thanks": {
+                    "url": "https://github.com/symfony/polyfill",
+                    "name": "symfony/polyfill"
+                }
+            },
+            "autoload": {
+                "files": [
+                    "bootstrap.php"
+                ],
+                "psr-4": {
+                    "Symfony\\Polyfill\\Php85\\": ""
+                },
+                "classmap": [
+                    "Resources/stubs"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nicolas Grekas",
+                    "email": "p@tchwork.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Symfony polyfill backporting some PHP 8.5+ features to lower PHP versions",
+            "homepage": "https://symfony.com",
+            "keywords": [
+                "compatibility",
+                "polyfill",
+                "portable",
+                "shim"
+            ],
+            "support": {
+                "source": "https://github.com/symfony/polyfill-php85/tree/v1.32.0"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2025-05-02T08:40:52+00:00"
+        },
+        {
             "name": "symfony/polyfill-uuid",
             "version": "v1.32.0",
             "source": {
@@ -7151,47 +7305,6 @@
             "time": "2025-04-30T06:54:44+00:00"
         },
         {
-            "name": "iamcal/sql-parser",
-            "version": "v0.6",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/iamcal/SQLParser.git",
-                "reference": "947083e2dca211a6f12fb1beb67a01e387de9b62"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/iamcal/SQLParser/zipball/947083e2dca211a6f12fb1beb67a01e387de9b62",
-                "reference": "947083e2dca211a6f12fb1beb67a01e387de9b62",
-                "shasum": ""
-            },
-            "require-dev": {
-                "php-coveralls/php-coveralls": "^1.0",
-                "phpunit/phpunit": "^5|^6|^7|^8|^9"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "iamcal\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Cal Henderson",
-                    "email": "cal@iamcal.com"
-                }
-            ],
-            "description": "MySQL schema parser",
-            "support": {
-                "issues": "https://github.com/iamcal/SQLParser/issues",
-                "source": "https://github.com/iamcal/SQLParser/tree/v0.6"
-            },
-            "time": "2025-03-17T16:59:46+00:00"
-        },
-        {
             "name": "laravel/pail",
             "version": "v1.2.3",
             "source": {
@@ -7582,96 +7695,6 @@
             "time": "2025-06-25T02:12:12+00:00"
         },
         {
-            "name": "nunomaduro/larastan",
-            "version": "v3.6.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/larastan/larastan.git",
-                "reference": "6431d010dd383a9279eb8874a76ddb571738564a"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/larastan/larastan/zipball/6431d010dd383a9279eb8874a76ddb571738564a",
-                "reference": "6431d010dd383a9279eb8874a76ddb571738564a",
-                "shasum": ""
-            },
-            "require": {
-                "ext-json": "*",
-                "iamcal/sql-parser": "^0.6.0",
-                "illuminate/console": "^11.44.2 || ^12.4.1",
-                "illuminate/container": "^11.44.2 || ^12.4.1",
-                "illuminate/contracts": "^11.44.2 || ^12.4.1",
-                "illuminate/database": "^11.44.2 || ^12.4.1",
-                "illuminate/http": "^11.44.2 || ^12.4.1",
-                "illuminate/pipeline": "^11.44.2 || ^12.4.1",
-                "illuminate/support": "^11.44.2 || ^12.4.1",
-                "php": "^8.2",
-                "phpstan/phpstan": "^2.1.11"
-            },
-            "require-dev": {
-                "doctrine/coding-standard": "^13",
-                "laravel/framework": "^11.44.2 || ^12.7.2",
-                "mockery/mockery": "^1.6.12",
-                "nikic/php-parser": "^5.4",
-                "orchestra/canvas": "^v9.2.2 || ^10.0.1",
-                "orchestra/testbench-core": "^9.12.0 || ^10.1",
-                "phpstan/phpstan-deprecation-rules": "^2.0.1",
-                "phpunit/phpunit": "^10.5.35 || ^11.5.15"
-            },
-            "suggest": {
-                "orchestra/testbench": "Using Larastan for analysing a package needs Testbench"
-            },
-            "type": "phpstan-extension",
-            "extra": {
-                "phpstan": {
-                    "includes": [
-                        "extension.neon"
-                    ]
-                },
-                "branch-alias": {
-                    "dev-master": "3.0-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Larastan\\Larastan\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Can Vural",
-                    "email": "can9119@gmail.com"
-                }
-            ],
-            "description": "Larastan - Discover bugs in your code without running it. A phpstan/phpstan extension for Laravel",
-            "keywords": [
-                "PHPStan",
-                "code analyse",
-                "code analysis",
-                "larastan",
-                "laravel",
-                "package",
-                "php",
-                "static analysis"
-            ],
-            "support": {
-                "issues": "https://github.com/larastan/larastan/issues",
-                "source": "https://github.com/larastan/larastan/tree/v3.6.0"
-            },
-            "funding": [
-                {
-                    "url": "https://github.com/canvural",
-                    "type": "github"
-                }
-            ],
-            "abandoned": "larastan/larastan",
-            "time": "2025-07-11T06:52:52+00:00"
-        },
-        {
             "name": "phar-io/manifest",
             "version": "2.0.4",
             "source": {
@@ -7788,64 +7811,6 @@
                 "source": "https://github.com/phar-io/version/tree/3.2.1"
             },
             "time": "2022-02-21T01:04:05+00:00"
-        },
-        {
-            "name": "phpstan/phpstan",
-            "version": "2.1.22",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/phpstan/phpstan.git",
-                "reference": "41600c8379eb5aee63e9413fe9e97273e25d57e4"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/41600c8379eb5aee63e9413fe9e97273e25d57e4",
-                "reference": "41600c8379eb5aee63e9413fe9e97273e25d57e4",
-                "shasum": ""
-            },
-            "require": {
-                "php": "^7.4|^8.0"
-            },
-            "conflict": {
-                "phpstan/phpstan-shim": "*"
-            },
-            "bin": [
-                "phpstan",
-                "phpstan.phar"
-            ],
-            "type": "library",
-            "autoload": {
-                "files": [
-                    "bootstrap.php"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "description": "PHPStan - PHP Static Analysis Tool",
-            "keywords": [
-                "dev",
-                "static analysis"
-            ],
-            "support": {
-                "docs": "https://phpstan.org/user-guide/getting-started",
-                "forum": "https://github.com/phpstan/phpstan/discussions",
-                "issues": "https://github.com/phpstan/phpstan/issues",
-                "security": "https://github.com/phpstan/phpstan/security/policy",
-                "source": "https://github.com/phpstan/phpstan-src"
-            },
-            "funding": [
-                {
-                    "url": "https://github.com/ondrejmirtes",
-                    "type": "github"
-                },
-                {
-                    "url": "https://github.com/phpstan",
-                    "type": "github"
-                }
-            ],
-            "time": "2025-08-04T19:17:37+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",
@@ -8184,16 +8149,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "11.5.28",
+            "version": "11.5.32",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "93f30aa3889e785ac63493d4976df0ae9fdecb60"
+                "reference": "101e132dcf9e74a1eb3a309b4f686114ae8f7f36"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/93f30aa3889e785ac63493d4976df0ae9fdecb60",
-                "reference": "93f30aa3889e785ac63493d4976df0ae9fdecb60",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/101e132dcf9e74a1eb3a309b4f686114ae8f7f36",
+                "reference": "101e132dcf9e74a1eb3a309b4f686114ae8f7f36",
                 "shasum": ""
             },
             "require": {
@@ -8203,7 +8168,7 @@
                 "ext-mbstring": "*",
                 "ext-xml": "*",
                 "ext-xmlwriter": "*",
-                "myclabs/deep-copy": "^1.13.3",
+                "myclabs/deep-copy": "^1.13.4",
                 "phar-io/manifest": "^2.0.4",
                 "phar-io/version": "^3.2.1",
                 "php": ">=8.2",
@@ -8214,13 +8179,13 @@
                 "phpunit/php-timer": "^7.0.1",
                 "sebastian/cli-parser": "^3.0.2",
                 "sebastian/code-unit": "^3.0.3",
-                "sebastian/comparator": "^6.3.1",
+                "sebastian/comparator": "^6.3.2",
                 "sebastian/diff": "^6.0.2",
                 "sebastian/environment": "^7.2.1",
                 "sebastian/exporter": "^6.3.0",
                 "sebastian/global-state": "^7.0.2",
                 "sebastian/object-enumerator": "^6.0.1",
-                "sebastian/type": "^5.1.2",
+                "sebastian/type": "^5.1.3",
                 "sebastian/version": "^5.0.2",
                 "staabm/side-effects-detector": "^1.0.5"
             },
@@ -8265,7 +8230,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/phpunit/issues",
                 "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-                "source": "https://github.com/sebastianbergmann/phpunit/tree/11.5.28"
+                "source": "https://github.com/sebastianbergmann/phpunit/tree/11.5.32"
             },
             "funding": [
                 {
@@ -8289,7 +8254,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-07-31T07:10:28+00:00"
+            "time": "2025-08-12T07:32:49+00:00"
         },
         {
             "name": "sebastian/cli-parser",
@@ -8463,16 +8428,16 @@
         },
         {
             "name": "sebastian/comparator",
-            "version": "6.3.1",
+            "version": "6.3.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/comparator.git",
-                "reference": "24b8fbc2c8e201bb1308e7b05148d6ab393b6959"
+                "reference": "85c77556683e6eee4323e4c5468641ca0237e2e8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/comparator/zipball/24b8fbc2c8e201bb1308e7b05148d6ab393b6959",
-                "reference": "24b8fbc2c8e201bb1308e7b05148d6ab393b6959",
+                "url": "https://api.github.com/repos/sebastianbergmann/comparator/zipball/85c77556683e6eee4323e4c5468641ca0237e2e8",
+                "reference": "85c77556683e6eee4323e4c5468641ca0237e2e8",
                 "shasum": ""
             },
             "require": {
@@ -8531,15 +8496,27 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/comparator/issues",
                 "security": "https://github.com/sebastianbergmann/comparator/security/policy",
-                "source": "https://github.com/sebastianbergmann/comparator/tree/6.3.1"
+                "source": "https://github.com/sebastianbergmann/comparator/tree/6.3.2"
             },
             "funding": [
                 {
                     "url": "https://github.com/sebastianbergmann",
                     "type": "github"
+                },
+                {
+                    "url": "https://liberapay.com/sebastianbergmann",
+                    "type": "liberapay"
+                },
+                {
+                    "url": "https://thanks.dev/u/gh/sebastianbergmann",
+                    "type": "thanks_dev"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/sebastian/comparator",
+                    "type": "tidelift"
                 }
             ],
-            "time": "2025-03-07T06:57:01+00:00"
+            "time": "2025-08-10T08:07:46+00:00"
         },
         {
             "name": "sebastian/complexity",
@@ -9056,23 +9033,23 @@
         },
         {
             "name": "sebastian/recursion-context",
-            "version": "6.0.2",
+            "version": "6.0.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/recursion-context.git",
-                "reference": "694d156164372abbd149a4b85ccda2e4670c0e16"
+                "reference": "f6458abbf32a6c8174f8f26261475dc133b3d9dc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/recursion-context/zipball/694d156164372abbd149a4b85ccda2e4670c0e16",
-                "reference": "694d156164372abbd149a4b85ccda2e4670c0e16",
+                "url": "https://api.github.com/repos/sebastianbergmann/recursion-context/zipball/f6458abbf32a6c8174f8f26261475dc133b3d9dc",
+                "reference": "f6458abbf32a6c8174f8f26261475dc133b3d9dc",
                 "shasum": ""
             },
             "require": {
                 "php": ">=8.2"
             },
             "require-dev": {
-                "phpunit/phpunit": "^11.0"
+                "phpunit/phpunit": "^11.3"
             },
             "type": "library",
             "extra": {
@@ -9108,28 +9085,40 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/recursion-context/issues",
                 "security": "https://github.com/sebastianbergmann/recursion-context/security/policy",
-                "source": "https://github.com/sebastianbergmann/recursion-context/tree/6.0.2"
+                "source": "https://github.com/sebastianbergmann/recursion-context/tree/6.0.3"
             },
             "funding": [
                 {
                     "url": "https://github.com/sebastianbergmann",
                     "type": "github"
+                },
+                {
+                    "url": "https://liberapay.com/sebastianbergmann",
+                    "type": "liberapay"
+                },
+                {
+                    "url": "https://thanks.dev/u/gh/sebastianbergmann",
+                    "type": "thanks_dev"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/sebastian/recursion-context",
+                    "type": "tidelift"
                 }
             ],
-            "time": "2024-07-03T05:10:34+00:00"
+            "time": "2025-08-13T04:42:22+00:00"
         },
         {
             "name": "sebastian/type",
-            "version": "5.1.2",
+            "version": "5.1.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/type.git",
-                "reference": "a8a7e30534b0eb0c77cd9d07e82de1a114389f5e"
+                "reference": "f77d2d4e78738c98d9a68d2596fe5e8fa380f449"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/type/zipball/a8a7e30534b0eb0c77cd9d07e82de1a114389f5e",
-                "reference": "a8a7e30534b0eb0c77cd9d07e82de1a114389f5e",
+                "url": "https://api.github.com/repos/sebastianbergmann/type/zipball/f77d2d4e78738c98d9a68d2596fe5e8fa380f449",
+                "reference": "f77d2d4e78738c98d9a68d2596fe5e8fa380f449",
                 "shasum": ""
             },
             "require": {
@@ -9165,15 +9154,27 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/type/issues",
                 "security": "https://github.com/sebastianbergmann/type/security/policy",
-                "source": "https://github.com/sebastianbergmann/type/tree/5.1.2"
+                "source": "https://github.com/sebastianbergmann/type/tree/5.1.3"
             },
             "funding": [
                 {
                     "url": "https://github.com/sebastianbergmann",
                     "type": "github"
+                },
+                {
+                    "url": "https://liberapay.com/sebastianbergmann",
+                    "type": "liberapay"
+                },
+                {
+                    "url": "https://thanks.dev/u/gh/sebastianbergmann",
+                    "type": "thanks_dev"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/sebastian/type",
+                    "type": "tidelift"
                 }
             ],
-            "time": "2025-03-18T13:35:50+00:00"
+            "time": "2025-08-09T06:55:48+00:00"
         },
         {
             "name": "sebastian/version",
@@ -9334,9 +9335,7 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "nunomaduro/larastan": 20
-    },
+    "stability-flags": {},
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
