@@ -1,4 +1,4 @@
-name: launchpad-api
+name: vohrad-api
 type: laravel
 docroot: public
 php_version: '8.3'
@@ -7,8 +7,8 @@ xdebug_enabled: false
 additional_hostnames: []
 additional_fqdns: []
 database:
-  type: mariadb
-  version: '10.11'
+  type: postgres
+  version: '17'
 hooks:
   post-start:
     - exec: php artisan cache:clear
@@ -16,7 +16,13 @@ hooks:
 use_dns_when_possible: true
 composer_version: '2'
 disable_settings_management: true
-web_environment: []
+web_environment:
+  - DB_CONNECTION=pgsql
+  - DB_HOST=db
+  - DB_PORT=5432
+  - DB_DATABASE=db
+  - DB_USERNAME=app_user
+  - DB_PASSWORD=app_password
 corepack_enable: false
 default_container_timeout: '240'
 # Key features of DDEV's config.yaml:

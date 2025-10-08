@@ -3,6 +3,7 @@
 /public/storage
 /storage/*.key
 /vendor
+/.vscode
 .env
 .env.backup
 .env.production
@@ -26,3 +27,14 @@ Thumbs.db
 ./.ddev
 ./.ddev/commands/*
 ./.ddev/config.yaml
+/tests/*
+dist
+/scripts
+/storage
+/docker
+.ddev/db_snapshots/
+.ddev/logs/
+.ddev/commands/*
+.ddev/config.yaml
+.ddev/traefik/
+.ddev/logs/
