@@ -1,21 +1,14 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Console\Commands;
 
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\Hash;
 
-class CreateUserToken extends Command
-{
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
-    protected $signature = 'app:create-user-token {email? : The email of the user} {--name=expo-app : The token name}';
-
+final class CreateUserToken extends Command {
     /**
      * The console command description.
      *
@@ -24,19 +17,26 @@ class CreateUserToken extends Command
     protected $description = 'Create an encrypted access token for a user';
 
     /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'app:create-user-token {email? : The email of the user} {--name=expo-app : The token name}';
+
+    /**
      * Execute the console command.
      */
-    public function handle()
-    {
-        $email = $this->argument('email');
+    public function handle(): void {
+        $email     = $this->argument('email');
         $tokenName = $this->option('name');
 
         // If no email provided, ask for it or show available users
-        if (!$email) {
+        if (! $email) {
             $users = User::select('email', 'first_name', 'last_name')->get();
-            
+
             if ($users->isEmpty()) {
                 $this->error('No users found in the database.');
+
                 return;
             }
 
@@ -51,8 +51,9 @@ class CreateUserToken extends Command
         // Find the user
         $user = User::where('email', $email)->first();
 
-        if (!$user) {
+        if (! $user) {
             $this->error("User with email '{$email}' not found.");
+
             return;
         }
 

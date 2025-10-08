@@ -145,7 +145,7 @@
         {
           "name": "with",
           "in": "query",
-          "description": "Include related models (comma-separated). For suppliers: items, itemSuppliers, stocks. For relationships: organization, item, supplier",
+          "description": "Include related models (comma-separated). For suppliers: items, itemSuppliers, batches. For relationships: organization, item, supplier",
           "required": false,
           "schema": {
             "type": "string"
@@ -405,7 +405,7 @@
         {
           "name": "with",
           "in": "query",
-          "description": "Include related models (comma-separated). For suppliers: items, itemSuppliers, stocks. For relationships: organization, item, supplier",
+          "description": "Include related models (comma-separated). For suppliers: items, itemSuppliers, batches. For relationships: organization, item, supplier",
           "required": false,
           "schema": {
             "type": "string"

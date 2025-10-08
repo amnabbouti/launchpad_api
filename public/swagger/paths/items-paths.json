@@ -38,7 +38,7 @@
           "required": false,
           "schema": {
             "type": "string",
-            "enum": ["abstract", "bulk", "serialized"]
+            "enum": ["abstract", "standard", "serialized"]
           },
           "example": "serialized"
         },

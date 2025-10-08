@@ -1,0 +1,916 @@
+{
+  "/api/checks": {
+    "get": {
+      "tags": ["Check-In/Out"],
+      "summary": "Get all check-in/out records",
+      "description": "Retrieve all check-in/out records with advanced filtering. Supports filtering by user, item location, dates, status, and more. Returns comprehensive tracking information for inventory movements.",
+      "operationId": "getCheckInOuts",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "user_id",
+          "in": "query",
+          "description": "Filter by user who checked out the item",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "USR-0001"
+        },
+        {
+          "name": "trackable_id",
+          "in": "query",
+          "description": "Filter by trackable item ID (usually ItemLocation ID)",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "IL-0001"
+        },
+        {
+          "name": "trackable_type",
+          "in": "query",
+          "description": "Filter by trackable item type",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "enum": ["App\\Models\\ItemLocation", "App\\Models\\Item"]
+          },
+          "example": "App\\Models\\ItemLocation"
+        },
+        {
+          "name": "checkout_location_id",
+          "in": "query",
+          "description": "Filter by checkout location ID",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "LOC-0001"
+        },
+        {
+          "name": "checkin_location_id",
+          "in": "query",
+          "description": "Filter by check-in location ID",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "LOC-0002"
+        },
+        {
+          "name": "status_out_id",
+          "in": "query",
+          "description": "Filter by checkout status ID",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "STS-0001"
+        },
+        {
+          "name": "status_in_id",
+          "in": "query",
+          "description": "Filter by check-in status ID",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "STS-0002"
+        },
+        {
+          "name": "is_active",
+          "in": "query",
+          "description": "Filter by active status",
+          "required": false,
+          "schema": {
+            "type": "boolean"
+          },
+          "example": true
+        },
+        {
+          "name": "is_checked_out",
+          "in": "query",
+          "description": "Filter for items currently checked out (not returned)",
+          "required": false,
+          "schema": {
+            "type": "boolean"
+          },
+          "example": true
+        },
+        {
+          "name": "is_checked_in",
+          "in": "query",
+          "description": "Filter for items that have been checked in (returned)",
+          "required": false,
+          "schema": {
+            "type": "boolean"
+          },
+          "example": false
+        },
+        {
+          "name": "is_overdue",
+          "in": "query",
+          "description": "Filter for overdue items (past expected return date and not checked in)",
+          "required": false,
+          "schema": {
+            "type": "boolean"
+          },
+          "example": true
+        },
+        {
+          "name": "checkout_date_from",
+          "in": "query",
+          "description": "Filter by checkout date from (ISO 8601 format)",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "format": "date"
+          },
+          "example": "2024-01-01"
+        },
+        {
+          "name": "checkout_date_to",
+          "in": "query",
+          "description": "Filter by checkout date to (ISO 8601 format)",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "format": "date"
+          },
+          "example": "2024-12-31"
+        },
+        {
+          "name": "expected_return_date_from",
+          "in": "query",
+          "description": "Filter by expected return date from (ISO 8601 format)",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "format": "date"
+          },
+          "example": "2024-01-15"
+        },
+        {
+          "name": "expected_return_date_to",
+          "in": "query",
+          "description": "Filter by expected return date to (ISO 8601 format)",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "format": "date"
+          },
+          "example": "2024-02-15"
+        },
+        {
+          "name": "with",
+          "in": "query",
+          "description": "Include related data (comma-separated). Available: user, checkinUser, trackable, checkoutLocation, checkinLocation, statusOut, statusIn, organization",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "example": "user,trackable,checkoutLocation,statusOut"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Check-in/out records retrieved successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "success"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Check-in/out records retrieved successfully"
+                  },
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/CheckInOut"
+                    }
+                  }
+                }
+              },
+              "examples": {
+                "active_checkouts": {
+                  "summary": "Active checkouts with relationships",
+                  "value": {
+                    "status": "success",
+                    "message": "Check-in/out records retrieved successfully",
+                    "data": [
+                      {
+                        "id": "CHK-0001",
+                        "quantity": 2,
+                        "checkout_date": "2024-01-15T10:30:00Z",
+                        "expected_return_date": "2024-01-22T10:30:00Z",
+                        "checkin_date": null,
+                        "checkin_quantity": null,
+                        "duration_days": null,
+                        "reference": "REF-001",
+                        "notes": "Checkout for project Alpha",
+                        "is_active": true,
+                        "is_checked_out": true,
+                        "is_checked_in": false,
+                        "is_overdue": false,
+                        "user": {
+                          "id": "USR-0001",
+                          "name": "John Doe",
+                          "email": "john.doe@example.com"
+                        },
+                        "trackable": {
+                          "id": "IL-0001",
+                          "type": "ItemLocation",
+                          "item": {
+                            "id": "ITM-0001",
+                            "name": "Laptop Dell XPS 13",
+                            "code": "LAPTOP-001"
+                          },
+                          "location": {
+                            "id": "LOC-0001",
+                            "name": "Main Warehouse",
+                            "code": "WH-001"
+                          },
+                          "quantity": 10
+                        },
+                        "checkout_location": {
+                          "id": "LOC-0001",
+                          "name": "Main Warehouse",
+                          "code": "WH-001"
+                        },
+                        "status_out": {
+                          "id": "STS-0001",
+                          "name": "In Use",
+                          "color": "#ff6b35"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Bad Request - Invalid query parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInOutErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "Unknown query parameter: invalid_param",
+                "data": null
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized - Invalid or missing authentication token",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "error"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Unauthorized"
+                  },
+                  "data": {
+                    "type": "null",
+                    "example": null
+                  }
+                }
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden - User must belong to an organization",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInOutErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "User must belong to an organization",
+                "data": null
+              }
+            }
+          }
+        }
+      }
+    },
+    "post": {
+      "tags": ["Check-In/Out"],
+      "summary": "Create a new check-in/out record",
+      "description": "Create a new check-in/out record manually. For standard checkout/checkin operations, use the dedicated endpoints.",
+      "operationId": "createCheckInOut",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CheckInOutInput"
+            },
+            "examples": {
+              "manual_checkout": {
+                "summary": "Manual checkout record",
+                "value": {
+                  "user_id": "USR-0001",
+                  "trackable_id": "IL-0001",
+                  "trackable_type": "App\\Models\\ItemLocation",
+                  "checkout_location_id": "LOC-0001",
+                  "checkout_date": "2024-01-15T10:30:00Z",
+                  "quantity": 1,
+                  "expected_return_date": "2024-01-22T10:30:00Z",
+                  "reference": "REF-001",
+                  "notes": "Manual checkout for maintenance",
+                  "status_out_id": "STS-0001",
+                  "is_active": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Check-in/out record created successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInOutResponse"
+              },
+              "example": {
+                "status": "success",
+                "message": "Resource created successfully",
+                "data": {
+                  "id": "CHK-0001",
+                  "quantity": 1,
+                  "checkout_date": "2024-01-15T10:30:00Z",
+                  "expected_return_date": "2024-01-22T10:30:00Z",
+                  "checkin_date": null,
+                  "checkin_quantity": null,
+                  "duration_days": null,
+                  "reference": "REF-001",
+                  "notes": "Manual checkout for maintenance",
+                  "is_active": true,
+                  "is_checked_out": true,
+                  "is_checked_in": false,
+                  "is_overdue": false
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Bad Request - Invalid input data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInOutErrorResponse"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error - Invalid field values",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInOutValidationErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/checks/{id}": {
+    "get": {
+      "tags": ["Check-In/Out"],
+      "summary": "Get a specific check-in/out record",
+      "description": "Retrieve a specific check-in/out record by its ID with all related information.",
+      "operationId": "getCheckInOut",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Check-in/out record ID",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "CHK-0001"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Check-in/out record retrieved successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInOutResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Check-in/out record not found",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInOutErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    },
+    "patch": {
+      "tags": ["Check-In/Out"],
+      "summary": "Update a check-in/out record",
+      "description": "Update a specific check-in/out record. Commonly used for updating notes, status, or other metadata.",
+      "operationId": "updateCheckInOut",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Check-in/out record ID",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "CHK-0001"
+        }
+      ],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CheckInOutInput"
+            },
+            "examples": {
+              "update_notes": {
+                "summary": "Update notes and status",
+                "value": {
+                  "notes": "Updated notes for this checkout",
+                  "status_out_id": "STS-0002"
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Check-in/out record updated successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInOutResponse"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Check-in/out record not found",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInOutErrorResponse"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInOutValidationErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    },
+    "delete": {
+      "tags": ["Check-In/Out"],
+      "summary": "Delete a check-in/out record",
+      "description": "Delete a specific check-in/out record. Use with caution as this removes the tracking history.",
+      "operationId": "deleteCheckInOut",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Check-in/out record ID",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "CHK-0001"
+        }
+      ],
+      "responses": {
+        "204": {
+          "description": "Check-in/out record deleted successfully"
+        },
+        "404": {
+          "description": "Check-in/out record not found",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInOutErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/checks/out/{itemLocationId}": {
+    "post": {
+      "tags": ["Check-In/Out"],
+      "summary": "Check out an item",
+      "description": "Check out an item from a specific location. This is the primary endpoint for checkout operations from the mobile app.",
+      "operationId": "checkoutItem",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "itemLocationId",
+          "in": "path",
+          "description": "Item Location ID to check out from",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "IL-0001"
+        }
+      ],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CheckoutInput"
+            },
+            "examples": {
+              "basic_checkout": {
+                "summary": "Basic checkout",
+                "value": {
+                  "quantity": 2,
+                  "expected_return_date": "2024-01-22T10:30:00Z",
+                  "reference": "REF-001",
+                  "notes": "Checkout for project Alpha"
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Item checked out successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInOutResponse"
+              },
+              "example": {
+                "status": "success",
+                "message": "Item checked out successfully",
+                "data": {
+                  "id": "CHK-0001",
+                  "quantity": 2,
+                  "checkout_date": "2024-01-15T10:30:00Z",
+                  "expected_return_date": "2024-01-22T10:30:00Z",
+                  "checkin_date": null,
+                  "checkin_quantity": null,
+                  "duration_days": null,
+                  "reference": "REF-001",
+                  "notes": "Checkout for project Alpha",
+                  "is_active": true,
+                  "is_checked_out": true,
+                  "is_checked_in": false,
+                  "is_overdue": false
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Item location not found",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInOutErrorResponse"
+              }
+            }
+          }
+        },
+        "409": {
+          "description": "Insufficient quantity available",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInOutErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "Insufficient quantity available. Available: 1, Requested: 2",
+                "data": null
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInOutValidationErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/checks/in/{itemLocationId}": {
+    "post": {
+      "tags": ["Check-In/Out"],
+      "summary": "Check in an item",
+      "description": "Check in an item to a specific location. This is the primary endpoint for checkin operations from the mobile app.",
+      "operationId": "checkinItem",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "itemLocationId",
+          "in": "path",
+          "description": "Item Location ID to check in to",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "IL-0001"
+        }
+      ],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CheckinInput"
+            },
+            "examples": {
+              "basic_checkin": {
+                "summary": "Basic checkin",
+                "value": {
+                  "checkin_quantity": 2,
+                  "checkin_location_id": "LOC-0001",
+                  "reference": "REF-001",
+                  "notes": "Returned from project Alpha"
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Item checked in successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInOutResponse"
+              },
+              "example": {
+                "status": "success",
+                "message": "Item checked in successfully",
+                "data": {
+                  "id": "CHK-0001",
+                  "quantity": 2,
+                  "checkout_date": "2024-01-15T10:30:00Z",
+                  "expected_return_date": "2024-01-22T10:30:00Z",
+                  "checkin_date": "2024-01-20T14:30:00Z",
+                  "checkin_quantity": 2,
+                  "duration_days": 5,
+                  "reference": "REF-001",
+                  "notes": "Returned from project Alpha",
+                  "is_active": false,
+                  "is_checked_out": false,
+                  "is_checked_in": true,
+                  "is_overdue": false
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No active checkout found for this item",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInOutErrorResponse"
+              },
+              "example": {
+                "status": "error",
+                "message": "No active checkout found for this item",
+                "data": null
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInOutValidationErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/checks/availability/{itemLocationId}": {
+    "get": {
+      "tags": ["Check-In/Out"],
+      "summary": "Check item availability",
+      "description": "Check the availability status of an item location, including total quantity, checked out quantity, and available quantity.",
+      "operationId": "checkItemAvailability",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "itemLocationId",
+          "in": "path",
+          "description": "Item Location ID to check availability for",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "IL-0001"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Availability data retrieved successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "success"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Availability data retrieved"
+                  },
+                  "data": {
+                    "$ref": "#/components/schemas/AvailabilityData"
+                  }
+                }
+              },
+              "example": {
+                "status": "success",
+                "message": "Availability data retrieved",
+                "data": {
+                  "total_quantity": 10,
+                  "checked_out_quantity": 3,
+                  "available_quantity": 7,
+                  "availability_status": "partially_available"
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Item location not found",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInOutErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/checks/history/{itemLocationId}": {
+    "get": {
+      "tags": ["Check-In/Out"],
+      "summary": "Get item check-in/out history",
+      "description": "Retrieve the complete check-in/out history for a specific item location.",
+      "operationId": "getItemHistory",
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "itemLocationId",
+          "in": "path",
+          "description": "Item Location ID to get history for",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "IL-0001"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Check-in/out history retrieved successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "success"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Check-in/out history retrieved"
+                  },
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/CheckInOut"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Item location not found",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInOutErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+} 

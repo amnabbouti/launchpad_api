@@ -1,35 +1,84 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Constants;
 
-class SuccessMessages
-{
-    // Authentication
-    public const LOGIN_SUCCESS = 'Login successful';
-    public const LOGOUT_SUCCESS = 'Logout successful';
+/**
+ * Success Messages Constants
+ *
+ * This class contains translation keys for success messages that are NOT handled
+ * by MessageGeneratorService. The MessageGeneratorService handles standard CRUD
+ * operations (created, updated, deleted, retrieved, list).
+ *
+ * Only include success messages here that are:
+ * - Special operations not covered by CRUD
+ * - Custom business logic operations
+ * - Non-standard naming patterns
+ */
+final class SuccessMessages {
+    public const ACCESS_GRANTED = 'succ.auth.access_granted';
 
-    // Authorization
-    public const ACCESS_GRANTED = 'Access granted';
+    public const ACTION_ALLOWED = 'succ.auth.action_allowed';
 
-    // Resources
-    public const RESOURCE_CREATED = 'Resource created successfully';
-    public const RESOURCE_RETRIEVED = 'Resource retrieved successfully';
-    public const RESOURCE_UPDATED = 'Resource updated successfully';
-    public const RESOURCE_DELETED = 'Resource deleted successfully';
-    public const RESOURCES_RETRIEVED = 'Resources retrieved successfully';
+    public const ACTION_FORBIDDEN = 'succ.auth.action_forbidden';
 
-    // Organization
-    public const ORG_CREATED = 'Organization created successfully';
-    public const ORG_UPDATED = 'Organization updated successfully';
+    public const ITEM_CHECKIN = 'succ.item.checkin';
 
-    // Items
-    public const ITEM_MOVED = 'Item moved successfully';
-    public const ITEM_SCANNED = 'Item scanned successfully';
+    public const ITEM_CHECKOUT = 'succ.item.checkout';
 
-    // Roles & Permissions
-    public const ACTION_FORBIDDEN = 'Action forbidden successfully';
-    public const ACTION_ALLOWED = 'Action allowed successfully';
+    public const ITEM_INITIAL_PLACEMENT = 'succ.item.initial_placement';
 
-    // Options & Config
-    public const OPTIONS_RETRIEVED = 'Options retrieved successfully';
+    public const ITEM_MAINTENANCE_IN = 'succ.item.maintenance.in';
+
+    public const ITEM_MAINTENANCE_OUT = 'succ.item.maintenance.out';
+
+    // ==================================================
+    // SPECIAL ITEM OPERATIONS (not standard CRUD)
+    // ==================================================
+    public const ITEM_MOVED = 'succ.item.moved';
+
+    public const ITEM_QUANTITY_ADJUSTED = 'succ.item.quantity_adjusted';
+
+    public const ITEM_SCANNED = 'succ.item.scanned';
+
+    // ==================================================
+    // AUTHENTICATION & AUTHORIZATION
+    // ==================================================
+    public const LOGIN_SUCCESS = 'succ.auth.login';
+
+    public const LOGOUT_SUCCESS = 'succ.auth.logout';
+
+    // ==================================================
+    // SPECIAL MAINTENANCE OPERATIONS (not standard CRUD)
+    // ==================================================
+    public const MAINTENANCE_COMPLETED = 'succ.maintenance.completed';
+
+    public const MAINTENANCE_STARTED = 'succ.maintenance.started';
+
+    // ==================================================
+    // CONFIGURATION & OPTIONS
+    // ==================================================
+    public const OPTIONS_RETRIEVED = 'succ.config.options_retrieved';
+
+    // ==================================================
+    // ORGANIZATION (non-standard naming pattern)
+    // ==================================================
+    public const ORG_CREATED = 'succ.org.created';
+
+    public const ORG_UPDATED = 'succ.org.updated';
+
+    // ==================================================
+    // GENERIC FALLBACK MESSAGES
+    // ==================================================
+    // Note: These should rarely be used. Prefer MessageGeneratorService for CRUD operations.
+    public const RESOURCE_CREATED = 'succ.resource.created';
+
+    public const RESOURCE_DELETED = 'succ.resource.deleted';
+
+    public const RESOURCE_RETRIEVED = 'succ.resource.retrieved';
+
+    public const RESOURCE_UPDATED = 'succ.resource.updated';
+
+    public const RESOURCES_RETRIEVED = 'succ.resource.list';
 }

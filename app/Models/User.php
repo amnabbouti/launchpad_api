@@ -1,11 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Traits\HasAttachments;
-use App\Traits\HasPublicId;
-
-use App\Traits\HasOrganizationScope;
+use App\Traits\HasUuidv7;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -13,14 +13,23 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
+use function count;
+
 class User extends Authenticatable
 {
-    use HasAttachments;
-    use HasPublicId;
     use HasApiTokens;
+    use HasAttachments;
     use HasFactory;
-    use HasOrganizationScope;
+    use HasUuidv7;
     use Notifiable;
+
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password'          => 'hashed',
+        'date_of_birth'     => 'date',
+        'created_at'        => 'datetime',
+        'updated_at'        => 'datetime',
+    ];
 
     protected $fillable = [
         'org_id',
@@ -44,18 +53,58 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    protected static function getEntityType(): string
+    public function attachments(): HasMany
     {
-        return 'user';
+        return $this->hasMany(Attachment::class, 'user_id');
     }
 
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-        'password' => 'hashed',
-        'date_of_birth' => 'date',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-    ];
+    public function getCurrentRoleSlug(): ?string
+    {
+        if ($this->role_id && $this->role) {
+            return $this->role->slug;
+        }
+
+        return $this->org_role ?? 'employee';
+    }
+
+    public function getCurrentRoleTitle(): ?string
+    {
+        return $this->role?->title ?? 'Employee';
+    }
+
+    public function getFullNameAttribute(): string
+    {
+        return mb_trim("{$this->first_name} {$this->last_name}");
+    }
+
+    public function getName(): string
+    {
+        return mb_trim($this->first_name . ' ' . $this->last_name);
+    }
+
+
+
+    public function isEmployee(): bool
+    {
+        return $this->getCurrentRoleSlug() === 'employee';
+    }
+
+    public function isManager(): bool
+    {
+        return $this->getCurrentRoleSlug() === 'manager';
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->getCurrentRoleSlug() === 'super_admin';
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(Item::class, 'user_id');
+    }
+
+
 
     public function organization(): BelongsTo
     {
@@ -65,57 +114,5 @@ class User extends Authenticatable
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class, 'role_id');
-    }
-
-    public function items(): HasMany
-    {
-        return $this->hasMany(Item::class, 'user_id');
-    }
-
-    public function attachments(): HasMany
-    {
-        return $this->hasMany(Attachment::class, 'user_id');
-    }
-
-    public function isSuperAdmin(): bool
-    {
-        return $this->role?->slug === 'super_admin';
-    }
-
-    public function isManager(): bool
-    {
-        return $this->role?->slug === 'manager';
-    }
-
-    public function isEmployee(): bool
-    {
-        return $this->role?->slug === 'employee';
-    }
-
-    public function hasPermission(string $action): bool
-    {
-        if (! $this->role) {
-            return false;
-        }
-
-        return $this->role->allows($action);
-    }
-
-    public function lacksPermission(string $action): bool
-    {
-        return ! $this->hasPermission($action);
-    }
-
-    public function getFullNameAttribute(): string
-    {
-        return trim("{$this->first_name} {$this->last_name}");
-    }
-
-    /**
-     * Get the user's full name.
-     */
-    public function getName(): string
-    {
-        return trim($this->first_name.' '.$this->last_name);
     }
 }

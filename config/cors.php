@@ -1,7 +1,8 @@
 <?php
 
-return [
+declare(strict_types = 1);
 
+return [
     /*
     |--------------------------------------------------------------------------
     | Cross-Origin Resource Sharing (CORS) Configuration
@@ -20,12 +21,13 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
-        env('FRONTEND_URL', 'http://localhost:3000'),
-        'http://localhost:3000',
-        'http://localhost:8081',
-        'http://localhost:19000', // Expo app when running in development
-        'http://localhost:19006', // Expo web
-        'https://launchpad-api.ddev.site',
+        '*',
+        // env('FRONTEND_URL', 'http://localhost:3000'),
+        // 'http://localhost:3000',
+        // 'http://localhost:8081',
+        // 'http://localhost:19000', // Expo app when running in development
+        // 'http://localhost:19006', // Expo web
+        // 'https://launchpad-api.ddev.site',
     ],
 
     'allowed_origins_patterns' => [],
@@ -37,5 +39,4 @@ return [
     'max_age' => 0,
 
     'supports_credentials' => false,
-
 ];

@@ -1,97 +1,87 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Http\Requests;
 
-class SupplierRequest extends BaseRequest
-{
+use App\Constants\AppConstants;
+
+class SupplierRequest extends BaseRequest {
     /**
-     * Validation rules.
+     * Error messages - PURE VALIDATION MESSAGES ONLY
      */
-    public function rules(): array
-    {
-        $supplierId = $this->route('supplier')?->id ?? $this->supplier_id ?? null;
-        $operation = $this->route()->getActionMethod();
-
-        $rules = [];
-
-        // Supplier specific validation
-        if ($this->isSupplierOperation()) {
-            $rules = array_merge($rules, [
-                'name' => 'required|string|max:255',
-                'code' => 'nullable|string|max:50|unique:suppliers,code,'.$supplierId.',id,org_id,'.auth()->user()->org_id,
-                'contact_name' => 'nullable|string|max:255',
-                'email' => 'nullable|email|max:255',
-                'phone' => 'nullable|string|max:50',
-                'address' => 'nullable|string|max:255',
-                'city' => 'nullable|string|max:100',
-                'state' => 'nullable|string|max:100',
-                'postal_code' => 'nullable|string|max:20',
-                'country' => 'nullable|string|max:100',
-                'website' => 'nullable|url|max:255',
-                'tax_id' => 'nullable|string|max:50',
-                'notes' => 'nullable|string',
-                'is_active' => 'boolean',
-                'org_id' => 'nullable|exists:organizations,id',
-            ]);
-        }
-
-        // Item supplier relationship validation
-        if ($this->isItemSupplierOperation()) {
-            $rules = array_merge($rules, [
-                'item_id' => 'required|exists:items,id',
-                'supplier_id' => 'required|exists:suppliers,id',
-                'supplier_part_number' => 'nullable|string|max:100',
-                'price' => 'nullable|numeric|min:0',
-                'currency' => 'nullable|string|size:3',
-                'lead_time_days' => 'nullable|integer|min:0',
-                'is_preferred' => 'boolean',
-            ]);
-        }
-
-        return $rules;
-    }
-
-    /**
-     * Error messages.
-     */
-    public function messages(): array
-    {
+    public function messages(): array {
         return [
-            // Supplier messages
-            'name.required' => 'The supplier name is required',
-            'code.unique' => 'This supplier code is already used in your organization.',
-            'email.email' => 'Please enter a valid email address',
-            'website.url' => 'Please enter a valid website URL',
-
-            // Item Supplier relationship messages
-            'item_id.required' => 'The item is required',
-            'item_id.exists' => 'The selected item is invalid',
-            'supplier_id.required' => 'The supplier is required',
+            'name.required'      => 'The supplier name is required',
+            'email.email'        => 'Please enter a valid email address',
+            'website.url'        => 'Please enter a valid website URL',
+            'item_id.exists'     => 'The selected item is invalid',
             'supplier_id.exists' => 'The selected supplier is invalid',
-            'price.min' => 'The price cannot be negative',
-            'lead_time_days.min' => 'The lead time cannot be negative',            'currency.size' => 'Currency code must be exactly 3 characters',
+            'price.min'          => 'The price cannot be negative',
+            'lead_time_days.min' => 'The lead time cannot be negative',
+            'currency.size'      => 'Currency code must be exactly 3 characters',
+            'org_id.exists'      => 'The selected organization is invalid',
         ];
     }
 
     /**
-     * Check if this is a supplier operation.
+     * Configure the validator instance.
      */
-    private function isSupplierOperation(): bool
-    {
-        // Check for relationship type parameter
-        $type = $this->get('type');
+    public function withValidator($validator): void {
+        $validator->after(static function ($validator): void {
+            $data = $validator->getData();
 
-        return $type !== 'relationship' && ! $this->has('item_id');
+            // If this is a relationship request, validate relationship fields
+            if (isset($data['type']) && $data['type'] === 'relationship') {
+                if (empty($data['item_id'])) {
+                    $validator->errors()->add('item_id', 'The item ID is required for relationships.');
+                }
+                if (empty($data['supplier_id'])) {
+                    $validator->errors()->add('supplier_id', 'The supplier ID is required for relationships.');
+                }
+            } else {
+                // If this is a supplier request, validate supplier fields
+                if (empty($data['name'])) {
+                    $validator->errors()->add('name', 'The supplier name is required.');
+                }
+            }
+        });
     }
 
     /**
-     * Check if this is an item supplier relationship operation.
+     * Validation rules - PURE VALIDATION ONLY
+     * Business logic handled in SupplierService
      */
-    private function isItemSupplierOperation(): bool
-    {
-        // Check for relationship type parameter or item_id presence
-        $type = $this->get('type');
+    protected function getValidationRules(): array {
+        return [
+            // Supplier fields - basic validation only
+            'name'         => 'nullable|string|max:255',
+            'code'         => 'nullable|string|max:50',
+            'contact_name' => 'nullable|string|max:255',
+            'email'        => 'nullable|email|max:' . AppConstants::EMAIL_MAX_LENGTH,
+            'phone'        => 'nullable|string|max:50',
+            'address'      => 'nullable|string|max:255',
+            'city'         => 'nullable|string|max:100',
+            'state'        => 'nullable|string|max:100',
+            'postal_code'  => 'nullable|string|max:' . AppConstants::POSTAL_CODE_MAX_LENGTH,
+            'country'      => 'nullable|string|max:100',
+            'website'      => 'nullable|url|max:255',
+            'tax_id'       => 'nullable|string|max:50',
+            'notes'        => 'nullable|string',
+            'is_active'    => 'boolean',
+            'org_id'       => 'nullable|string|exists:organizations,id',
 
-        return $type === 'relationship' || $this->has('item_id');
+            // Item-Supplier relationship fields
+            'item_id'              => 'nullable|string|exists:items,id',
+            'supplier_id'          => 'nullable|string|exists:suppliers,id',
+            'supplier_part_number' => 'nullable|string|max:100',
+            'price'                => 'nullable|numeric|min:0',
+            'currency'             => 'nullable|string|size:3',
+            'lead_time_days'       => 'nullable|integer|min:0',
+            'is_preferred'         => 'boolean',
+
+            // Operation type (for service to handle business logic)
+            'type' => 'nullable|string|in:supplier,relationship',
+        ];
     }
 }

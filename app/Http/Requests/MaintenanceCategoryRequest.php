@@ -1,44 +1,37 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Http\Requests;
 
-use Illuminate\Validation\Rule;
+use App\Constants\ValidationMessages;
 
-class MaintenanceCategoryRequest extends BaseRequest
-{
+class MaintenanceCategoryRequest extends BaseRequest {
     /**
-     * validation rules.
+     * Error messages
      */
-    public function rules(): array
-    {
-        $categoryId = $this->route('maintenance_category')?->id ?? $this->maintenance_category_id ?? null;
-
+    public function messages(): array {
         return [
-            'name' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('maintenance_categories')
-                    ->where('org_id', $this->org_id)
-                    ->ignore($categoryId),
-            ],
-            'remarks' => 'nullable|string|max:65535',
-            'is_active' => 'boolean',
-            'org_id' => 'required|exists:organizations,id',
+            'name.required'     => __(ValidationMessages::MAINTENANCE_CATEGORY_NAME_REQUIRED),
+            'name.string'       => __(ValidationMessages::STRING_INVALID),
+            'name.max'          => __(ValidationMessages::STRING_TOO_LONG),
+            'org_id.required'   => __(ValidationMessages::ORG_REQUIRED),
+            'org_id.exists'     => __(ValidationMessages::INVALID_ORG),
+            'remarks.string'    => __(ValidationMessages::STRING_INVALID),
+            'remarks.max'       => __(ValidationMessages::STRING_TOO_LONG),
+            'is_active.boolean' => __(ValidationMessages::BOOLEAN_INVALID),
         ];
     }
 
     /**
-     * error messages.
+     * Validation rules
      */
-    public function messages(): array
-    {
+    protected function getValidationRules(): array {
         return [
-            'name.required' => 'The maintenance category name is required',
-            'name.unique' => 'This maintenance category name already exists for the organization',
-            'org_id.required' => 'The organization ID is required',
-            'org_id.exists' => 'The selected organization is invalid',
-            'remarks.max' => 'The remarks field is too long',
+            'name'      => 'required|string|max:255',
+            'remarks'   => 'nullable|string|max:1000',
+            'is_active' => 'nullable|boolean',
+            'org_id'    => 'nullable|exists:organizations,id',
         ];
     }
 }

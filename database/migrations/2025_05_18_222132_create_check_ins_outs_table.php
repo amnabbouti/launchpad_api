@@ -1,30 +1,39 @@
 <?php
 
+declare(strict_types = 1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void {
+        Schema::dropIfExists('check_ins_outs');
+    }
+
     /**
      * Run the migrations.
      */
-    public function up(): void
-    {
-        Schema::create('check_ins_outs', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('org_id')->constrained('organizations')->onDelete('cascade');
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->morphs('trackable'); 
-            $table->foreignId('checkout_location_id')->constrained('locations')->onDelete('cascade');
+    public function up(): void {
+        Schema::create('check_ins_outs', static function (Blueprint $table): void {
+            $table->uuid('id');
+            $table->primary('id');
+            $table->foreignUuid('org_id')->constrained('organizations')->cascadeOnDelete();
+            $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
+            $table->uuid('trackable_id');
+            $table->string('trackable_type');
+            $table->foreignUuid('checkout_location_id')->constrained('locations')->cascadeOnDelete();
             $table->timestamp('checkout_date');
             $table->decimal('quantity', 10, 2)->default(1);
-            $table->foreignId('status_out_id')->nullable()->constrained('statuses')->onDelete('set null');
-            $table->foreignId('checkin_user_id')->nullable()->constrained('users')->onDelete('set null');
-            $table->foreignId('checkin_location_id')->nullable()->constrained('locations')->onDelete('set null');
+            $table->foreignUuid('status_out_id')->nullable()->constrained('statuses')->nullOnDelete();
+            $table->foreignUuid('checkin_user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignUuid('checkin_location_id')->nullable()->constrained('locations')->nullOnDelete();
             $table->timestamp('checkin_date')->nullable();
             $table->decimal('checkin_quantity', 10, 2)->nullable();
-            $table->foreignId('status_in_id')->nullable()->constrained('statuses')->onDelete('set null');
+            $table->foreignUuid('status_in_id')->nullable()->constrained('statuses')->nullOnDelete();
             $table->timestamp('expected_return_date')->nullable();
             $table->string('reference', 100)->nullable();
             $table->text('notes')->nullable();
@@ -42,13 +51,5 @@ return new class extends Migration
             $table->index('status_out_id');
             $table->index('status_in_id');
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('check_ins_outs');
     }
 };

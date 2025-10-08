@@ -1,9 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
+use App\Constants\Permissions;
 use App\Models\Role;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
+
+use function in_array;
+use function is_array;
 
 class RoleService extends BaseService
 {
@@ -16,21 +25,46 @@ class RoleService extends BaseService
     }
 
     /**
-     * Get roles filtered by search.
+     * Add forbidden action to a role.
      */
-    public function getFiltered(array $filters = []): Collection
+    public function addForbiddenAction(string $roleId, string $action): Role
     {
-        $query = $this->getQuery();
+        $role = $this->findById($roleId);
+        $forbidden = $role->getForbidden();
+        if (! in_array($action, $forbidden, true)) {
+            $forbidden[] = $action;
+            $role->update(['forbidden' => $forbidden]);
+        }
 
-        $query->when($filters['search'] ?? null, function ($q, $search) {
-            $q->where(function ($subQuery) use ($search) {
-                $subQuery->where('slug', 'like', "%{$search}%")
-                    ->orWhere('title', 'like', "%{$search}%");
-            });
-        })
-            ->when($filters['with'] ?? null, fn ($q, $relations) => $q->with($relations));
+        return $role->fresh();
+    }
 
-        return $query->orderBy('title', 'asc')->get();
+    /**
+     * Create a new custom role.
+     */
+    public function createCustomRole(array $data): Role
+    {
+        $data = $this->applyCustomRoleBusinessRules($data);
+        $this->validateCustomRolePermissions($data);
+        return DB::transaction(fn() => $this->create($data));
+    }
+
+    /**
+     * Delete a custom role.
+     */
+    public function deleteCustomRole(string $roleId): bool
+    {
+        $role = $this->findById($roleId);
+
+        if ($role->isSystemRole()) {
+            throw new InvalidArgumentException('Cannot delete system roles');
+        }
+
+        if ($role->users()->exists()) {
+            throw new InvalidArgumentException('Cannot delete role that is assigned to users');
+        }
+
+        return DB::transaction(fn() => $this->delete($roleId));
     }
 
     /**
@@ -38,11 +72,41 @@ class RoleService extends BaseService
      */
     public function getAllRoles(): Collection
     {
-        return $this->all(['*'], [], [], ['title', 'asc']);
+        return $this->all(['*'], [], [], ['title', 'asc'])->get();
     }
 
     /**
-     * Get organization roles - excludes super_admin.
+     * Get permissions managers can control.
+     */
+    public function getAvailablePermissions(): array
+    {
+        return Permissions::getAvailablePermissionsForManagers();
+    }
+
+    /**
+     * Get roles with filters.
+     */
+    public function getFiltered(array $filters = []): Builder
+    {
+        $query = $this->getQuery();
+
+        $query->when($filters['is_system'] ?? null, static fn($q, $value) => $q->where('is_system', $value))
+            ->when($filters['slug'] ?? null, static fn($q, $value) => $q->where('slug', 'like', "%$value%"))
+            ->when($filters['title'] ?? null, static fn($q, $value) => $q->where('title', 'like', "%$value%"))
+            ->when($filters['q'] ?? null, static function ($q, $value) {
+                return $q->where(static function ($query) use ($value): void {
+                    $query->where('slug', 'like', "%$value%")
+                        ->orWhere('title', 'like', "%$value%")
+                        ->orWhere('description', 'like', "%$value%");
+                });
+            })
+            ->when($filters['with'] ?? null, static fn($q, $relations) => $q->with($relations));
+
+        return $query;
+    }
+
+    /**
+     * Get organization roles (excludes super_admin).
      */
     public function getOrganizationRoles(): Collection
     {
@@ -53,20 +117,43 @@ class RoleService extends BaseService
     }
 
     /**
-     * Process request parameters with validation and type conversion.
+     * Process request parameters.
      */
     public function processRequestParams(array $params): array
     {
-        // Validate parameters against whitelist
         $this->validateParams($params);
 
         return [
-            'search' => $this->toString($params['search'] ?? null),
-            'slug' => $this->toString($params['slug'] ?? null),
-            'title' => $this->toString($params['title'] ?? null),
-            'is_active' => $this->toBool($params['is_active'] ?? null),
-            'with' => $this->processWithParameter($params['with'] ?? null),
+            'is_system' => $this->toBool($params['is_system'] ?? null),
+            'slug'      => $this->toString($params['slug'] ?? null),
+            'title'     => $this->toString($params['title'] ?? null),
+            'q'         => $this->toString($params['q'] ?? null),
+            'with'      => $this->processWithParameter($params['with'] ?? null),
         ];
+    }
+
+    /**
+     * Remove forbidden action from role.
+     */
+    public function removeForbiddenAction(string $roleId, string $action): Role
+    {
+        $role = $this->findById($roleId);
+        $forbidden = $role->getForbidden();
+        $forbidden = array_filter($forbidden, static fn($item) => $item !== $action);
+        $role->update(['forbidden' => array_values($forbidden)]);
+        return $role->fresh();
+    }
+
+    /**
+     * Update an existing custom role.
+     */
+    public function updateCustomRole(string $roleId, array $data): Role
+    {
+        $role = $this->findById($roleId);
+        $data = $this->applyCustomRoleBusinessRules($data);
+        $this->validateCustomRolePermissions($data);
+
+        return DB::transaction(fn() => $this->update($roleId, $data));
     }
 
     /**
@@ -75,7 +162,10 @@ class RoleService extends BaseService
     protected function getAllowedParams(): array
     {
         return array_merge(parent::getAllowedParams(), [
-            'search', 'slug', 'title', 'is_active',
+            'is_system',
+            'slug',
+            'title',
+            'q',
         ]);
     }
 
@@ -84,78 +174,57 @@ class RoleService extends BaseService
      */
     protected function getValidRelations(): array
     {
-        return ['users'];
-    }
-
-    /**
-     * Get all available actions that can be forbidden.
-     */
-    public function getAvailableActions(): array
-    {
         return [
-            'users.create',
-            'users.edit',
-            'users.delete',
-            'users.view',
-            'users.edit.role_self',
-            'items.create',
-            'items.update',
-            'items.delete',
-            'items.view',
-            'categories.create',
-            'categories.update',
-            'categories.delete',
-            'categories.view',
-            'maintenance.create',
-            'maintenance.update',
-            'maintenance.delete',
-            'maintenance.view',
-            'locations.create',
-            'locations.update',
-            'locations.delete',
-            'locations.view',
-            'suppliers.create',
-            'suppliers.update',
-            'suppliers.delete',
-            'suppliers.view',
-            'roles.create',
-            'roles.update',
-            'roles.delete',
-            'roles.view',
-            'organizations.create',
-            'organizations.update',
-            'organizations.delete',
-            'organizations.view',
+            'organization',
+            'users',
         ];
     }
 
     /**
-     * Add a forbidden action to role.
+     * Apply business rules for custom roles.
      */
-    public function addForbiddenAction(int $roleId, string $action): Role
+    private function applyCustomRoleBusinessRules(array $data): array
     {
-        $role = $this->findById($roleId);
-        $forbidden = $role->getForbidden();
-        
-        if (!in_array($action, $forbidden)) {
-            $forbidden[] = $action;
-            $role->update(['forbidden' => $forbidden]);
+        $data['is_system'] = false;
+
+        if (! isset($data['forbidden'])) {
+            $data['forbidden'] = [];
         }
-        
-        return $role->fresh();
+
+        // Enforce manager restrictions: automatically add required forbidden permissions
+        $requiredForbidden = array_keys(Permissions::getRequiredForbiddenPermissions());
+        $data['forbidden'] = array_unique(array_merge($data['forbidden'], $requiredForbidden));
+
+        return $data;
     }
 
     /**
-     * Remove a forbidden action from role (allow the action).
+     * Validate custom role permissions.
      */
-    public function removeForbiddenAction(int $roleId, string $action): Role
+    private function validateCustomRolePermissions(array $data): void
     {
-        $role = $this->findById($roleId);
-        $forbidden = $role->getForbidden();
-        
-        $forbidden = array_filter($forbidden, fn($item) => $item !== $action);
-        $role->update(['forbidden' => array_values($forbidden)]);
-        
-        return $role->fresh();
+        if (! isset($data['forbidden']) || ! is_array($data['forbidden'])) {
+            throw new InvalidArgumentException('Forbidden permissions must be provided as an array');
+        }
+
+        // Validate that all required forbidden permissions are present
+        $requiredForbidden = array_keys(Permissions::getRequiredForbiddenPermissions());
+        $missingRequired = array_diff($requiredForbidden, $data['forbidden']);
+
+        if (! empty($missingRequired)) {
+            throw new InvalidArgumentException(
+                'Custom roles must include these forbidden permissions: ' . implode(', ', $missingRequired)
+            );
+        }
+
+        // Validate that all forbidden permissions are valid
+        $validPermissions = Permissions::getAvailablePermissionKeys();
+        $invalidPermissions = array_diff($data['forbidden'], $validPermissions);
+
+        if (! empty($invalidPermissions)) {
+            throw new InvalidArgumentException(
+                'Invalid forbidden permissions: ' . implode(', ', $invalidPermissions)
+            );
+        }
     }
 }

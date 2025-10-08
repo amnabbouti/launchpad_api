@@ -1,42 +1,32 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Http\Requests;
 
-class CategoryRequest extends BaseRequest
-{
+class CategoryRequest extends BaseRequest {
     /**
-     * validation rules.
+     * Error messages
      */
-    public function rules(): array
-    {
-        if ($this->isMethod('GET')) {
-            return [];
-        }
-
-        $categoryId = $this->route('category')?->id ?? $this->category_id ?? null;
-
+    public function messages(): array {
         return [
-            'name' => 'required|string|max:255',
-            'parent_id' => 'nullable|exists:categories,id',
-            'path' => 'nullable|string',
-            'org_id' => 'required|exists:organizations,id',
-            'is_active' => 'nullable|boolean',
+            'name.required'     => 'The category name is required',
+            'name.string'       => 'The category name must be a string',
+            'name.max'          => 'The category name cannot exceed 255 characters',
+            'parent_id.exists'  => 'The selected parent category does not exist',
+            'is_active.boolean' => 'The active status must be true or false',
         ];
     }
 
     /**
-     * error messages.
+     * Validation rules
      */
-    public function messages(): array
-    {
+    protected function getValidationRules(): array {
         return [
-            'name.required' => 'The category name is required',
-            'name.string' => 'The category name must be a string',
-            'name.max' => 'The category name cannot exceed 255 characters',
-            'parent_id.exists' => 'The selected parent category does not exist',
-            'org_id.required' => 'The organization ID is required',
-            'org_id.exists' => 'The selected organization is invalid',
-            'is_active.boolean' => 'The active status must be true or false',
+            'name'      => 'required|string|max:255',
+            'parent_id' => 'nullable|exists:categories,id',
+            'path'      => 'nullable|string',
+            'is_active' => 'nullable|boolean',
         ];
     }
 }

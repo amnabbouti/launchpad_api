@@ -1,66 +1,199 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
+use App\Constants\ErrorMessages;
+use App\Models\Item;
 use App\Models\Maintenance;
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\Auth;
+use App\Models\MaintenanceCondition;
+use App\Models\MaintenanceDetail;
+use Illuminate\Database\Eloquent\Builder;
+use InvalidArgumentException;
 
 class MaintenanceService extends BaseService
 {
-    /**
-     * Create a new service instance.
-     */
-    public function __construct(Maintenance $maintenance)
+    protected EventService $eventService;
+
+    public function __construct(Maintenance $maintenance, EventService $eventService)
     {
         parent::__construct($maintenance);
+        $this->eventService = $eventService;
     }
 
-    /**
-     * Get maintenances with details.
-     */
-    public function getWithDetails(): Collection
+    public function completeMaintenance(string $maintenanceId, array $data): Maintenance
     {
-        return $this->getQuery()->with(['maintainable', 'user', 'supplier', 'maintenanceDetails'])->get();
+        $maintenance = $this->findById($maintenanceId);
+
+        if ($maintenance->date_back_from_maintenance) {
+            throw new InvalidArgumentException(ErrorMessages::MAINTENANCE_ALREADY_COMPLETED);
+        }
+
+        $completionData = array_merge($data, [
+            'date_back_from_maintenance' => $data['date_back_from_maintenance'] ?? now(),
+        ]);
+
+        $updatedMaintenance = $this->update($maintenanceId, $completionData);
+
+        // Get the maintainable item
+        if ($updatedMaintenance->maintainable_type === Item::class) {
+            $item = Item::findOrFail($updatedMaintenance->maintainable_id);
+
+            // Create maintenance end event
+            $description = $data['remarks'] ?? 'Item returned from maintenance';
+            $this->eventService->createMaintenanceEvent(
+                $item->id,
+                'end',
+                $description,
+                $updatedMaintenance->id,
+                null,
+                $updatedMaintenance->date_in_maintenance,
+                $updatedMaintenance->date_back_from_maintenance,
+            );
+        }
+
+        return $updatedMaintenance;
     }
 
-    /**
-     * Get active maintenances.
-     */
-    public function getActive(): Collection
+    public function createFromCondition(array $data): Maintenance
     {
-        return $this->getQuery()->whereNull('date_back_from_maintenance')->get();
+        if (! isset($data['condition_id'])) {
+            throw new InvalidArgumentException(ErrorMessages::MAINTENANCE_CONDITION_REQUIRED);
+        }
+
+        $condition = MaintenanceCondition::findOrFail($data['condition_id']);
+
+        if (! $condition->item) {
+            throw new InvalidArgumentException(ErrorMessages::MAINTENANCE_CONDITION_ITEM_REQUIRED);
+        }
+
+        $maintenanceData = array_merge($data, [
+            'org_id'              => $condition->item->org_id,
+            'maintainable_id'     => $condition->item->id,
+            'maintainable_type'   => Item::class,
+            'date_in_maintenance' => $data['date_in_maintenance'] ?? now(),
+            'remarks'             => $data['remarks'] ?? "Maintenance triggered by condition: {$condition->maintenanceCategory->name}",
+        ]);
+
+        unset($maintenanceData['condition_id']);
+
+        if (! isset($maintenanceData['user_id'])) {
+            $user                       = \App\Services\AuthorizationHelper::getCurrentUser();
+            $maintenanceData['user_id'] = $user?->id;
+        }
+
+        $maintenance = $this->create($maintenanceData);
+
+        $this->createMaintenanceDetail($maintenance, $condition, $data);
+
+        // Create maintenance start event
+        $description = $maintenanceData['remarks'];
+        $this->eventService->createMaintenanceEvent(
+            $condition->item->id,
+            'start',
+            $description,
+            $maintenance->id,
+            $maintenance->date_expected_back_from_maintenance,
+            $maintenance->date_in_maintenance,
+            null,
+            $condition->id,
+            $condition->maintenanceCategory->name,
+            $data['trigger_value'] ?? null,
+        );
+
+        return $maintenance;
     }
 
-    /**
-     * Get filtered maintenance records.
-     */
-    public function getFiltered(array $filters = []): Collection
+    public function createItemMaintenance(array $data): Maintenance
+    {
+        if (! isset($data['item_id'])) {
+            throw new InvalidArgumentException(ErrorMessages::MAINTENANCE_ITEM_REQUIRED);
+        }
+
+        $item = Item::findOrFail($data['item_id']);
+
+        $maintenanceData = array_merge($data, [
+            'org_id'              => $item->org_id,
+            'maintainable_id'     => $item->id,
+            'maintainable_type'   => Item::class,
+            'date_in_maintenance' => $data['date_in_maintenance'] ?? now(),
+        ]);
+
+        unset($maintenanceData['item_id']);
+
+        if (! isset($maintenanceData['user_id'])) {
+            $user                       = \App\Services\AuthorizationHelper::getCurrentUser();
+            $maintenanceData['user_id'] = $user?->id;
+        }
+
+        $maintenance = $this->create($maintenanceData);
+
+        // Create maintenance start event
+        $description = $data['remarks'] ?? 'Item sent to maintenance';
+        $this->eventService->createMaintenanceEvent(
+            $item->id,
+            'start',
+            $description,
+            $maintenance->id,
+            $maintenance->date_expected_back_from_maintenance,
+            $maintenance->date_in_maintenance,
+        );
+
+        return $maintenance;
+    }
+
+    public function findByIdWithRelations($id): Maintenance
+    {
+        /** @var Maintenance $maintenance */
+        return $this->findById($id, ['*'], [
+            'maintainable',
+            'user',
+            'supplier',
+            'statusOut',
+            'statusIn',
+            'maintenanceDetails',
+            'organization',
+        ]);
+    }
+
+    public function getFiltered(array $filters = []): Builder
     {
         $query = $this->getQuery();
 
-        // Apply filters
-        $query->when($filters['org_id'] ?? null, fn($q, $value) => $q->where('org_id', $value))
-            ->when($filters['maintainable_id'] ?? null, fn($q, $value) => $q->where('maintainable_id', $value))
-            ->when($filters['maintainable_type'] ?? null, fn($q, $value) => $q->where('maintainable_type', $value))
-            ->when($filters['user_id'] ?? null, fn($q, $value) => $q->where('user_id', $value))
-            ->when($filters['supplier_id'] ?? null, fn($q, $value) => $q->where('supplier_id', $value))
-            ->when($filters['active_only'] ?? null, fn($q) => $q->whereNull('date_back_from_maintenance'))
-            ->when($filters['completed_only'] ?? null, fn($q) => $q->whereNotNull('date_back_from_maintenance'))
-            ->when($filters['date_from'] ?? null, fn($q, $value) => $q->where('date_in_maintenance', '>=', $value))
-            ->when($filters['date_to'] ?? null, fn($q, $value) => $q->where('date_in_maintenance', '<=', $value))
-            ->when($filters['with'] ?? null, fn($q, $relations) => $q->with($relations));
+        $query->when($filters['maintainable_id'] ?? null, static fn($q, $value) => $q->where('maintainable_id', $value))
+            ->when($filters['maintainable_type'] ?? null, static fn($q, $value) => $q->where('maintainable_type', $value))
+            ->when($filters['user_id'] ?? null, static fn($q, $value) => $q->where('user_id', $value))
+            ->when($filters['supplier_id'] ?? null, static fn($q, $value) => $q->where('supplier_id', $value))
+            ->when($filters['active_only'] ?? null, static fn($q) => $q->whereNull('date_back_from_maintenance'))
+            ->when($filters['completed_only'] ?? null, static fn($q) => $q->whereNotNull('date_back_from_maintenance'))
+            ->when($filters['date_from'] ?? null, static fn($q, $value) => $q->where('date_in_maintenance', '>=', $value))
+            ->when($filters['date_to'] ?? null, static fn($q, $value) => $q->where('date_in_maintenance', '<=', $value))
+            ->when($filters['with'] ?? null, static fn($q, $relations) => $q->with($relations));
 
-        return $query->get();
+        return $query;
     }
 
-    /**
-     * Get allowed query parameters
-     */
+    public function processRequestParams(array $params): array
+    {
+        $this->validateParams($params);
+
+        return [
+            'maintainable_id'   => $this->toInt($params['maintainable_id'] ?? null),
+            'maintainable_type' => $this->toString($params['maintainable_type'] ?? null),
+            'user_id'           => $this->toInt($params['user_id'] ?? null),
+            'supplier_id'       => $this->toInt($params['supplier_id'] ?? null),
+            'active_only'       => $this->toBool($params['active_only'] ?? null),
+            'completed_only'    => $this->toBool($params['completed_only'] ?? null),
+            'date_from'         => $this->toString($params['date_from'] ?? null),
+            'date_to'           => $this->toString($params['date_to'] ?? null),
+            'with'              => $this->processWithParameter($params['with'] ?? null),
+        ];
+    }
+
     protected function getAllowedParams(): array
     {
         return array_merge(parent::getAllowedParams(), [
-            'org_id',
             'maintainable_id',
             'maintainable_type',
             'user_id',
@@ -72,47 +205,6 @@ class MaintenanceService extends BaseService
         ]);
     }
 
-    /**
-     * Process request parameters with validation and type conversion.
-     */
-    public function processRequestParams(array $params): array
-    {
-        // Validate parameters against whitelist
-        $this->validateParams($params);
-
-        return [
-            'org_id' => $this->toInt($params['org_id'] ?? null),
-            'maintainable_id' => $this->toInt($params['maintainable_id'] ?? null),
-            'maintainable_type' => $this->toString($params['maintainable_type'] ?? null),
-            'user_id' => $this->toInt($params['user_id'] ?? null),
-            'supplier_id' => $this->toInt($params['supplier_id'] ?? null),
-            'active_only' => $this->toBool($params['active_only'] ?? null),
-            'completed_only' => $this->toBool($params['completed_only'] ?? null),
-            'date_from' => $this->toString($params['date_from'] ?? null),
-            'date_to' => $this->toString($params['date_to'] ?? null),
-            'with' => $this->processWithParameter($params['with'] ?? null),
-        ];
-    }
-
-    /**
-     * Find maintenance by ID with all relationships
-     */
-    public function findByIdWithRelations($id): Maintenance
-    {
-        return $this->findById($id, ['*'], [
-            'maintainable',
-            'user',
-            'supplier',
-            'statusOut',
-            'statusIn',
-            'maintenanceDetails',
-            'organization'
-        ]);
-    }
-
-    /**
-     * Get valid relations for the maintenance model.
-     */
     protected function getValidRelations(): array
     {
         return [
@@ -122,7 +214,18 @@ class MaintenanceService extends BaseService
             'statusOut',
             'statusIn',
             'maintenanceDetails',
-            'organization'
+            'organization',
         ];
+    }
+
+    private function createMaintenanceDetail(Maintenance $maintenance, MaintenanceCondition $condition, array $data): void
+    {
+        $detailData = [
+            'maintenance_id'           => $maintenance->id,
+            'maintenance_condition_id' => $condition->id,
+            'value'                    => $data['trigger_value'] ?? 0,
+        ];
+
+        MaintenanceDetail::create($detailData);
     }
 }

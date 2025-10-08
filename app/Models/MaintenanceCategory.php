@@ -1,20 +1,24 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Models;
 
-use App\Traits\HasPublicId;
-
-use App\Traits\HasOrganizationScope;
+use App\Traits\HasUuidv7;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class MaintenanceCategory extends Model
-{
-    use HasPublicId; // Add public_id support
+class MaintenanceCategory extends Model {
     use HasFactory;
-    use HasOrganizationScope;
+    use HasUuidv7;
+
+    protected $casts = [
+        'is_active'  => 'boolean',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
 
     protected $fillable = [
         'org_id',
@@ -23,24 +27,11 @@ class MaintenanceCategory extends Model
         'is_active',
     ];
 
-    protected static function getEntityType(): string
-    {
-        return 'maintenance_category';
-    }
-
-    protected $casts = [
-        'is_active' => 'boolean',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-    ];
-
-    public function organization(): BelongsTo
-    {
-        return $this->belongsTo(Organization::class, 'org_id');
-    }
-
-    public function maintenanceConditions(): HasMany
-    {
+    public function maintenanceConditions(): HasMany {
         return $this->hasMany(MaintenanceCondition::class, 'maintenance_category_id');
+    }
+
+    public function organization(): BelongsTo {
+        return $this->belongsTo(Organization::class, 'org_id');
     }
 }

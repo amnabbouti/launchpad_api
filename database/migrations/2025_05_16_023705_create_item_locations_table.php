@@ -1,18 +1,23 @@
 <?php
 
+declare(strict_types = 1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateItemLocationsTable extends Migration
-{
-    public function up(): void
-    {
-        Schema::create('item_locations', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('org_id')->constrained('organizations')->onDelete('cascade');
-            $table->foreignId('item_id')->constrained()->onDelete('cascade');
-            $table->foreignId('location_id')->constrained()->onDelete('cascade');
+final class CreateItemLocationsTable extends Migration {
+    public function down(): void {
+        Schema::dropIfExists('item_locations');
+    }
+
+    public function up(): void {
+        Schema::create('item_locations', static function (Blueprint $table): void {
+            $table->uuid('id');
+            $table->primary('id');
+            $table->foreignUuid('org_id')->constrained('organizations')->cascadeOnDelete();
+            $table->foreignUuid('item_id')->constrained('items')->cascadeOnDelete();
+            $table->foreignUuid('location_id')->constrained('locations')->cascadeOnDelete();
             $table->decimal('quantity', 10, 2)->default(0);
             $table->date('moved_date')->nullable();
             $table->text('notes')->nullable();
@@ -24,10 +29,5 @@ class CreateItemLocationsTable extends Migration
             $table->index(['org_id', 'location_id']);
             $table->index('moved_date');
         });
-    }
-
-    public function down(): void
-    {
-        Schema::dropIfExists('item_locations');
     }
 }

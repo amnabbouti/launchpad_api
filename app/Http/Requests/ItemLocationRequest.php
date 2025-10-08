@@ -1,73 +1,42 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Http\Requests;
 
-class ItemLocationRequest extends BaseRequest
-{
+use App\Constants\AppConstants;
+
+class ItemLocationRequest extends BaseRequest {
     /**
-     * validation rules.
+     * Error messages for ItemLocation validation
      */
-    public function rules(): array
-    {
-        $itemLocationId = $this->route('id') ?? null;
-        $isMove = $this->isMethod('post') && str_contains($this->path(), 'move');
-        $isUpdateQuantity = $this->isMethod('put') && str_contains($this->path(), 'update-quantity');
-        $orgId = auth()->user()->org_id;
-
-        if ($isMove) {
-            return [
-                'org_id' => 'required|exists:organizations,id',
-                'item_id' => 'required|integer',
-                'from_location_id' => 'required|integer',
-                'to_location_id' => 'required|integer|different:from_location_id',
-                'quantity' => 'required|numeric|min:0',
-                'moved_date' => 'nullable|date',
-                'notes' => 'nullable|string|max:65535',
-            ];
-        }
-
-        if ($isUpdateQuantity) {
-            return [
-                'org_id' => 'required|exists:organizations,id',
-                'item_id' => 'required|integer',
-                'location_id' => 'required|integer',
-                'quantity' => 'required|numeric|min:0',
-                'moved_date' => 'nullable|date',
-                'notes' => 'nullable|string|max:65535',
-            ];
-        }
-
+    public function messages(): array {
         return [
-            'org_id' => 'required|exists:organizations,id',
-            'item_id' => 'required|string',
-            'location_id' => 'required|string',
-            'quantity' => 'required|numeric|min:0',
-            'moved_date' => 'nullable|date',
-            'notes' => 'nullable|string|max:65535',
+            'org_id.required'      => 'Organization ID is required',
+            'org_id.exists'        => 'The selected organization is invalid',
+            'item_id.required'     => 'The item is required',
+            'item_id.exists'       => 'The selected item is invalid',
+            'location_id.required' => 'The location is required',
+            'location_id.exists'   => 'The selected location is invalid',
+            'quantity.required'    => 'The quantity is required',
+            'quantity.numeric'     => 'The quantity must be a number',
+            'quantity.min'         => 'The quantity cannot be negative',
+            'moved_date.date'      => 'The moved date must be a valid date',
+            'notes.max'            => 'The notes field is too long',
         ];
     }
 
     /**
-     * error messages.
+     * Validation rules for ItemLocation operations (inventory management only)
      */
-    public function messages(): array
-    {
+    protected function getValidationRules(): array {
         return [
-            'org_id.required' => 'Organization ID is required',
-            'org_id.exists' => 'The selected organization is invalid',
-            'item_id.required' => 'The item is required',
-            'item_id.exists' => 'The selected item is invalid',
-            'location_id.required' => 'The location is required',
-            'location_id.exists' => 'The selected location is invalid',
-            'location_id.unique' => 'This item is already assigned to this location for the organization',
-            'from_location_id.required' => 'The source location is required',
-            'from_location_id.exists' => 'The selected source location is invalid',
-            'to_location_id.required' => 'The destination location is required',
-            'to_location_id.exists' => 'The selected destination location is invalid',
-            'to_location_id.different' => 'The destination location must be different from the source location',
-            'quantity.required' => 'The quantity is required',
-            'quantity.min' => 'The quantity cannot be negative',
-            'notes.max' => 'The notes field is too long',
+            'org_id'      => 'nullable|exists:organizations,id',
+            'item_id'     => 'required|exists:items,id',
+            'location_id' => 'required|exists:locations,id',
+            'quantity'    => 'required|numeric|min:0|max:' . AppConstants::ITEM_MAX_QUANTITY,
+            'moved_date'  => 'nullable|date',
+            'notes'       => 'nullable|string|max:' . AppConstants::REMARKS_MAX_LENGTH,
         ];
     }
 }

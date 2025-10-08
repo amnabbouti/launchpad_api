@@ -1,0 +1,638 @@
+{
+  "CheckInOut": {
+    "type": "object",
+    "description": "A check-in/out record represents the tracking of inventory items being checked out and returned. It maintains complete audit trail of who, what, when, and where for inventory movements.",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Unique public identifier for the check-in/out record (e.g., 'CHK-0001')",
+        "example": "CHK-0001"
+      },
+      "quantity": {
+        "type": "number",
+        "format": "decimal",
+        "description": "Quantity of items checked out",
+        "minimum": 0.01,
+        "example": 2.5
+      },
+      "checkout_date": {
+        "type": "string",
+        "format": "date-time",
+        "description": "ISO 8601 timestamp when the item was checked out",
+        "example": "2024-01-15T10:30:00Z"
+      },
+      "expected_return_date": {
+        "type": "string",
+        "format": "date-time",
+        "nullable": true,
+        "description": "ISO 8601 timestamp when the item is expected to be returned",
+        "example": "2024-01-22T10:30:00Z"
+      },
+      "checkin_date": {
+        "type": "string",
+        "format": "date-time",
+        "nullable": true,
+        "description": "ISO 8601 timestamp when the item was checked in (null if still checked out)",
+        "example": "2024-01-20T14:30:00Z"
+      },
+      "checkin_quantity": {
+        "type": "number",
+        "format": "decimal",
+        "nullable": true,
+        "description": "Quantity of items checked in (null if not checked in yet)",
+        "minimum": 0.01,
+        "example": 2.5
+      },
+      "duration_days": {
+        "type": "integer",
+        "nullable": true,
+        "description": "Number of days between checkout and checkin (null if not checked in yet)",
+        "example": 5
+      },
+      "reference": {
+        "type": "string",
+        "nullable": true,
+        "description": "Optional reference number for tracking purposes",
+        "maxLength": 255,
+        "example": "REF-001"
+      },
+      "notes": {
+        "type": "string",
+        "nullable": true,
+        "description": "Optional notes about the checkout/checkin",
+        "maxLength": 1000,
+        "example": "Checkout for project Alpha"
+      },
+      "is_active": {
+        "type": "boolean",
+        "description": "Whether this checkout is currently active",
+        "example": true
+      },
+      "is_checked_out": {
+        "type": "boolean",
+        "description": "Whether the item is currently checked out (computed field)",
+        "example": true
+      },
+      "is_checked_in": {
+        "type": "boolean",
+        "description": "Whether the item has been checked in (computed field)",
+        "example": false
+      },
+      "is_overdue": {
+        "type": "boolean",
+        "description": "Whether the item is overdue for return (computed field)",
+        "example": false
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "ISO 8601 timestamp when the record was created",
+        "example": "2024-01-15T10:30:00Z"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "ISO 8601 timestamp when the record was last updated",
+        "example": "2024-01-20T14:30:00Z"
+      },
+      "user": {
+        "type": "object",
+        "nullable": true,
+        "description": "User who checked out the item (included when 'user' is requested in 'with' parameter)",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "USR-0001"
+          },
+          "name": {
+            "type": "string",
+            "example": "John Doe"
+          },
+          "email": {
+            "type": "string",
+            "example": "john.doe@example.com"
+          }
+        }
+      },
+      "checkin_user": {
+        "type": "object",
+        "nullable": true,
+        "description": "User who checked in the item (included when 'checkinUser' is requested in 'with' parameter)",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "USR-0002"
+          },
+          "name": {
+            "type": "string",
+            "example": "Jane Smith"
+          },
+          "email": {
+            "type": "string",
+            "example": "jane.smith@example.com"
+          }
+        }
+      },
+      "trackable": {
+        "type": "object",
+        "nullable": true,
+        "description": "The item being tracked (included when 'trackable' is requested in 'with' parameter)",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "IL-0001"
+          },
+          "type": {
+            "type": "string",
+            "example": "ItemLocation"
+          },
+          "item": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "id": {
+                "type": "string",
+                "example": "ITM-0001"
+              },
+              "name": {
+                "type": "string",
+                "example": "Laptop Dell XPS 13"
+              },
+              "code": {
+                "type": "string",
+                "example": "LAPTOP-001"
+              }
+            }
+          },
+          "location": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "id": {
+                "type": "string",
+                "example": "LOC-0001"
+              },
+              "name": {
+                "type": "string",
+                "example": "Main Warehouse"
+              },
+              "code": {
+                "type": "string",
+                "example": "WH-001"
+              }
+            }
+          },
+          "quantity": {
+            "type": "number",
+            "format": "decimal",
+            "example": 10
+          }
+        }
+      },
+      "checkout_location": {
+        "type": "object",
+        "nullable": true,
+        "description": "Location where the item was checked out from (included when 'checkoutLocation' is requested in 'with' parameter)",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "LOC-0001"
+          },
+          "name": {
+            "type": "string",
+            "example": "Main Warehouse"
+          },
+          "code": {
+            "type": "string",
+            "example": "WH-001"
+          }
+        }
+      },
+      "checkin_location": {
+        "type": "object",
+        "nullable": true,
+        "description": "Location where the item was checked in to (included when 'checkinLocation' is requested in 'with' parameter)",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "LOC-0002"
+          },
+          "name": {
+            "type": "string",
+            "example": "Secondary Warehouse"
+          },
+          "code": {
+            "type": "string",
+            "example": "WH-002"
+          }
+        }
+      },
+      "status_out": {
+        "type": "object",
+        "nullable": true,
+        "description": "Status when checked out (included when 'statusOut' is requested in 'with' parameter)",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "STS-0001"
+          },
+          "name": {
+            "type": "string",
+            "example": "In Use"
+          },
+          "color": {
+            "type": "string",
+            "example": "#ff6b35"
+          }
+        }
+      },
+      "status_in": {
+        "type": "object",
+        "nullable": true,
+        "description": "Status when checked in (included when 'statusIn' is requested in 'with' parameter)",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "STS-0002"
+          },
+          "name": {
+            "type": "string",
+            "example": "Available"
+          },
+          "color": {
+            "type": "string",
+            "example": "#28a745"
+          }
+        }
+      },
+      "attachments": {
+        "type": "array",
+        "description": "File attachments related to this check-in/out (included when 'attachments' is requested in 'with' parameter)",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "example": "ATT-0001"
+            },
+            "name": {
+              "type": "string",
+              "example": "checkout_receipt.pdf"
+            },
+            "url": {
+              "type": "string",
+              "example": "https://example.com/files/checkout_receipt.pdf"
+            },
+            "size": {
+              "type": "integer",
+              "example": 102400
+            }
+          }
+        }
+      }
+    },
+    "required": ["id", "quantity", "checkout_date", "is_active", "is_checked_out", "is_checked_in", "is_overdue", "created_at", "updated_at"]
+  },
+  "CheckInOutInput": {
+    "type": "object",
+    "description": "Input schema for creating or updating a check-in/out record",
+    "properties": {
+      "user_id": {
+        "type": "string",
+        "nullable": true,
+        "description": "User ID who is checking out the item",
+        "example": "USR-0001"
+      },
+      "trackable_id": {
+        "type": "string",
+        "nullable": true,
+        "description": "ID of the trackable item (usually ItemLocation ID)",
+        "example": "IL-0001"
+      },
+      "trackable_type": {
+        "type": "string",
+        "nullable": true,
+        "description": "Type of the trackable item",
+        "enum": ["App\\Models\\ItemLocation", "App\\Models\\Item"],
+        "example": "App\\Models\\ItemLocation"
+      },
+      "checkout_location_id": {
+        "type": "string",
+        "nullable": true,
+        "description": "Location ID where the item is being checked out from",
+        "example": "LOC-0001"
+      },
+      "checkout_date": {
+        "type": "string",
+        "format": "date-time",
+        "nullable": true,
+        "description": "Checkout date (ISO 8601 format)",
+        "example": "2024-01-15T10:30:00Z"
+      },
+      "quantity": {
+        "type": "number",
+        "format": "decimal",
+        "nullable": true,
+        "description": "Quantity to check out",
+        "minimum": 0.01,
+        "example": 2.5
+      },
+      "status_out_id": {
+        "type": "string",
+        "nullable": true,
+        "description": "Status ID for checkout",
+        "example": "STS-0001"
+      },
+      "checkin_user_id": {
+        "type": "string",
+        "nullable": true,
+        "description": "User ID who is checking in the item",
+        "example": "USR-0002"
+      },
+      "checkin_location_id": {
+        "type": "string",
+        "nullable": true,
+        "description": "Location ID where the item is being checked in to",
+        "example": "LOC-0002"
+      },
+      "checkin_date": {
+        "type": "string",
+        "format": "date-time",
+        "nullable": true,
+        "description": "Check-in date (ISO 8601 format)",
+        "example": "2024-01-20T14:30:00Z"
+      },
+      "checkin_quantity": {
+        "type": "number",
+        "format": "decimal",
+        "nullable": true,
+        "description": "Quantity to check in",
+        "minimum": 0.01,
+        "example": 2.5
+      },
+      "status_in_id": {
+        "type": "string",
+        "nullable": true,
+        "description": "Status ID for check-in",
+        "example": "STS-0002"
+      },
+      "expected_return_date": {
+        "type": "string",
+        "format": "date-time",
+        "nullable": true,
+        "description": "Expected return date (ISO 8601 format)",
+        "example": "2024-01-22T10:30:00Z"
+      },
+      "reference": {
+        "type": "string",
+        "nullable": true,
+        "description": "Optional reference number",
+        "maxLength": 255,
+        "example": "REF-001"
+      },
+      "notes": {
+        "type": "string",
+        "nullable": true,
+        "description": "Optional notes",
+        "maxLength": 1000,
+        "example": "Checkout for project Alpha"
+      },
+      "is_active": {
+        "type": "boolean",
+        "description": "Whether this checkout is active",
+        "example": true
+      }
+    }
+  },
+  "CheckoutInput": {
+    "type": "object",
+    "description": "Input schema for checking out an item",
+    "properties": {
+      "quantity": {
+        "type": "number",
+        "format": "decimal",
+        "description": "Quantity to check out (required)",
+        "minimum": 0.01,
+        "example": 2.5
+      },
+      "expected_return_date": {
+        "type": "string",
+        "format": "date-time",
+        "nullable": true,
+        "description": "Expected return date (ISO 8601 format, must be in the future)",
+        "example": "2024-01-22T10:30:00Z"
+      },
+      "reference": {
+        "type": "string",
+        "nullable": true,
+        "description": "Optional reference number",
+        "maxLength": 255,
+        "example": "REF-001"
+      },
+      "notes": {
+        "type": "string",
+        "nullable": true,
+        "description": "Optional notes",
+        "maxLength": 1000,
+        "example": "Checkout for project Alpha"
+      },
+      "status_out_id": {
+        "type": "string",
+        "nullable": true,
+        "description": "Status ID for checkout",
+        "example": "STS-0001"
+      }
+    },
+    "required": ["quantity"]
+  },
+  "CheckinInput": {
+    "type": "object",
+    "description": "Input schema for checking in an item",
+    "properties": {
+      "checkin_quantity": {
+        "type": "number",
+        "format": "decimal",
+        "description": "Quantity to check in (required)",
+        "minimum": 0.01,
+        "example": 2.5
+      },
+      "checkin_location_id": {
+        "type": "string",
+        "nullable": true,
+        "description": "Location ID where the item is being checked in to",
+        "example": "LOC-0002"
+      },
+      "reference": {
+        "type": "string",
+        "nullable": true,
+        "description": "Optional reference number",
+        "maxLength": 255,
+        "example": "REF-001"
+      },
+      "notes": {
+        "type": "string",
+        "nullable": true,
+        "description": "Optional notes",
+        "maxLength": 1000,
+        "example": "Returned from project Alpha"
+      },
+      "status_in_id": {
+        "type": "string",
+        "nullable": true,
+        "description": "Status ID for check-in",
+        "example": "STS-0002"
+      }
+    },
+    "required": ["checkin_quantity"]
+  },
+  "AvailabilityData": {
+    "type": "object",
+    "description": "Availability information for an item location",
+    "properties": {
+      "total_quantity": {
+        "type": "number",
+        "format": "decimal",
+        "description": "Total quantity available at this location",
+        "example": 10
+      },
+      "checked_out_quantity": {
+        "type": "number",
+        "format": "decimal",
+        "description": "Quantity currently checked out",
+        "example": 3
+      },
+      "available_quantity": {
+        "type": "number",
+        "format": "decimal",
+        "description": "Quantity available for checkout",
+        "example": 7
+      },
+      "availability_status": {
+        "type": "string",
+        "description": "Overall availability status",
+        "enum": ["available", "partially_available", "unavailable"],
+        "example": "partially_available"
+      }
+    },
+    "required": ["total_quantity", "checked_out_quantity", "available_quantity", "availability_status"]
+  },
+  "CheckInOutResponse": {
+    "type": "object",
+    "description": "Standard API response wrapper for check-in/out data",
+    "properties": {
+      "status": {
+        "type": "string",
+        "description": "Response status indicator",
+        "example": "success"
+      },
+      "message": {
+        "type": "string",
+        "description": "Human-readable response message",
+        "example": "Check-in/out records retrieved successfully"
+      },
+      "data": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/CheckInOut"
+          },
+          {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CheckInOut"
+            }
+          }
+        ],
+        "description": "Check-in/out data - single record or array depending on endpoint"
+      }
+    },
+    "required": ["status", "message", "data"]
+  },
+  "CheckInOutErrorResponse": {
+    "type": "object",
+    "description": "Standard API error response for check-in/out operations",
+    "properties": {
+      "status": {
+        "type": "string",
+        "description": "Error status indicator",
+        "example": "error"
+      },
+      "message": {
+        "type": "string",
+        "description": "Error message describing what went wrong",
+        "example": "Resource not found"
+      },
+      "data": {
+        "type": "null",
+        "description": "Always null for error responses",
+        "example": null
+      }
+    },
+    "required": ["status", "message", "data"]
+  },
+  "CheckInOutValidationErrorResponse": {
+    "type": "object",
+    "description": "Validation error response for check-in/out operations",
+    "properties": {
+      "message": {
+        "type": "string",
+        "description": "General validation error message",
+        "example": "The given data was invalid."
+      },
+      "errors": {
+        "type": "object",
+        "description": "Field-specific validation errors",
+        "properties": {
+          "quantity": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Quantity field validation errors",
+            "example": ["Quantity must be greater than 0"]
+          },
+          "checkin_quantity": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Check-in quantity field validation errors",
+            "example": ["Check-in quantity must be greater than 0"]
+          },
+          "expected_return_date": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Expected return date field validation errors",
+            "example": ["Expected return date must be in the future"]
+          },
+          "status_out_id": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Checkout status field validation errors",
+            "example": ["Selected checkout status does not exist"]
+          },
+          "status_in_id": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Check-in status field validation errors",
+            "example": ["Selected checkin status does not exist"]
+          },
+          "checkin_location_id": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Check-in location field validation errors",
+            "example": ["Selected checkin location does not exist"]
+          }
+        }
+      }
+    },
+    "required": ["message", "errors"]
+  }
+} 

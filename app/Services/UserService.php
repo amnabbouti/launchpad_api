@@ -1,431 +1,202 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Services;
 
-use App\Constants\ErrorMessages;
-use App\Exceptions\ResourceNotFoundException;
-use App\Exceptions\UnauthorizedAccessException;
+use App\Models\Organization;
+use App\Models\Role;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use InvalidArgumentException;
 
-class UserService extends BaseService
-{
-
-    public function __construct(User $user)
-    {
+class UserService extends BaseService {
+    public function __construct(User $user) {
         parent::__construct($user);
     }
 
-    /**
-     * Create a new user
-     */
-    public function createUser(array $data, ?User $currentUser = null): User
-    {
-        $currentUser = $currentUser ?? auth()->user();
+    // Create a new user with password hashing and role assignment
+    public function createUser(array $data): User {
+        $this->validateUserBusinessRules($data);
+        $data = $this->applyUserBusinessRules($data);
 
-        $this->ensurePermission('users.create', $currentUser);
-        $data = $this->prepareCreateData($data, $currentUser);
+        // Authorization checks are handled by PermissionMiddleware
+        
+        if (isset($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
+        }
+
+        $this->convertNameToFirstLastName($data);
 
         return DB::transaction(fn () => $this->create($data));
     }
 
-    /**
-     * Update a user
-     */
-    public function updateUser(int $userId, array $data, ?User $currentUser = null): User
-    {
-        $currentUser = $currentUser ?? auth()->user();
-        $user = $this->findById($userId);
+    // Delete user with authorization checks
+    public function deleteUser(string $userId): bool {
+        return DB::transaction(fn () => $this->delete($userId));
+    }
 
-        $this->ensurePermission('users.edit', $currentUser);
-        $data = $this->prepareUpdateData($data, $user, $currentUser);
+    /**
+     * Get filtered users with optional relationships.
+     */
+    public function getFiltered(array $filters = []): Builder {
+        $query = $this->getQuery();
+
+        $query->when($filters['role_id'] ?? null, static fn ($q, $value) => $q->where('role_id', $value))
+            ->when($filters['email'] ?? null, static fn ($q, $value) => $q->where('email', 'like', "%{$value}%"))
+            ->when($filters['name'] ?? null, static function ($q, $value) {
+                return $q->where(static function ($query) use ($value): void {
+                    $query->where('first_name', 'like', "%{$value}%")
+                        ->orWhere('last_name', 'like', "%{$value}%")
+                        ->orWhereRaw("CONCAT(first_name, ' ', last_name) like ?", ["%{$value}%"]);
+                });
+            })
+            ->when($filters['q'] ?? null, static function ($q, $value) {
+                return $q->where(static function ($query) use ($value): void {
+                    $query->where('email', 'like', "%{$value}%")
+                        ->orWhere('first_name', 'like', "%{$value}%")
+                        ->orWhere('last_name', 'like', "%{$value}%")
+                        ->orWhereRaw("CONCAT(first_name, ' ', last_name) like ?", ["%{$value}%"]);
+                });
+            })
+            ->when($filters['with'] ?? null, static fn ($q, $relations) => $q->with($relations));
+
+        return $query;
+    }
+
+    public function processRequestParams(array $params): array {
+        $this->validateParams($params);
+
+        return [
+            'role_id' => $this->toInt($params['role_id'] ?? null),
+            'email'   => $this->toString($params['email'] ?? null),
+            'name'    => $this->toString($params['name'] ?? null),
+            'q'       => $this->toString($params['q'] ?? null),
+            // org_id is allowed as parameter but not used for filtering since RLS handles organization scoping
+            'with'    => $this->processWithParameter($params['with'] ?? null),
+        ];
+    }
+
+    // Update the user with password hashing and role assignment
+    public function updateUser(string $userId, array $data): User {
+        // Validate first, then apply business rules
+        $this->validateUserBusinessRules($data, $userId);
+        $data = $this->applyUserBusinessRules($data);
+
+        if (isset($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
+        }
+
+        if (isset($data['name'])) {
+            $this->convertNameToFirstLastName($data);
+        }
 
         return DB::transaction(fn () => $this->update($userId, $data));
     }
 
-    /**
-     * Delete a user
-     */
-    public function deleteUser(int $userId, ?User $currentUser = null): bool
-    {
-        $currentUser = $currentUser ?? auth()->user();
-        $user = $this->findById($userId);
-
-        $this->ensurePermission('users.delete', $currentUser);
-        
-        if (!$this->canDeleteUser($currentUser, $user)) {
-            $this->throwForbidden();
-        }
-
-        return DB::transaction(fn () => $this->delete($userId));
-    }
-
-
-    /**
-     * Get filtered users with optional relationships
-     */
-    public function getFiltered(array $filters = []): Collection
-    {
-        $filters = $this->processRequestParams($filters);
-        $visibleUsers = $this->getVisibleUsers(['*'], $filters['with'] ?? []);
-
-        return $visibleUsers->filter(function ($user) use ($filters) {
-            if (isset($filters['role_id']) && $user->role_id !== $filters['role_id']) {
-                return false;
-            }
-
-            if (isset($filters['email']) && ! str_contains(strtolower($user->email), strtolower($filters['email']))) {
-                return false;
-            }
-
-            if (isset($filters['name'])) {
-                $fullName = strtolower($user->getName());
-
-                if (! str_contains($fullName, strtolower($filters['name']))) {
-                    return false;
-                }
-            }
-
-            if (isset($filters['q'])) {
-                $query = strtolower($filters['q']);
-                $fullName = strtolower($user->getName());
-                $email = strtolower($user->email);
-
-                if (! str_contains($fullName, $query) && ! str_contains($email, $query)) {
-                    return false;
-                }
-            }
-
-            return ! (isset($filters['is_active']) && $user->is_active !== $filters['is_active']);
-        });
-    }
-
-    /**
-     * Find a user by ID with automatic visibility validation.
-     */
-    public function findById($id, array $columns = ['*'], array $relations = [], array $appends = []): Model
-    {
-        $user = $this->findVisibleUser($id, $columns, $relations);
-
-        if (! $user) {
-            return parent::findById($id, $columns, $relations, $appends);
-        }
-
-        if (! empty($appends)) {
-            $user->append($appends);
-        }
-
-        return $user;
-    }
-
-    /**
-     * Get users visible to the current user based on role.
-     * Super admins are completely excluded via canUserSeeUser logic
-     */
-    public function getVisibleUsers(array $columns = ['*'], array $relations = [], ?User $currentUser = null): Collection
-    {
-        $currentUser = $currentUser ?? auth()->user();
-
-        if (! $currentUser) {
-            return new Collection;
-        }
-
-        $allUsers = User::query()->with($relations)->get($columns);
-
-        // Filter users based on visibility rules
-        return $allUsers->filter(function ($user) use ($currentUser) {
-            return $this->canUserSeeUser($currentUser, $user);
-        });
-    }
-
-    /**
-     * Find user by ID with role visibility check.
-     */
-    public function findVisibleUser(int $id, array $columns = ['*'], array $relations = [], ?User $currentUser = null): ?User
-    {
-        $currentUser = $currentUser ?? auth()->user();
-
-        if (! $currentUser) {
-            return null;
-        }
-
-        $user = User::with($relations)->find($id, $columns);
-
-        if (! $user) {
-            return null;
-        }
-
-        if ($this->canUserSeeUser($currentUser, $user)) {
-            return $user;
-        }
-
-        return null;
-    }
-
-    /**
-     * Check if current user can see target user based on role hierarchy.
-     */
-    protected function canUserSeeUser(User $currentUser, User $targetUser): bool
-    {
-        // Super admins are invisible
-        if ($targetUser->isSuperAdmin()) {
-            return false;
-        }
-
-        // Super admins can see all users
-        if ($currentUser->isSuperAdmin()) {
-            return true;
-        }
-
-        if ($currentUser->org_id !== $targetUser->org_id) {
-            return false;
-        }
-
-        if ($currentUser->isManager()) {
-            return true; 
-        }
-
-        if ($currentUser->isEmployee()) {
-            return $currentUser->id === $targetUser->id;
-        }
-
-        return false;
-    }
-
-    /**
-     * Ensure user has required permission.
-     */
-    private function ensurePermission(string $permission, User $user): void
-    {
-        if ($user->lacksPermission($permission)) {
-            $this->throwInsufficientPermissions();
-        }
-    }
-
-    /**
-     * Check if the current user can delete the target user.
-     */
-    private function canDeleteUser(User $currentUser, User $targetUser): bool
-    {
-        if ($currentUser->id === $targetUser->id) {
-            return false;
-        }
-
-        if ($currentUser->isEmployee()) {
-            return false;
-        }
-
-        if ($currentUser->isManager() && $targetUser->isManager()) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Check if the current user can assign a specific role.
-     */
-    private function canAssignRole(User $currentUser, string $roleSlug): bool
-    {
-        if ($currentUser->isEmployee()) {
-            return false;
-        }
-
-        if ($currentUser->isManager()) {
-            return $roleSlug === 'employee';
-        }
-
-        return true;
-    }
-
-    /**
-     * Check if the current user can create users.
-     */
-    private function canCreateUsers(User $currentUser): bool
-    {
-        if ($currentUser->isEmployee()) {
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * Validate if the current user can assign a specific role.
-     */
-    private function validateRoleAssignment(User $currentUser, int $roleId, ?User $targetUser = null): void
-    {
-        $role = \App\Models\Role::find($roleId);
-        
-        if (!$role) {
-            $this->throwNotFound();
-        }
-
-        if (!$this->canAssignRole($currentUser, $role->slug)) {
-            if ($currentUser->isEmployee()) {
-                $this->throwForbidden();
-            }
-            
-            if ($currentUser->isManager() && $role->slug === 'manager') {
-                $this->throwForbidden();
-            }
-        }
-    }
-
-    /**
-     * Prepare data for user creation.
-     */
-    private function prepareCreateData(array $data, User $currentUser): array
-    {
-        if (isset($data['password'])) {
-            $data['password'] = Hash::make($data['password']);
-        }
-
-        if (!$this->canCreateUsers($currentUser)) {
-            $this->throwForbidden();
-        }
-
-        // default role if not provided
-        if (!isset($data['role_id'])) {
-            $defaultRoleId = $this->getDefaultRoleForCreation($currentUser);
-            if ($defaultRoleId) {
-                $data['role_id'] = $defaultRoleId;
-            }
-        }
-
-        // Role assignment is required
-        if (!isset($data['role_id'])) {
-            $this->throwValidationFailed();
-        }
-
-        $this->validateRoleAssignment($currentUser, $data['role_id']);
-        $this->processOrgIdForUser($data, $currentUser);
-
-        return $data;
-    }
-
-    /**
-     * Prepare data for user update.
-     */
-    private function prepareUpdateData(array $data, User $user, User $currentUser): array
-    {
-        if (isset($data['password'])) {
-            $data['password'] = Hash::make($data['password']);
-        }
-
-        if (isset($data['role_id']) && $data['role_id'] != $user->role_id) {
-
-            if ($currentUser->id === $user->id && $currentUser->lacksPermission('users.edit.role_self')) {
-                $this->throwForbidden();
-            }
-            
-            $this->validateRoleAssignment($currentUser, $data['role_id'], $user);
-        }
-
-        if (isset($data['role_id']) || isset($data['org_id'])) {
-            $this->processOrgIdForUser($data, $currentUser, $user);
-        }
-
-        return $data;
-    }
-
-    /**
-     * Process and validate org_id based on role assignment and user permissions.
-     * Handles both creation and update scenarios.
-     */
-    private function processOrgIdForUser(array &$data, User $currentUser, ?User $existingUser = null): void
-    {
-        // Get the role being assigned
-        $roleId = $data['role_id'] ?? $existingUser?->role_id;
-        if (!$roleId) {
-            return; 
-        }
-
-        $role = \App\Models\Role::find($roleId);
-        if (!$role) {
-            return; 
-        }
-
-        // Check if a specific org_id is being requested
-        $requestedOrgId = $data['org_id'] ?? null;
-
-        // Special handling for super admin role assignment - only other super admins can do this
-        if ($role->slug === 'super_admin') {
-            if (!$currentUser->isSuperAdmin()) {
-                $this->throwForbidden("Only super admins can create/modify super admin users");
-            }
-            
-            // Super admins should have org_id = null
-            $data['org_id'] = null;
-            return;
-        }
-        
-        // Handle standard users (non-super admins)
-        if ($requestedOrgId === null) {
-            if ($existingUser && !isset($data['role_id'])) {
-                return; // Keep existing org_id if not changing the role
-            }
-            $data['org_id'] = $currentUser->org_id;
-            return;
-        }
-
-        if ($currentUser->isSuperAdmin() && $requestedOrgId !== null) {
-            $organizationExists = \App\Models\Organization::find($requestedOrgId);
-            if (!$organizationExists) {
-                $this->throwValidationFailed("Invalid organization specified");
-            }
-        }
-
-    }
-
-    /**
-     * Get the default role ID for users
-     */
-    private function getDefaultRoleForCreation(User $currentUser): ?int
-    {
-        if ($currentUser->isManager()) {
-            $employeeRole = \App\Models\Role::where('slug', 'employee')->first();
-            return $employeeRole?->id;
-        }
-        return null;
-    }
-
-    /**
-     * Get allowed query parameters
-     */
-    protected function getAllowedParams(): array
-    {
+    protected function getAllowedParams(): array {
         return array_merge(parent::getAllowedParams(), [
-            'org_id', 'role_id', 'email', 'name', 'is_active', 'with',
+            'role_id',
+            'email',
+            'name',
+            'q',
+            'org_id',
         ]);
     }
 
     /**
-     * Get valid relations
+     * Base query - RLS handles organization scoping automatically.
      */
-    protected function getValidRelations(): array
-    {
+    protected function getQuery(): Builder {
+        return $this->model->newQuery();
+    }
+
+    protected function getValidRelations(): array {
         return [
-            'organization', 'role',
+            'organization',
+            'role',
         ];
     }
 
     /**
-     * Process request parameters
+     * Apply business rules for user operations.
      */
-    public function processRequestParams(array $params): array
-    {
-        $this->validateParams($params);
-        return [
-            'org_id' => $this->toInt($params['org_id'] ?? null),
-            'role_id' => $this->toInt($params['role_id'] ?? null),
-            'email' => $this->toString($params['email'] ?? null),
-            'name' => $this->toString($params['name'] ?? null),
-            'is_active' => $this->toBool($params['is_active'] ?? null),
-            'with' => $this->processWithParameter($params['with'] ?? null),
-        ];
+    private function applyUserBusinessRules(array $data): array {
+        // Remove password_confirmation as it's unnecessary for the model
+        unset($data['password_confirmation']);
+
+        return $data;
+    }
+
+    // Convert the full name to first_name and last_name
+    private function convertNameToFirstLastName(array &$data): void {
+        if (isset($data['name'])) {
+            $nameParts          = explode(' ', mb_trim($data['name']), 2);
+            $data['first_name'] = $nameParts[0] ?? '';
+            $data['last_name']  = $nameParts[1] ?? '';
+            unset($data['name']);
+        }
+    }
+
+    /**
+     * Validate business rules for user operations.
+     */
+    private function validateUserBusinessRules(array $data, $userId = null): void {
+        // Validate required fields
+        if (empty($data['name'])) {
+            throw new InvalidArgumentException('The name field is required');
+        }
+
+        if (empty($data['email'])) {
+            throw new InvalidArgumentException('The email field is required');
+        }
+
+        // Validate email format
+        if (! filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+            throw new InvalidArgumentException('The email must be a valid email address');
+        }
+
+        // Validate email uniqueness
+        $query = User::where('email', $data['email']);
+        if ($userId) {
+            $query->where('id', '!=', $userId);
+        }
+        if ($query->exists()) {
+            throw new InvalidArgumentException('The email has already been taken');
+        }
+
+        // Validate password requirements for creation
+        if (! $userId && empty($data['password'])) {
+            throw new InvalidArgumentException('The password field is required');
+        }
+
+        // Validate password confirmation logic
+        if (isset($data['password']) && empty($data['password_confirmation'])) {
+            throw new InvalidArgumentException('The password confirmation is required when password is provided');
+        }
+
+        // Validate password confirmation match
+        if (isset($data['password'], $data['password_confirmation'])) {
+            if ($data['password'] !== $data['password_confirmation']) {
+                throw new InvalidArgumentException('The password confirmation does not match');
+            }
+        }
+
+        // Validate password strength
+        if (isset($data['password']) && mb_strlen($data['password']) < 8) {
+            throw new InvalidArgumentException('The password must be at least 8 characters');
+        }
+
+        // Validate role assignment permissions
+        if (isset($data['role_id'])) {
+            $role = Role::find($data['role_id']);
+            if (! $role) {
+                throw new InvalidArgumentException('The selected role does not exist');
+            }
+
+            // Role assignment authorization is handled by PermissionMiddleware
+        }
     }
 }

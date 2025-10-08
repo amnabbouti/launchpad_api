@@ -1,15 +1,13 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Middleware\TrustProxies as Middleware;
 use Illuminate\Http\Request;
 
-class TrustProxies extends Middleware
-{
-    // Trusted proxies
-    protected $proxies = '*';
-
+final class TrustProxies extends Middleware {
     // Proxy headers
     protected $headers
         = Request::HEADER_X_FORWARDED_FOR
@@ -17,4 +15,7 @@ class TrustProxies extends Middleware
         | Request::HEADER_X_FORWARDED_PORT
         | Request::HEADER_X_FORWARDED_PROTO
         | Request::HEADER_X_FORWARDED_AWS_ELB;
+
+    // Trusted proxies
+    protected $proxies = '*';
 }

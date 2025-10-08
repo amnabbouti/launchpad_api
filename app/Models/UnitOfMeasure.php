@@ -1,35 +1,38 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Models;
 
-use App\Traits\HasPublicId;
-
-use App\Traits\HasOrganizationScope;
+use App\Traits\HasUuidv7;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class UnitOfMeasure extends Model
-{
-    use HasPublicId; // Add public_id support
+class UnitOfMeasure extends Model {
     use HasFactory;
-    use HasOrganizationScope;
+    use HasUuidv7;
 
-    // Constants for unit types
     public const TYPE_DATE = 'DATE';
 
     public const TYPE_DAYS_ACTIVE = 'DAYS_ACTIVE';
 
     public const TYPE_DAYS_CHECKED_OUT = 'DAYS_CHECKED_OUT';
 
+    public const TYPE_DISTANCE = 'DISTANCE';
+
     public const TYPE_QUANTITY = 'QUANTITY';
 
-    public const TYPE_DISTANCE = 'DISTANCE';
+    public const TYPE_VOLUME = 'VOLUME';
 
     public const TYPE_WEIGHT = 'WEIGHT';
 
-    public const TYPE_VOLUME = 'VOLUME';
+    protected $casts = [
+        'is_active'  => 'boolean',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
 
     protected $fillable = [
         'org_id',
@@ -41,29 +44,15 @@ class UnitOfMeasure extends Model
         'is_active',
     ];
 
-    protected static function getEntityType(): string
-    {
-        return 'unit_of_measure';
-    }
-
-    protected $casts = [
-        'is_active' => 'boolean',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-    ];
-
-    public function organization(): BelongsTo
-    {
-        return $this->belongsTo(Organization::class, 'org_id');
-    }
-
-    public function items(): HasMany
-    {
+    public function items(): HasMany {
         return $this->hasMany(Item::class, 'unit_id');
     }
 
-    public function maintenanceConditions(): HasMany
-    {
+    public function maintenanceConditions(): HasMany {
         return $this->hasMany(MaintenanceCondition::class, 'unit_of_measure_id');
+    }
+
+    public function organization(): BelongsTo {
+        return $this->belongsTo(Organization::class, 'org_id');
     }
 }

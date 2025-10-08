@@ -1,19 +1,27 @@
 <?php
 
+declare(strict_types = 1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void {
+        Schema::dropIfExists('maintenance_categories');
+    }
+
     /**
      * Run the migrations.
      */
-    public function up(): void
-    {
-        Schema::create('maintenance_categories', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('org_id')->constrained('organizations')->onDelete('cascade');
+    public function up(): void {
+        Schema::create('maintenance_categories', static function (Blueprint $table): void {
+            $table->uuid('id');
+            $table->primary('id');
+            $table->foreignUuid('org_id')->constrained('organizations')->cascadeOnDelete();
             $table->string('name');
             $table->string('remarks')->nullable();
             $table->boolean('is_active')->default(true);
@@ -22,13 +30,5 @@ return new class extends Migration
             $table->index('org_id');
             $table->index(['org_id', 'id']);
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('maintenance_categories');
     }
 };
