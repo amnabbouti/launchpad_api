@@ -38,3 +38,4 @@ dist
 .ddev/config.yaml
 .ddev/traefik/
 .ddev/logs/
+.ddev/.env.ddev
