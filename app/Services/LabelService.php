@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Services;
 
@@ -9,10 +9,12 @@ use App\Models\Item;
 use App\Models\Location;
 use InvalidArgumentException;
 
-final class LabelService {
+final class LabelService
+{
     public function __construct(private readonly LabelRendererInterface $renderer) {}
 
-    public function generate(string $format, string $entityType, array $entityIds, array $options = []): string {
+    public function generate(string $format, string $entityType, array $entityIds, array $options = []): string
+    {
         $codes = match ($entityType) {
             'locations' => $this->getLocationCodes($entityIds),
             'items'     => $this->getItemCodes($entityIds),
@@ -39,11 +41,13 @@ final class LabelService {
         throw new InvalidArgumentException('Unsupported format');
     }
 
-    public function generateZpl(string $entityType, array $entityIds, array $options = []): string {
+    public function generateZpl(string $entityType, array $entityIds, array $options = []): string
+    {
         return $this->generate('zpl', $entityType, $entityIds, $options);
     }
 
-    private function generatePdfBase64(array $codes, array $options): string {
+    private function generatePdfBase64(array $codes, array $options): string
+    {
         $generator  = new \Picqer\Barcode\BarcodeGeneratorPNG;
         $height     = (int) ($options['png']['height'] ?? 60);
         $scale      = (int) ($options['png']['scale'] ?? 2);
@@ -79,7 +83,8 @@ final class LabelService {
         return base64_encode($output);
     }
 
-    private function generatePngBase64(array $codes, array $options): string {
+    private function generatePngBase64(array $codes, array $options): string
+    {
         $generator = new \Picqer\Barcode\BarcodeGeneratorPNG;
         $height    = (int) ($options['png']['height'] ?? 60);
         $scale     = (int) ($options['png']['scale'] ?? 2);
@@ -93,13 +98,15 @@ final class LabelService {
         return json_encode($images, JSON_THROW_ON_ERROR);
     }
 
-    private function getItemCodes(array $ids): array {
+    private function getItemCodes(array $ids): array
+    {
         $items = Item::query()->whereIn('id', $ids)->get(['id', 'code']);
 
         return $items->pluck('code')->filter()->values()->all();
     }
 
-    private function getLocationCodes(array $ids): array {
+    private function getLocationCodes(array $ids): array
+    {
         $locations = Location::query()->whereIn('id', $ids)->get(['id', 'code']);
 
         return $locations->pluck('code')->filter()->values()->all();

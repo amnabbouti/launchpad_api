@@ -8,6 +8,7 @@ use App\Http\Middleware\ApiResponseMiddleware;
 use App\Http\Middleware\EnsureActiveLicense;
 use App\Http\Middleware\ForceJsonResponse;
 use App\Http\Middleware\LogApiUsageMiddleware;
+use App\Http\Middleware\PermissionMiddleware;
 use App\Http\Middleware\RateLimitMiddleware;
 use App\Http\Middleware\SessionValidation;
 use App\Http\Middleware\SetLocaleMiddleware;
@@ -41,6 +42,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'set.locale'         => SetLocaleMiddleware::class,
             'tenancy.context'    => TenancyContextMiddleware::class,
             'license.active'     => EnsureActiveLicense::class,
+            'permission'         => PermissionMiddleware::class,
         ]);
 
         // Prepend ForceJsonResponse, SetLocale, SessionValidation, and LogApiUsage to API middleware

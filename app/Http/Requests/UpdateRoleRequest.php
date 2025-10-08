@@ -1,18 +1,21 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Http\Requests;
 
 use App\Constants\Permissions;
 use Illuminate\Validation\Rule;
 
-class UpdateRoleRequest extends BaseRequest {
-    public function authorize(): bool {
-        return $this->user()->hasPermission('roles.update');
+class UpdateRoleRequest extends BaseRequest
+{
+    public function authorize(): bool
+    {
+        return true;
     }
 
-    public function messages(): array {
+    public function messages(): array
+    {
         return [
             'slug.regex'     => 'The slug field may only contain lowercase letters, numbers, hyphens, and underscores.',
             'slug.unique'    => 'A role with this slug already exists.',
@@ -20,7 +23,8 @@ class UpdateRoleRequest extends BaseRequest {
         ];
     }
 
-    protected function getValidationRules(): array {
+    protected function getValidationRules(): array
+    {
         $roleId = $this->route('role');
 
         return [

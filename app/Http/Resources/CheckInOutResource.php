@@ -89,5 +89,3 @@ class CheckInOutResource extends BaseResource {
         return $this->addCommonData($data, $request);
     }
 }
-
-// you have to be sure about the checkin location (TODO: check if this is correct)

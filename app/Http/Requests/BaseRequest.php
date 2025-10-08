@@ -1,38 +1,44 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Services\AuthorizationHelper;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Http\FormRequest;
 
-abstract class BaseRequest extends FormRequest {
+abstract class BaseRequest extends FormRequest
+{
     /**
      * Get custom attributes for validator errors.
      */
-    public function attributes(): array {
+    public function attributes(): array
+    {
         return [];
     }
 
     /**
      * Determine if the user is authorized to make this request.
      */
-    public function authorize(): bool {
+    public function authorize(): bool
+    {
         return true;
     }
 
     /**
      * Get custom messages for validator errors.
      */
-    public function messages(): array {
+    public function messages(): array
+    {
         return [];
     }
 
     /**
      * Get validation rules - with global GET request handling.
      */
-    public function rules(): array {
-        // Global rule: GET requests don't need validation
+    public function rules(): array
+    {
         if ($this->isMethod('GET')) {
             return [];
         }
@@ -45,8 +51,16 @@ abstract class BaseRequest extends FormRequest {
      */
     abstract protected function getValidationRules(): array;
 
-    /**
-     * Prepare the data for validation.
-     */
-    protected function prepareForValidation(): void {}
+    protected function prepareForValidation(): void
+    {
+        if (!$this->has('org_id') || !$this->input('org_id')) {
+            $tempModel = new class extends Model {
+                public $org_id = null;
+            };
+            AuthorizationHelper::autoAssignOrganization($tempModel);
+            if ($tempModel->org_id) {
+                $this->merge(['org_id' => $tempModel->org_id]);
+            }
+        }
+    }
 }

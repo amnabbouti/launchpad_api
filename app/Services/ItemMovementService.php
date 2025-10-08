@@ -111,7 +111,7 @@ class ItemMovementService extends BaseService {
         $this->validateMovementData($data);
 
         $item         = Item::findOrFail($data['item_id']);
-        $user         = AuthorizationEngine::getCurrentUser();
+        $user         = \App\Services\AuthorizationHelper::getCurrentUser();
         $movementType = $this->determineMovementType($data);
 
         return DB::transaction(function () use ($item, $data, $user, $movementType) {

@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Services;
 
@@ -11,40 +11,44 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 
-class BatchService extends BaseService {
-    public function __construct(Batch $batch) {
+class BatchService extends BaseService
+{
+    public function __construct(Batch $batch)
+    {
         parent::__construct($batch);
     }
 
     /**
      * Create a new batch.
      */
-    public function createBatch(array $data): Model {
+    public function createBatch(array $data): Model
+    {
         $data = $this->applyBatchBusinessRules($data);
         $this->validateBatchBusinessRules($data);
-
         return $this->create($data);
     }
 
     /**
      * Delete a batch.
      */
-    public function deleteBatch(string $id): bool {
+    public function deleteBatch(string $id): bool
+    {
         return $this->delete($id);
     }
 
     /**
      * Get filtered batches with organization scoping.
      */
-    public function getFiltered(array $filters = []): Builder {
+    public function getFiltered(array $filters = []): Builder
+    {
         $query = $this->getQuery();
 
         // Apply filters
-        $query->when($filters['supplier_id'] ?? null, static fn ($q, $value) => $q->where('supplier_id', $value))
-            ->when($filters['batch_number'] ?? null, static fn ($q, $value) => $q->where('batch_number', 'like', "%{$value}%"))
-            ->when($filters['received_date'] ?? null, static fn ($q, $value) => $q->whereDate('received_date', $value))
-            ->when($filters['expiry_date'] ?? null, static fn ($q, $value) => $q->whereDate('expiry_date', $value))
-            ->when(isset($filters['is_active']), static fn ($q) => $q->where('is_active', $filters['is_active']))
+        $query->when($filters['supplier_id'] ?? null, static fn($q, $value) => $q->where('supplier_id', $value))
+            ->when($filters['batch_number'] ?? null, static fn($q, $value) => $q->where('batch_number', 'like', "%{$value}%"))
+            ->when($filters['received_date'] ?? null, static fn($q, $value) => $q->whereDate('received_date', $value))
+            ->when($filters['expiry_date'] ?? null, static fn($q, $value) => $q->whereDate('expiry_date', $value))
+            ->when(isset($filters['is_active']), static fn($q) => $q->where('is_active', $filters['is_active']))
             ->when(isset($filters['expired']), static function ($q) use ($filters) {
                 if ($filters['expired']) {
                     return $q->where('expiry_date', '<', now());
@@ -54,7 +58,7 @@ class BatchService extends BaseService {
                     $subQ->whereNull('expiry_date')->orWhere('expiry_date', '>=', now());
                 });
             })
-            ->when($filters['with'] ?? null, static fn ($q, $relations) => $q->with($relations));
+            ->when($filters['with'] ?? null, static fn($q, $relations) => $q->with($relations));
 
         return $query;
     }
@@ -62,7 +66,8 @@ class BatchService extends BaseService {
     /**
      * Process request parameters with validation and type conversion.
      */
-    public function processRequestParams(array $params): array {
+    public function processRequestParams(array $params): array
+    {
         // Validate parameters against the allowlist
         $this->validateParams($params);
 
@@ -80,7 +85,8 @@ class BatchService extends BaseService {
     /**
      * Update a batch.
      */
-    public function updateBatch(string $id, array $data): Model {
+    public function updateBatch(string $id, array $data): Model
+    {
         $data = $this->applyBatchBusinessRules($data);
         $this->validateBatchBusinessRules($data, $id);
 
@@ -90,7 +96,8 @@ class BatchService extends BaseService {
     /**
      * Get allowed query parameters.
      */
-    protected function getAllowedParams(): array {
+    protected function getAllowedParams(): array
+    {
         return array_merge(parent::getAllowedParams(), [
             'supplier_id',
             'batch_number',
@@ -104,14 +111,16 @@ class BatchService extends BaseService {
     /**
      * Get valid relations for the model.
      */
-    protected function getValidRelations(): array {
+    protected function getValidRelations(): array
+    {
         return ['supplier', 'items'];
     }
 
     /**
      * Apply business rules for batch operations.
      */
-    private function applyBatchBusinessRules(array $data): array {
+    private function applyBatchBusinessRules(array $data): array
+    {
         if (! isset($data['is_active'])) {
             $data['is_active'] = true;
         }
@@ -122,7 +131,8 @@ class BatchService extends BaseService {
     /**
      * Validate business rules for batch operations.
      */
-    private function validateBatchBusinessRules(array $data, $batchId = null): void {
+    private function validateBatchBusinessRules(array $data, $batchId = null): void
+    {
         if (isset($data['batch_number'])) {
             $query = Batch::where('batch_number', $data['batch_number']);
 
@@ -141,7 +151,7 @@ class BatchService extends BaseService {
         }
 
         // Validate date relationships
-        if (isset($data['expiry_date'], $data['received_date'])  ) {
+        if (isset($data['expiry_date'], $data['received_date'])) {
             $receivedDate = Carbon::parse($data['received_date']);
             $expiryDate   = Carbon::parse($data['expiry_date']);
 

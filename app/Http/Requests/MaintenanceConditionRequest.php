@@ -48,7 +48,7 @@ class MaintenanceConditionRequest extends BaseRequest {
      */
     protected function getValidationRules(): array {
         return [
-            'org_id'                          => 'required|exists:organizations,id',
+            'org_id'                          => 'nullable|exists:organizations,id',
             'item_id'                         => 'required|exists:items,id',
             'maintenance_category_id'         => 'required|exists:maintenance_categories,id',
             'unit_of_measure_id'              => 'required|exists:unit_of_measures,id',

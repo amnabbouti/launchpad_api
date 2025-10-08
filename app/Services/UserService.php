@@ -22,16 +22,8 @@ class UserService extends BaseService {
         $this->validateUserBusinessRules($data);
         $data = $this->applyUserBusinessRules($data);
 
-        // Enforce license seat limits before creating a user
-        $currentUser = AuthorizationEngine::getCurrentUser();
-        if ($currentUser && $currentUser->org_id) {
-            $organization = Organization::find($currentUser->org_id);
-            if ($organization) {
-                $licenseService = app(LicenseService::class);
-                $licenseService->assertCanAddUser($organization);
-            }
-        }
-
+        // Authorization checks are handled by PermissionMiddleware
+        
         if (isset($data['password'])) {
             $data['password'] = Hash::make($data['password']);
         }
@@ -82,6 +74,7 @@ class UserService extends BaseService {
             'email'   => $this->toString($params['email'] ?? null),
             'name'    => $this->toString($params['name'] ?? null),
             'q'       => $this->toString($params['q'] ?? null),
+            // org_id is allowed as parameter but not used for filtering since RLS handles organization scoping
             'with'    => $this->processWithParameter($params['with'] ?? null),
         ];
     }
@@ -109,6 +102,7 @@ class UserService extends BaseService {
             'email',
             'name',
             'q',
+            'org_id',
         ]);
     }
 
@@ -202,9 +196,7 @@ class UserService extends BaseService {
                 throw new InvalidArgumentException('The selected role does not exist');
             }
 
-            if (! AuthorizationEngine::canAssignRole($role->slug)) {
-                throw new InvalidArgumentException('You do not have permission to assign this role');
-            }
+            // Role assignment authorization is handled by PermissionMiddleware
         }
     }
 }

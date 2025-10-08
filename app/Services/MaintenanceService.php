@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Services;
 
@@ -12,15 +12,18 @@ use App\Models\MaintenanceDetail;
 use Illuminate\Database\Eloquent\Builder;
 use InvalidArgumentException;
 
-class MaintenanceService extends BaseService {
+class MaintenanceService extends BaseService
+{
     protected EventService $eventService;
 
-    public function __construct(Maintenance $maintenance, EventService $eventService) {
+    public function __construct(Maintenance $maintenance, EventService $eventService)
+    {
         parent::__construct($maintenance);
         $this->eventService = $eventService;
     }
 
-    public function completeMaintenance(string $maintenanceId, array $data): Maintenance {
+    public function completeMaintenance(string $maintenanceId, array $data): Maintenance
+    {
         $maintenance = $this->findById($maintenanceId);
 
         if ($maintenance->date_back_from_maintenance) {
@@ -53,7 +56,8 @@ class MaintenanceService extends BaseService {
         return $updatedMaintenance;
     }
 
-    public function createFromCondition(array $data): Maintenance {
+    public function createFromCondition(array $data): Maintenance
+    {
         if (! isset($data['condition_id'])) {
             throw new InvalidArgumentException(ErrorMessages::MAINTENANCE_CONDITION_REQUIRED);
         }
@@ -75,7 +79,7 @@ class MaintenanceService extends BaseService {
         unset($maintenanceData['condition_id']);
 
         if (! isset($maintenanceData['user_id'])) {
-            $user                       = AuthorizationEngine::getCurrentUser();
+            $user                       = \App\Services\AuthorizationHelper::getCurrentUser();
             $maintenanceData['user_id'] = $user?->id;
         }
 
@@ -101,7 +105,8 @@ class MaintenanceService extends BaseService {
         return $maintenance;
     }
 
-    public function createItemMaintenance(array $data): Maintenance {
+    public function createItemMaintenance(array $data): Maintenance
+    {
         if (! isset($data['item_id'])) {
             throw new InvalidArgumentException(ErrorMessages::MAINTENANCE_ITEM_REQUIRED);
         }
@@ -118,7 +123,7 @@ class MaintenanceService extends BaseService {
         unset($maintenanceData['item_id']);
 
         if (! isset($maintenanceData['user_id'])) {
-            $user                       = AuthorizationEngine::getCurrentUser();
+            $user                       = \App\Services\AuthorizationHelper::getCurrentUser();
             $maintenanceData['user_id'] = $user?->id;
         }
 
@@ -138,7 +143,8 @@ class MaintenanceService extends BaseService {
         return $maintenance;
     }
 
-    public function findByIdWithRelations($id): Maintenance {
+    public function findByIdWithRelations($id): Maintenance
+    {
         /** @var Maintenance $maintenance */
         return $this->findById($id, ['*'], [
             'maintainable',
@@ -151,23 +157,25 @@ class MaintenanceService extends BaseService {
         ]);
     }
 
-    public function getFiltered(array $filters = []): Builder {
+    public function getFiltered(array $filters = []): Builder
+    {
         $query = $this->getQuery();
 
-        $query->when($filters['maintainable_id'] ?? null, static fn ($q, $value) => $q->where('maintainable_id', $value))
-            ->when($filters['maintainable_type'] ?? null, static fn ($q, $value) => $q->where('maintainable_type', $value))
-            ->when($filters['user_id'] ?? null, static fn ($q, $value) => $q->where('user_id', $value))
-            ->when($filters['supplier_id'] ?? null, static fn ($q, $value) => $q->where('supplier_id', $value))
-            ->when($filters['active_only'] ?? null, static fn ($q) => $q->whereNull('date_back_from_maintenance'))
-            ->when($filters['completed_only'] ?? null, static fn ($q) => $q->whereNotNull('date_back_from_maintenance'))
-            ->when($filters['date_from'] ?? null, static fn ($q, $value) => $q->where('date_in_maintenance', '>=', $value))
-            ->when($filters['date_to'] ?? null, static fn ($q, $value) => $q->where('date_in_maintenance', '<=', $value))
-            ->when($filters['with'] ?? null, static fn ($q, $relations) => $q->with($relations));
+        $query->when($filters['maintainable_id'] ?? null, static fn($q, $value) => $q->where('maintainable_id', $value))
+            ->when($filters['maintainable_type'] ?? null, static fn($q, $value) => $q->where('maintainable_type', $value))
+            ->when($filters['user_id'] ?? null, static fn($q, $value) => $q->where('user_id', $value))
+            ->when($filters['supplier_id'] ?? null, static fn($q, $value) => $q->where('supplier_id', $value))
+            ->when($filters['active_only'] ?? null, static fn($q) => $q->whereNull('date_back_from_maintenance'))
+            ->when($filters['completed_only'] ?? null, static fn($q) => $q->whereNotNull('date_back_from_maintenance'))
+            ->when($filters['date_from'] ?? null, static fn($q, $value) => $q->where('date_in_maintenance', '>=', $value))
+            ->when($filters['date_to'] ?? null, static fn($q, $value) => $q->where('date_in_maintenance', '<=', $value))
+            ->when($filters['with'] ?? null, static fn($q, $relations) => $q->with($relations));
 
         return $query;
     }
 
-    public function processRequestParams(array $params): array {
+    public function processRequestParams(array $params): array
+    {
         $this->validateParams($params);
 
         return [
@@ -183,7 +191,8 @@ class MaintenanceService extends BaseService {
         ];
     }
 
-    protected function getAllowedParams(): array {
+    protected function getAllowedParams(): array
+    {
         return array_merge(parent::getAllowedParams(), [
             'maintainable_id',
             'maintainable_type',
@@ -196,7 +205,8 @@ class MaintenanceService extends BaseService {
         ]);
     }
 
-    protected function getValidRelations(): array {
+    protected function getValidRelations(): array
+    {
         return [
             'maintainable',
             'user',
@@ -208,7 +218,8 @@ class MaintenanceService extends BaseService {
         ];
     }
 
-    private function createMaintenanceDetail(Maintenance $maintenance, MaintenanceCondition $condition, array $data): void {
+    private function createMaintenanceDetail(Maintenance $maintenance, MaintenanceCondition $condition, array $data): void
+    {
         $detailData = [
             'maintenance_id'           => $maintenance->id,
             'maintenance_condition_id' => $condition->id,

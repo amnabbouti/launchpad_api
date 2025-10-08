@@ -125,7 +125,7 @@ class ApiKeyService {
             default => '%Y-%m-%d',
         };
 
-        $requestsOverTime = $baseQuery()->selectRaw("DATE_FORMAT(created_at, '{$timeFormat}') as period, COUNT(*) as count")
+        $requestsOverTime = $baseQuery()->selectRaw("DATE_FORMAT(created_at, '$timeFormat') as period, COUNT(*) as count")
             ->groupBy('period')
             ->orderBy('period')
             ->pluck('count', 'period')

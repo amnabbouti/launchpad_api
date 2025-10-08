@@ -20,7 +20,7 @@ class ThreatDetectionController extends BaseController {
      * Get comprehensive threat detection overview
      */
     public function overview(ThreatDetectionRequest $request): JsonResponse {
-        $organizationId = \App\Services\AuthorizationEngine::inSystemScope($request->user()) ? null : $request->user()->org_id;
+        $organizationId = \App\Services\AuthorizationHelper::inSystemScope($request->user()) ? null : $request->user()->org_id;
 
         $threatData = $this->threatDetectionService->getThreatOverview($organizationId);
 

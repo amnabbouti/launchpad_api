@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace Database\Factories;
 
 use App\Models\Organization;
@@ -10,8 +12,7 @@ use Illuminate\Support\Str;
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
  */
-class UserFactory extends Factory
-{
+class UserFactory extends Factory {
     /** The current password being used by the factory. */
     protected static ?string $password;
 
@@ -20,39 +21,36 @@ class UserFactory extends Factory
      *
      * @return array<string, mixed>
      */
-    public function definition(): array
-    {
+    public function definition(): array {
         return [
-            'first_name' => fake()->firstName(),
-            'last_name' => fake()->lastName(),
-            'email' => fake()->unique()->safeEmail(),
+            'first_name'        => fake()->firstName(),
+            'last_name'         => fake()->lastName(),
+            'email'             => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
-            'date_of_birth' => fake()->dateTimeBetween('-60 years', '-18 years'),
-            'address' => fake()->address(),
-            'phone_number' => fake()->phoneNumber(),
-            'remember_token' => Str::random(10),
-            'org_id' => Organization::factory(),
+            'password'          => static::$password ??= Hash::make('password'),
+            'date_of_birth'     => fake()->dateTimeBetween('-60 years', '-18 years'),
+            'address'           => fake()->address(),
+            'phone_number'      => fake()->phoneNumber(),
+            'remember_token'    => Str::random(10),
+            'org_id'            => Organization::factory(),
         ];
-    }
-
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
-    public function unverified(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
-        ]);
     }
 
     /**
      * Indicate that the user belongs to a specific organization.
      */
-    public function forOrganization(Organization $organization): static
-    {
-        return $this->state(fn (array $attributes) => [
+    public function forOrganization(Organization $organization): static {
+        return $this->state(static fn (array $attributes) => [
             'org_id' => $organization->id,
+        ]);
+    }
+
+    /**
+     * Indicate that the model's email address should be unverified.
+     */
+    public function unverified(): static {
+        return $this->state(static fn (array $attributes) => [
+            'email_verified_at' => null,
         ]);
     }
 }

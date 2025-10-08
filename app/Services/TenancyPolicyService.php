@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Services;
 
@@ -10,11 +10,13 @@ use Illuminate\Support\Facades\Log;
 
 use function in_array;
 
-class TenancyPolicyService {
+class TenancyPolicyService
+{
     /**
      * Clear the RLS context
      */
-    public function clearContext(): void {
+    public function clearContext(): void
+    {
         $connection = DB::connection();
         $connection->statement('RESET app.org_id');
     }
@@ -22,7 +24,8 @@ class TenancyPolicyService {
     /**
      * Drop all RLS policies
      */
-    public function dropAllPolicies(): void {
+    public function dropAllPolicies(): void
+    {
         $policies = config('tenancy.policies');
 
         foreach ($policies as $table => $tablePolicies) {
@@ -34,10 +37,11 @@ class TenancyPolicyService {
     /**
      * Set the RLS context for a user
      */
-    public function setContext(User $user): void {
+    public function setContext(User $user): void
+    {
         $connection = DB::connection();
 
-        if (! AuthorizationEngine::inSystemScope($user)) {
+        if (! \App\Services\AuthorizationHelper::inSystemScope($user)) {
             // Regular user - set their org_id for RLS filtering
             $connection->statement("SET app.org_id = '{$user->org_id}'");
             Log::info('RLS context set for regular user', [
@@ -59,7 +63,8 @@ class TenancyPolicyService {
     /**
      * Set up all RLS policies based on configuration
      */
-    public function setupAllPolicies(): void {
+    public function setupAllPolicies(): void
+    {
         $policies = config('tenancy.policies');
 
         foreach ($policies as $table => $tablePolicies) {
@@ -70,7 +75,8 @@ class TenancyPolicyService {
     /**
      * Create a simple org-based policy
      */
-    private function createSimplePolicy(string $table): void {
+    private function createSimplePolicy(string $table): void
+    {
         $systemTables = [
             'api_key_usage',
             'api_key_rate_limits',
@@ -155,7 +161,8 @@ class TenancyPolicyService {
     /**
      * Set up policies for a specific table
      */
-    private function setupTablePolicies(string $table, array $policies): void {
+    private function setupTablePolicies(string $table, array $policies): void
+    {
         DB::statement("ALTER TABLE {$table} ENABLE ROW LEVEL SECURITY");
         DB::statement("ALTER TABLE {$table} FORCE ROW LEVEL SECURITY");
         $this->createSimplePolicy($table);

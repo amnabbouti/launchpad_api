@@ -3,7 +3,7 @@
 declare(strict_types = 1);
 
 use App\Constants\Permissions;
-use App\Services\AuthorizationEngine;
+use App\Services\AuthorizationHelper;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
@@ -83,7 +83,7 @@ return new class extends Migration {
      */
     public function up(): void {
         // Get system roles from AuthorizationEngine for basic info
-        $systemRoles = AuthorizationEngine::getSystemRoles();
+        $systemRoles = AuthorizationHelper::getSystemRoles();
 
         foreach ($systemRoles as $slug => $roleData) {
             // Get actual forbidden permissions from Permissions constants

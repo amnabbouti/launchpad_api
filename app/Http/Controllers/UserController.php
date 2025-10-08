@@ -1,19 +1,17 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Exceptions\UnauthorizedAccessException;
 use App\Http\Middleware\ApiResponseMiddleware;
 use App\Http\Requests\UserRequest;
 use App\Http\Resources\UserResource;
-use App\Models\User;
 use App\Services\UserService;
-use Exception;
 use Illuminate\Http\JsonResponse;
 
-class UserController extends BaseController {
+class UserController extends BaseController
+{
     /**
      * Create a new controller
      */
@@ -24,22 +22,18 @@ class UserController extends BaseController {
     /**
      * Delete a user.
      */
-    public function destroy(string $id): JsonResponse {
-        try {
-            $this->userService->deleteUser($id);
+    public function destroy(string $id): JsonResponse
+    {
+        $this->userService->deleteUser($id);
 
-            return ApiResponseMiddleware::deleteResponse('user');
-        } catch (UnauthorizedAccessException $e) {
-            throw $e;
-        } catch (Exception $e) {
-            throw $e;
-        }
+        return ApiResponseMiddleware::deleteResponse('user');
     }
 
     /**
      * Get all users.
      */
-    public function index(UserRequest $request): JsonResponse {
+    public function index(UserRequest $request): JsonResponse
+    {
         $filters    = $this->userService->processRequestParams($request->query());
         $usersQuery = $this->userService->getFiltered($filters);
         $totalCount = $usersQuery->count();
@@ -56,7 +50,8 @@ class UserController extends BaseController {
     /**
      * Get a specific user by ID.
      */
-    public function show($id): JsonResponse {
+    public function show($id): JsonResponse
+    {
         $user = $this->userService->findById($id, ['*'], ['role', 'organization']);
 
         return ApiResponseMiddleware::showResponse(
@@ -69,7 +64,8 @@ class UserController extends BaseController {
     /**
      * Create a new user.
      */
-    public function store(UserRequest $request): JsonResponse {
+    public function store(UserRequest $request): JsonResponse
+    {
         $user = $this->userService->createUser($request->validated());
 
         return ApiResponseMiddleware::createResponse(
@@ -82,7 +78,8 @@ class UserController extends BaseController {
     /**
      * Update an existing user.
      */
-    public function update(UserRequest $request, string $id): JsonResponse {
+    public function update(UserRequest $request, string $id): JsonResponse
+    {
         $updatedUser = $this->userService->updateUser($id, $request->validated());
 
         return ApiResponseMiddleware::updateResponse(

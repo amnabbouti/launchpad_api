@@ -129,15 +129,15 @@ class AttachmentService extends BaseService {
         $query->with($defaultRelations);
 
         $query->when($filters['category'] ?? null, static fn ($q, $value) => $q->where('category', $value))
-            ->when($filters['file_type'] ?? null, static fn ($q, $value) => $q->where('file_type', 'like', "%{$value}%"))
+            ->when($filters['file_type'] ?? null, static fn ($q, $value) => $q->where('file_type', 'like', "%$value%"))
             ->when($filters['user_id'] ?? null, static fn ($q, $value) => $q->where('user_id', $value))
             ->when($filters['min_size'] ?? null, static fn ($q, $value) => $q->where('size', '>=', $value))
             ->when($filters['max_size'] ?? null, static fn ($q, $value) => $q->where('size', '<=', $value))
-            ->when($filters['description'] ?? null, static fn ($q, $value) => $q->where('description', 'like', "%{$value}%"))
+            ->when($filters['description'] ?? null, static fn ($q, $value) => $q->where('description', 'like', "%$value%"))
             ->when($filters['filename'] ?? null, static function ($q, $value) {
                 return $q->where(static function ($subQuery) use ($value): void {
-                    $subQuery->where('filename', 'like', "%{$value}%")
-                        ->orWhere('original_filename', 'like', "%{$value}%");
+                    $subQuery->where('filename', 'like', "%$value%")
+                        ->orWhere('original_filename', 'like', "%$value%");
                 });
             })
             ->when(
@@ -179,7 +179,7 @@ class AttachmentService extends BaseService {
         $supportedTypes = $this->getSupportedEntityTypes();
 
         if (! in_array($entityType, $supportedTypes, true)) {
-            $this->throwInvalidData("Invalid attachmentable type: {$entityType}");
+            $this->throwInvalidData("Invalid attachmentable type: $entityType");
         }
 
         $entity = $entityType::where('id', $entityId)->first();
@@ -274,7 +274,7 @@ class AttachmentService extends BaseService {
      */
     private function applyAttachmentBusinessRules(array $data): array {
         if (! isset($data['user_id'])) {
-            $data['user_id'] = AuthorizationEngine::getCurrentUser()?->id;
+            $data['user_id'] = \App\Services\AuthorizationHelper::getCurrentUser()?->id;
         }
 
         return $data;

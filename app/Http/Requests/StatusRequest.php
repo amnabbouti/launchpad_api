@@ -32,7 +32,7 @@ class StatusRequest extends BaseRequest {
             'code'        => 'required|string|max:255',
             'description' => 'nullable|string',
             'is_active'   => 'nullable|boolean',
-            'org_id'      => 'required|exists:organizations,id',
+            'org_id'      => 'nullable|exists:organizations,id',
         ];
     }
 }

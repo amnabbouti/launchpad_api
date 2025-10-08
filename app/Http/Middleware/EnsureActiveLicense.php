@@ -24,7 +24,7 @@ final class EnsureActiveLicense {
             return $next($request);
         }
 
-        if (\App\Services\AuthorizationEngine::inSystemScope($user)) {
+        if (\App\Services\AuthorizationHelper::inSystemScope($user)) {
             return $next($request);
         }
 

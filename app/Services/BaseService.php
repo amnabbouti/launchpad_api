@@ -1,11 +1,10 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Services;
 
 use App\Constants\ErrorMessages;
-use App\Exceptions\UnauthorizedAccessException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -14,31 +13,32 @@ use InvalidArgumentException;
 use function is_array;
 use function is_string;
 
-class BaseService {
+class BaseService
+{
     protected Model $model;
 
-    protected string $resource;
-
-    public function __construct(Model $model) {
-        $this->model    = $model;
-        $this->resource = AuthorizationEngine::getResourceFromModel($model);
+    public function __construct(Model $model)
+    {
+        $this->model = $model;
     }
 
-    public function all(array $columns = ['*'], array $relations = []): Builder {
+    public function all(array $columns = ['*'], array $relations = []): Builder
+    {
         return $this->getQuery()->with($relations)->select($columns);
     }
 
     /**
      * @throws InvalidArgumentException
      */
-    public function create(array $data): Model {
+    public function create(array $data): Model
+    {
         if (empty($data)) {
             $message = __(ErrorMessages::EMPTY_DATA);
 
             throw new InvalidArgumentException($message);
         }
 
-        AuthorizationEngine::authorize('create', $this->resource);
+        // Authorization is handled by PermissionMiddleware
         $model = $this->model->newInstance($data);
 
         // RLS will handle organization assignment automatically
@@ -47,25 +47,22 @@ class BaseService {
         return $model;
     }
 
-    /**
-     * @throws UnauthorizedAccessException
-     */
-    public function delete($id): bool {
+    public function delete($id): bool
+    {
         $model = $this->findModel($id);
 
-        AuthorizationEngine::authorize('delete', $this->resource, $model);
-
+        // Authorization is handled by PermissionMiddleware
         return $model->delete();
     }
 
     /**
      * @throws InvalidArgumentException
      */
-    public function findById($id, array $columns = ['*'], array $relations = [], array $appends = []): Model {
+    public function findById($id, array $columns = ['*'], array $relations = [], array $appends = []): Model
+    {
         $model = $this->findModel($id, $columns, $relations);
 
-        AuthorizationEngine::authorize('view', $this->resource, $model);
-
+        // Authorization is handled by PermissionMiddleware
         if (! empty($appends)) {
             $model->append($appends);
         }
@@ -74,10 +71,10 @@ class BaseService {
     }
 
     /**
-     * @throws UnauthorizedAccessException
      * @throws InvalidArgumentException
      */
-    public function update($id, array $data): Model {
+    public function update($id, array $data): Model
+    {
         if (empty($data)) {
             $message = __(ErrorMessages::EMPTY_DATA);
 
@@ -86,13 +83,14 @@ class BaseService {
 
         $model = $this->findModel($id);
 
-        AuthorizationEngine::authorize('update', $this->resource, $model);
+        // Authorization is handled by PermissionMiddleware
         $model->update($data);
 
         return $model->fresh();
     }
 
-    protected function findModel($id, array $columns = ['*'], array $relations = []) {
+    protected function findModel($id, array $columns = ['*'], array $relations = [])
+    {
         $model = $this->getQuery()->with($relations)->find($id, $columns);
         if ($model) {
             return $model;
@@ -103,27 +101,30 @@ class BaseService {
         throw new InvalidArgumentException($message);
     }
 
-    protected function getAllowedParams(): array {
+    protected function getAllowedParams(): array
+    {
         return ['with', 'per_page', 'page'];
     }
 
-    protected function getQuery(): Builder {
+    protected function getQuery(): Builder
+    {
         // Use the same connection that was used to set RLS context
-        $connectionName = session('rls_connection_name', 'pgsql');
-        $connection     = DB::connection($connectionName);
+        // $connectionName = session('rls_connection_name', 'pgsql');
+        // $connection     = DB::connection($connectionName);
 
         // Create a query using the specific connection
         $query = $this->model->newQuery();
-        $query->getModel()->setConnection($connectionName);
 
         return $query;
     }
 
-    protected function getValidRelations(): array {
+    protected function getValidRelations(): array
+    {
         return [];
     }
 
-    protected function processWithParameter($with): ?array {
+    protected function processWithParameter($with): ?array
+    {
         if (empty($with)) {
             return null;
         }
@@ -146,7 +147,8 @@ class BaseService {
         return $relations;
     }
 
-    protected function toBool($value): ?bool {
+    protected function toBool($value): ?bool
+    {
         if ($value === null || $value === '') {
             return null;
         }
@@ -154,7 +156,8 @@ class BaseService {
         return filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
     }
 
-    protected function toInt($value): ?int {
+    protected function toInt($value): ?int
+    {
         if ($value === null || $value === '') {
             return null;
         }
@@ -162,7 +165,8 @@ class BaseService {
         return is_numeric($value) ? (int) $value : null;
     }
 
-    protected function toString($value): ?string {
+    protected function toString($value): ?string
+    {
         if ($value === null || $value === '') {
             return null;
         }
@@ -170,7 +174,8 @@ class BaseService {
         return is_string($value) ? mb_trim($value) : null;
     }
 
-    protected function validateParams(array $params): void {
+    protected function validateParams(array $params): void
+    {
         $allowedParams = $this->getAllowedParams();
         $unknownParams = array_diff(array_keys($params), $allowedParams);
 

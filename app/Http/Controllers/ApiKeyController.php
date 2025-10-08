@@ -35,7 +35,7 @@ class ApiKeyController extends BaseController {
      */
     public function index(Request $request): JsonResponse {
         // Super admins automatically get all organizations, regular users get their org only
-        $organizationId = \App\Services\AuthorizationEngine::inSystemScope($request->user()) ? null : $request->user()->org_id;
+        $organizationId = \App\Services\AuthorizationHelper::inSystemScope($request->user()) ? null : $request->user()->org_id;
         $userId         = $request->query('user_id');
 
         $apiKeys = $this->apiKeyService->getApiKeys($organizationId, $userId);
@@ -74,7 +74,7 @@ class ApiKeyController extends BaseController {
      * Get basic API keys overview statistics
      */
     public function overview(Request $request): JsonResponse {
-        $organizationId = \App\Services\AuthorizationEngine::inSystemScope($request->user()) ? null : $request->user()->org_id;
+        $organizationId = \App\Services\AuthorizationHelper::inSystemScope($request->user()) ? null : $request->user()->org_id;
         $overview       = $this->apiKeyService->getApiKeysOverview($organizationId);
 
         return $this->successResponse($overview);
@@ -113,7 +113,7 @@ class ApiKeyController extends BaseController {
      * Display the specified API key
      */
     public function show(Request $request, int $id): JsonResponse {
-        $organizationId = \App\Services\AuthorizationEngine::inSystemScope($request->user()) ? null : $request->user()->org_id;
+        $organizationId = \App\Services\AuthorizationHelper::inSystemScope($request->user()) ? null : $request->user()->org_id;
 
         $apiKeys = $this->apiKeyService->getApiKeys($organizationId);
         $token   = $apiKeys->firstWhere('id', $id);
@@ -173,7 +173,7 @@ class ApiKeyController extends BaseController {
             'metadata'             => 'nullable|array',
         ]);
 
-        if (\App\Services\AuthorizationEngine::inSystemScope($request->user())) {
+        if (\App\Services\AuthorizationHelper::inSystemScope($request->user())) {
             $validated['organization_id'] = $validated['organization_id'] ?? null;
         } else {
             $validated['organization_id'] = $request->user()->org_id;

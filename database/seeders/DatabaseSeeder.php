@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace Database\Seeders;
 
 use App\Models\Batch;
@@ -18,59 +20,59 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
-class DatabaseSeeder extends Seeder
-{
+use function count;
+
+class DatabaseSeeder extends Seeder {
     /**
      * Seed the application's database.
      */
-    public function run(): void
-    {
+    public function run(): void {
         // Run the comprehensive enterprise system seeder first
         $this->call(EnterpriseSystemSeeder::class);
 
         // Then continue with the existing inventory seeding for the first organization
-        $org = \App\Models\Organization::first();
+        $org = Organization::first();
 
         // Get system roles from database (created by migration)
         $superAdminRole = \App\Models\Role::where('slug', 'super_admin')->where('is_system', true)->first();
-        $managerRole = \App\Models\Role::where('slug', 'manager')->where('is_system', true)->first();
-        $employeeRole = \App\Models\Role::where('slug', 'employee')->where('is_system', true)->first();
+        $managerRole    = \App\Models\Role::where('slug', 'manager')->where('is_system', true)->first();
+        $employeeRole   = \App\Models\Role::where('slug', 'employee')->where('is_system', true)->first();
 
         // Create users with system roles (now they have role_id for consistency)
         $admin = User::factory()->create([
             'first_name' => 'Admin',
-            'last_name' => 'User',
-            'email' => 'admin@example.be',
-            'password' => Hash::make('admin123'),
-            'org_id' => null,                // Super admin doesn't belong to any org
-            'org_role' => 'super_admin',     // Keep for backward compatibility
-            'role_id' => $superAdminRole->id, // Now has database role too
+            'last_name'  => 'User',
+            'email'      => 'admin@example.be',
+            'password'   => Hash::make('admin123'),
+            'org_id'     => null,                // Super admin doesn't belong to any org
+            'org_role'   => 'super_admin',     // Keep for backward compatibility
+            'role_id'    => $superAdminRole->id, // Now has database role too
         ]);
 
         $testUser = User::factory()->create([
             'first_name' => 'Test',
-            'last_name' => 'User',
-            'email' => 'test@example.com',
-            'password' => Hash::make('password'),
-            'org_id' => $org->id,
-            'org_role' => 'manager',      // Keep for backward compatibility
-            'role_id' => $managerRole->id, // Now has database role too
+            'last_name'  => 'User',
+            'email'      => 'test@example.com',
+            'password'   => Hash::make('password'),
+            'org_id'     => $org->id,
+            'org_role'   => 'manager',      // Keep for backward compatibility
+            'role_id'    => $managerRole->id, // Now has database role too
         ]);
 
         // Create some employees with system role
         $users = User::factory(6)->create([
-            'org_id' => $org->id,
+            'org_id'   => $org->id,
             'org_role' => 'employee',     // Keep for backward compatibility
-            'role_id' => $employeeRole->id, // Now has database role too
+            'role_id'  => $employeeRole->id, // Now has database role too
         ]);
 
         // Create a custom role to demonstrate the hybrid system
         $warehouseSupervisorRole = \App\Models\Role::create([
-            'slug' => 'warehouse_supervisor',
-            'title' => 'Warehouse Supervisor',
+            'slug'        => 'warehouse_supervisor',
+            'title'       => 'Warehouse Supervisor',
             'description' => 'Can manage warehouse operations and inventory',
-            'org_id' => $org->id,
-            'forbidden' => [
+            'org_id'      => $org->id,
+            'forbidden'   => [
                 'users.create',           // Can't create users (inherited from employee)
                 'organizations.update',   // Can't update organization
                 // But can delete items (not in forbidden list, unlike regular employees)
@@ -78,11 +80,11 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $maintenanceTechRole = \App\Models\Role::create([
-            'slug' => 'maintenance_tech',
-            'title' => 'Maintenance Technician',
+            'slug'        => 'maintenance_tech',
+            'title'       => 'Maintenance Technician',
             'description' => 'Specializes in equipment maintenance and repairs',
-            'org_id' => $org->id,
-            'forbidden' => [
+            'org_id'      => $org->id,
+            'forbidden'   => [
                 'users.create',
                 'items.delete',           // Can't delete items
                 'organizations.update',
@@ -93,22 +95,22 @@ class DatabaseSeeder extends Seeder
         // Create users with custom roles
         $warehouseSupervisor = User::factory()->create([
             'first_name' => 'John',
-            'last_name' => 'Supervisor',
-            'email' => 'supervisor@example.com',
-            'password' => Hash::make('password'),
-            'org_id' => $org->id,
-            'org_role' => null,                        // No system role
-            'role_id' => $warehouseSupervisorRole->id, // Custom role
+            'last_name'  => 'Supervisor',
+            'email'      => 'supervisor@example.com',
+            'password'   => Hash::make('password'),
+            'org_id'     => $org->id,
+            'org_role'   => null,                        // No system role
+            'role_id'    => $warehouseSupervisorRole->id, // Custom role
         ]);
 
         $maintenanceTech = User::factory()->create([
             'first_name' => 'Jane',
-            'last_name' => 'Tech',
-            'email' => 'tech@example.com',
-            'password' => Hash::make('password'),
-            'org_id' => $org->id,
-            'org_role' => null,                    // No system role
-            'role_id' => $maintenanceTechRole->id, // Custom role
+            'last_name'  => 'Tech',
+            'email'      => 'tech@example.com',
+            'password'   => Hash::make('password'),
+            'org_id'     => $org->id,
+            'org_role'   => null,                    // No system role
+            'role_id'    => $maintenanceTechRole->id, // Custom role
         ]);
 
         $allUsers = collect([$admin, $testUser, $warehouseSupervisor, $maintenanceTech])->merge($users);
@@ -128,63 +130,63 @@ class DatabaseSeeder extends Seeder
             $data['org_id'] = $org->id;
             $statusModels[] = Status::firstOrCreate(
                 ['code' => $data['code'], 'org_id' => $org->id],
-                $data
+                $data,
             );
         }
 
         // Seed nested categories
-        $root = Category::firstOrCreate(['name' => 'Root', 'parent_id' => null, 'org_id' => $org->id]);
+        $root        = Category::firstOrCreate(['name' => 'Root', 'parent_id' => null, 'org_id' => $org->id]);
         $electronics = Category::firstOrCreate(['name' => 'Electronics', 'parent_id' => $root->id, 'org_id' => $org->id]);
-        $computers = Category::firstOrCreate(['name' => 'Computers', 'parent_id' => $electronics->id, 'org_id' => $org->id]);
-        $laptops = Category::firstOrCreate(['name' => 'Laptops', 'parent_id' => $computers->id, 'org_id' => $org->id]);
-        $desktops = Category::firstOrCreate(['name' => 'Desktops', 'parent_id' => $computers->id, 'org_id' => $org->id]);
-        $phones = Category::firstOrCreate(['name' => 'Phones', 'parent_id' => $electronics->id, 'org_id' => $org->id]);
-        $office = Category::firstOrCreate(['name' => 'Office Supplies', 'parent_id' => $root->id, 'org_id' => $org->id]);
-        $furniture = Category::firstOrCreate(['name' => 'Furniture', 'parent_id' => $office->id, 'org_id' => $org->id]);
-        $chairs = Category::firstOrCreate(['name' => 'Chairs', 'parent_id' => $furniture->id, 'org_id' => $org->id]);
-        $desks = Category::firstOrCreate(['name' => 'Desks', 'parent_id' => $furniture->id, 'org_id' => $org->id]);
-        $kitchen = Category::firstOrCreate(['name' => 'Kitchen', 'parent_id' => $root->id, 'org_id' => $org->id]);
-        $appliances = Category::firstOrCreate(['name' => 'Appliances', 'parent_id' => $kitchen->id, 'org_id' => $org->id]);
+        $computers   = Category::firstOrCreate(['name' => 'Computers', 'parent_id' => $electronics->id, 'org_id' => $org->id]);
+        $laptops     = Category::firstOrCreate(['name' => 'Laptops', 'parent_id' => $computers->id, 'org_id' => $org->id]);
+        $desktops    = Category::firstOrCreate(['name' => 'Desktops', 'parent_id' => $computers->id, 'org_id' => $org->id]);
+        $phones      = Category::firstOrCreate(['name' => 'Phones', 'parent_id' => $electronics->id, 'org_id' => $org->id]);
+        $office      = Category::firstOrCreate(['name' => 'Office Supplies', 'parent_id' => $root->id, 'org_id' => $org->id]);
+        $furniture   = Category::firstOrCreate(['name' => 'Furniture', 'parent_id' => $office->id, 'org_id' => $org->id]);
+        $chairs      = Category::firstOrCreate(['name' => 'Chairs', 'parent_id' => $furniture->id, 'org_id' => $org->id]);
+        $desks       = Category::firstOrCreate(['name' => 'Desks', 'parent_id' => $furniture->id, 'org_id' => $org->id]);
+        $kitchen     = Category::firstOrCreate(['name' => 'Kitchen', 'parent_id' => $root->id, 'org_id' => $org->id]);
+        $appliances  = Category::firstOrCreate(['name' => 'Appliances', 'parent_id' => $kitchen->id, 'org_id' => $org->id]);
 
         // Seed deeply nested locations and collect them for later use
-        $locationModels = [];
-        $hq = Location::firstOrCreate(['name' => 'HQ', 'code' => 'HQ', 'is_active' => true, 'parent_id' => null, 'org_id' => $org->id]);
+        $locationModels   = [];
+        $hq               = Location::firstOrCreate(['name' => 'HQ', 'code' => 'HQ', 'is_active' => true, 'parent_id' => null, 'org_id' => $org->id]);
         $locationModels[] = $hq;
-        $floor1 = Location::firstOrCreate(['name' => 'Floor 1', 'code' => 'F1', 'is_active' => true, 'parent_id' => $hq->id, 'org_id' => $org->id]);
+        $floor1           = Location::firstOrCreate(['name' => 'Floor 1', 'code' => 'F1', 'is_active' => true, 'parent_id' => $hq->id, 'org_id' => $org->id]);
         $locationModels[] = $floor1;
-        $floor2 = Location::firstOrCreate(['name' => 'Floor 2', 'code' => 'F2', 'is_active' => true, 'parent_id' => $hq->id, 'org_id' => $org->id]);
+        $floor2           = Location::firstOrCreate(['name' => 'Floor 2', 'code' => 'F2', 'is_active' => true, 'parent_id' => $hq->id, 'org_id' => $org->id]);
         $locationModels[] = $floor2;
-        $room101 = Location::firstOrCreate(['name' => 'Room 101', 'code' => 'R101', 'is_active' => true, 'parent_id' => $floor1->id, 'org_id' => $org->id]);
+        $room101          = Location::firstOrCreate(['name' => 'Room 101', 'code' => 'R101', 'is_active' => true, 'parent_id' => $floor1->id, 'org_id' => $org->id]);
         $locationModels[] = $room101;
-        $shelfA = Location::firstOrCreate(['name' => 'Shelf A', 'code' => 'S-A', 'is_active' => true, 'parent_id' => $room101->id, 'org_id' => $org->id]);
+        $shelfA           = Location::firstOrCreate(['name' => 'Shelf A', 'code' => 'S-A', 'is_active' => true, 'parent_id' => $room101->id, 'org_id' => $org->id]);
         $locationModels[] = $shelfA;
-        $box1 = Location::firstOrCreate(['name' => 'Box 1', 'code' => 'B1', 'is_active' => true, 'parent_id' => $shelfA->id, 'org_id' => $org->id]);
+        $box1             = Location::firstOrCreate(['name' => 'Box 1', 'code' => 'B1', 'is_active' => true, 'parent_id' => $shelfA->id, 'org_id' => $org->id]);
         $locationModels[] = $box1;
-        $compartmentA = Location::firstOrCreate(['name' => 'Compartment A', 'code' => 'C-A', 'is_active' => true, 'parent_id' => $box1->id, 'org_id' => $org->id]);
+        $compartmentA     = Location::firstOrCreate(['name' => 'Compartment A', 'code' => 'C-A', 'is_active' => true, 'parent_id' => $box1->id, 'org_id' => $org->id]);
         $locationModels[] = $compartmentA;
-        $compartmentB = Location::firstOrCreate(['name' => 'Compartment B', 'code' => 'C-B', 'is_active' => true, 'parent_id' => $box1->id, 'org_id' => $org->id]);
+        $compartmentB     = Location::firstOrCreate(['name' => 'Compartment B', 'code' => 'C-B', 'is_active' => true, 'parent_id' => $box1->id, 'org_id' => $org->id]);
         $locationModels[] = $compartmentB;
-        $shelfB = Location::firstOrCreate(['name' => 'Shelf B', 'code' => 'S-B', 'is_active' => true, 'parent_id' => $room101->id, 'org_id' => $org->id]);
+        $shelfB           = Location::firstOrCreate(['name' => 'Shelf B', 'code' => 'S-B', 'is_active' => true, 'parent_id' => $room101->id, 'org_id' => $org->id]);
         $locationModels[] = $shelfB;
-        $room102 = Location::firstOrCreate(['name' => 'Room 102', 'code' => 'R102', 'is_active' => true, 'parent_id' => $floor1->id, 'org_id' => $org->id]);
+        $room102          = Location::firstOrCreate(['name' => 'Room 102', 'code' => 'R102', 'is_active' => true, 'parent_id' => $floor1->id, 'org_id' => $org->id]);
         $locationModels[] = $room102;
-        $lockerA = Location::firstOrCreate(['name' => 'Locker A', 'code' => 'L-A', 'is_active' => true, 'parent_id' => $room102->id, 'org_id' => $org->id]);
+        $lockerA          = Location::firstOrCreate(['name' => 'Locker A', 'code' => 'L-A', 'is_active' => true, 'parent_id' => $room102->id, 'org_id' => $org->id]);
         $locationModels[] = $lockerA;
-        $lockerB = Location::firstOrCreate(['name' => 'Locker B', 'code' => 'L-B', 'is_active' => true, 'parent_id' => $room102->id, 'org_id' => $org->id]);
+        $lockerB          = Location::firstOrCreate(['name' => 'Locker B', 'code' => 'L-B', 'is_active' => true, 'parent_id' => $room102->id, 'org_id' => $org->id]);
         $locationModels[] = $lockerB;
-        $room201 = Location::firstOrCreate(['name' => 'Room 201', 'code' => 'R201', 'is_active' => true, 'parent_id' => $floor2->id, 'org_id' => $org->id]);
+        $room201          = Location::firstOrCreate(['name' => 'Room 201', 'code' => 'R201', 'is_active' => true, 'parent_id' => $floor2->id, 'org_id' => $org->id]);
         $locationModels[] = $room201;
-        $cabinet1 = Location::firstOrCreate(['name' => 'Cabinet 1', 'code' => 'CAB1', 'is_active' => true, 'parent_id' => $room201->id, 'org_id' => $org->id]);
+        $cabinet1         = Location::firstOrCreate(['name' => 'Cabinet 1', 'code' => 'CAB1', 'is_active' => true, 'parent_id' => $room201->id, 'org_id' => $org->id]);
         $locationModels[] = $cabinet1;
-        $drawerA = Location::firstOrCreate(['name' => 'Drawer A', 'code' => 'DRA', 'is_active' => true, 'parent_id' => $cabinet1->id, 'org_id' => $org->id]);
+        $drawerA          = Location::firstOrCreate(['name' => 'Drawer A', 'code' => 'DRA', 'is_active' => true, 'parent_id' => $cabinet1->id, 'org_id' => $org->id]);
         $locationModels[] = $drawerA;
-        $drawerB = Location::firstOrCreate(['name' => 'Drawer B', 'code' => 'DRB', 'is_active' => true, 'parent_id' => $cabinet1->id, 'org_id' => $org->id]);
+        $drawerB          = Location::firstOrCreate(['name' => 'Drawer B', 'code' => 'DRB', 'is_active' => true, 'parent_id' => $cabinet1->id, 'org_id' => $org->id]);
         $locationModels[] = $drawerB;
-        $retail = Location::firstOrCreate(['name' => 'Retail Store', 'code' => 'RETAIL', 'is_active' => true, 'parent_id' => null, 'org_id' => $org->id]);
+        $retail           = Location::firstOrCreate(['name' => 'Retail Store', 'code' => 'RETAIL', 'is_active' => true, 'parent_id' => null, 'org_id' => $org->id]);
         $locationModels[] = $retail;
-        $retailBack = Location::firstOrCreate(['name' => 'Back Room', 'code' => 'RETAIL-BACK', 'is_active' => true, 'parent_id' => $retail->id, 'org_id' => $org->id]);
+        $retailBack       = Location::firstOrCreate(['name' => 'Back Room', 'code' => 'RETAIL-BACK', 'is_active' => true, 'parent_id' => $retail->id, 'org_id' => $org->id]);
         $locationModels[] = $retailBack;
-        $retailSafe = Location::firstOrCreate(['name' => 'Safe', 'code' => 'SAFE', 'is_active' => true, 'parent_id' => $retailBack->id, 'org_id' => $org->id]);
+        $retailSafe       = Location::firstOrCreate(['name' => 'Safe', 'code' => 'SAFE', 'is_active' => true, 'parent_id' => $retailBack->id, 'org_id' => $org->id]);
         $locationModels[] = $retailSafe;
         $retailSafeDrawer = Location::firstOrCreate(['name' => 'Safe Drawer', 'code' => 'SAFE-DR', 'is_active' => true, 'parent_id' => $retailSafe->id, 'org_id' => $org->id]);
         $locationModels[] = $retailSafeDrawer;
@@ -200,9 +202,9 @@ class DatabaseSeeder extends Seeder
         $batchModels = [];
         foreach ($batchData as $data) {
             $data['org_id'] = $org->id;
-            $batchModels[] = Batch::firstOrCreate(
+            $batchModels[]  = Batch::firstOrCreate(
                 ['batch_number' => $data['batch_number'], 'org_id' => $org->id],
-                $data
+                $data,
             );
         }
 
@@ -221,7 +223,7 @@ class DatabaseSeeder extends Seeder
             $data['org_id'] = $org->id;
             UnitOfMeasure::firstOrCreate(
                 ['name' => $data['name']],
-                $data
+                $data,
             );
         }
 
@@ -236,10 +238,10 @@ class DatabaseSeeder extends Seeder
 
         $supplierModels = [];
         foreach ($supplierData as $data) {
-            $data['org_id'] = $org->id;
+            $data['org_id']   = $org->id;
             $supplierModels[] = Supplier::firstOrCreate(
                 ['name' => $data['name']],
-                $data
+                $data,
             );
         }
 
@@ -250,135 +252,135 @@ class DatabaseSeeder extends Seeder
         // Create items if they don't exist
         $itemData = [
             [
-                'name' => 'Laptop Computer',
-                'code' => 'COMP-001',
-                'description' => 'High-performance laptop for business use',
-                'price' => 1200.00,
-                'unit_id' => $eachUnit->id,
-                'category_id' => 2,
-                'user_id' => $admin->id,
-                'tracking_mode' => 'serialized',
-                'is_active' => true,
+                'name'           => 'Laptop Computer',
+                'code'           => 'COMP-001',
+                'description'    => 'High-performance laptop for business use',
+                'price'          => 1200.00,
+                'unit_id'        => $eachUnit->id,
+                'category_id'    => $computers->id,
+                'user_id'        => $admin->id,
+                'tracking_mode'  => 'serialized',
+                'is_active'      => true,
                 'specifications' => json_encode(['processor' => 'Intel i7', 'ram' => '16GB', 'storage' => '512GB SSD']),
             ],
             [
-                'name' => 'Desktop Computer',
-                'code' => 'COMP-002',
-                'description' => 'Powerful desktop workstation',
-                'price' => 1500.00,
-                'unit_id' => $eachUnit->id,
-                'category_id' => 2,
-                'user_id' => $admin->id,
-                'tracking_mode' => 'serialized',
-                'is_active' => true,
+                'name'           => 'Desktop Computer',
+                'code'           => 'COMP-002',
+                'description'    => 'Powerful desktop workstation',
+                'price'          => 1500.00,
+                'unit_id'        => $eachUnit->id,
+                'category_id'    => $computers->id,
+                'user_id'        => $admin->id,
+                'tracking_mode'  => 'serialized',
+                'is_active'      => true,
                 'specifications' => json_encode(['processor' => 'Intel i9', 'ram' => '32GB', 'storage' => '1TB SSD']),
             ],
             [
-                'name' => 'Smartphone',
-                'code' => 'PHONE-001',
-                'description' => 'Latest model smartphone',
-                'price' => 800.00,
-                'unit_id' => $eachUnit->id,
-                'category_id' => 3,
-                'user_id' => $testUser->id,
-                'tracking_mode' => 'serialized',
-                'is_active' => true,
+                'name'           => 'Smartphone',
+                'code'           => 'PHONE-001',
+                'description'    => 'Latest model smartphone',
+                'price'          => 800.00,
+                'unit_id'        => $eachUnit->id,
+                'category_id'    => $phones->id,
+                'user_id'        => $testUser->id,
+                'tracking_mode'  => 'serialized',
+                'is_active'      => true,
                 'specifications' => json_encode(['screen' => '6.5 inch', 'camera' => '12MP', 'storage' => '128GB']),
             ],
             [
-                'name' => 'Wireless Mouse',
-                'code' => 'ACC-001',
-                'description' => 'Ergonomic wireless mouse',
-                'price' => 25.00,
-                'unit_id' => $eachUnit->id,
-                'category_id' => 4,
-                'user_id' => $users[0]->id,
-                'tracking_mode' => 'standard',
-                'is_active' => true,
+                'name'           => 'Wireless Mouse',
+                'code'           => 'ACC-001',
+                'description'    => 'Ergonomic wireless mouse',
+                'price'          => 25.00,
+                'unit_id'        => $eachUnit->id,
+                'category_id'    => $electronics->id,
+                'user_id'        => $users[0]->id,
+                'tracking_mode'  => 'standard',
+                'is_active'      => true,
                 'specifications' => json_encode(['connectivity' => 'Bluetooth', 'battery' => 'Rechargeable']),
             ],
             [
-                'name' => 'Wireless Keyboard',
-                'code' => 'ACC-002',
-                'description' => 'Compact wireless keyboard',
-                'price' => 45.00,
-                'unit_id' => $eachUnit->id,
-                'category_id' => 4,
-                'user_id' => $users[0]->id,
-                'tracking_mode' => 'standard',
-                'is_active' => true,
+                'name'           => 'Wireless Keyboard',
+                'code'           => 'ACC-002',
+                'description'    => 'Compact wireless keyboard',
+                'price'          => 45.00,
+                'unit_id'        => $eachUnit->id,
+                'category_id'    => $electronics->id,
+                'user_id'        => $users[0]->id,
+                'tracking_mode'  => 'standard',
+                'is_active'      => true,
                 'specifications' => json_encode(['connectivity' => 'Bluetooth', 'battery' => 'Rechargeable']),
             ],
             [
-                'name' => 'Printer Paper',
-                'code' => 'OFFICE-001',
-                'description' => 'A4 printer paper, 500 sheets',
-                'price' => 5.00,
-                'unit_id' => $packUnit->id,
-                'category_id' => 5,
-                'user_id' => $users[1]->id,
-                'tracking_mode' => 'standard',
-                'is_active' => true,
+                'name'           => 'Printer Paper',
+                'code'           => 'OFFICE-001',
+                'description'    => 'A4 printer paper, 500 sheets',
+                'price'          => 5.00,
+                'unit_id'        => $packUnit->id,
+                'category_id'    => $office->id,
+                'user_id'        => $users[1]->id,
+                'tracking_mode'  => 'standard',
+                'is_active'      => true,
                 'specifications' => json_encode(['size' => 'A4', 'weight' => '80gsm']),
             ],
             [
-                'name' => 'Office Chair',
-                'code' => 'FURN-001',
-                'description' => 'Ergonomic office chair',
-                'price' => 150.00,
-                'unit_id' => $eachUnit->id,
-                'category_id' => 7,
-                'user_id' => $users[2]->id,
-                'tracking_mode' => 'serialized',
-                'is_active' => true,
+                'name'           => 'Office Chair',
+                'code'           => 'FURN-001',
+                'description'    => 'Ergonomic office chair',
+                'price'          => 150.00,
+                'unit_id'        => $eachUnit->id,
+                'category_id'    => $chairs->id,
+                'user_id'        => $users[2]->id,
+                'tracking_mode'  => 'serialized',
+                'is_active'      => true,
                 'specifications' => json_encode(['material' => 'Mesh', 'color' => 'Black', 'adjustable' => true]),
             ],
             [
-                'name' => 'Standing Desk',
-                'code' => 'FURN-002',
-                'description' => 'Adjustable height standing desk',
-                'price' => 300.00,
-                'unit_id' => $eachUnit->id,
-                'category_id' => 8,
-                'user_id' => $users[2]->id,
-                'tracking_mode' => 'serialized',
-                'is_active' => true,
+                'name'           => 'Standing Desk',
+                'code'           => 'FURN-002',
+                'description'    => 'Adjustable height standing desk',
+                'price'          => 300.00,
+                'unit_id'        => $eachUnit->id,
+                'category_id'    => $desks->id,
+                'user_id'        => $users[2]->id,
+                'tracking_mode'  => 'serialized',
+                'is_active'      => true,
                 'specifications' => json_encode(['material' => 'Wood/Metal', 'color' => 'Brown', 'electric' => true]),
             ],
             [
-                'name' => 'Coffee Maker',
-                'code' => 'KITCH-001',
-                'description' => 'Programmable coffee maker',
-                'price' => 75.00,
-                'unit_id' => $eachUnit->id,
-                'category_id' => 10,
-                'user_id' => $users[3]->id,
-                'tracking_mode' => 'serialized',
-                'is_active' => true,
+                'name'           => 'Coffee Maker',
+                'code'           => 'KITCH-001',
+                'description'    => 'Programmable coffee maker',
+                'price'          => 75.00,
+                'unit_id'        => $eachUnit->id,
+                'category_id'    => $appliances->id,
+                'user_id'        => $users[3]->id,
+                'tracking_mode'  => 'serialized',
+                'is_active'      => true,
                 'specifications' => json_encode(['capacity' => '12 cups', 'programmable' => true]),
             ],
             [
-                'name' => 'Microwave Oven',
-                'code' => 'KITCH-002',
-                'description' => 'Countertop microwave oven',
-                'price' => 120.00,
-                'unit_id' => $eachUnit->id,
-                'category_id' => 10,
-                'user_id' => $users[3]->id,
-                'tracking_mode' => 'serialized',
-                'is_active' => true,
+                'name'           => 'Microwave Oven',
+                'code'           => 'KITCH-002',
+                'description'    => 'Countertop microwave oven',
+                'price'          => 120.00,
+                'unit_id'        => $eachUnit->id,
+                'category_id'    => $appliances->id,
+                'user_id'        => $users[3]->id,
+                'tracking_mode'  => 'serialized',
+                'is_active'      => true,
                 'specifications' => json_encode(['power' => '1000W', 'capacity' => '1.2 cubic feet']),
             ],
             [
-                'name' => 'Discontinued Item',
-                'code' => 'DISC-001',
-                'description' => 'This item is no longer available',
-                'price' => 10.00,
-                'unit_id' => $eachUnit->id,
-                'category_id' => 5,
-                'user_id' => $users[4]->id,
-                'tracking_mode' => 'abstract',
-                'is_active' => false,
+                'name'           => 'Discontinued Item',
+                'code'           => 'DISC-001',
+                'description'    => 'This item is no longer available',
+                'price'          => 10.00,
+                'unit_id'        => $eachUnit->id,
+                'category_id'    => $office->id,
+                'user_id'        => $users[4]->id,
+                'tracking_mode'  => 'abstract',
+                'is_active'      => false,
                 'specifications' => json_encode(['status' => 'discontinued']),
             ],
         ];
@@ -386,9 +388,9 @@ class DatabaseSeeder extends Seeder
         $itemModels = [];
         foreach ($itemData as $data) {
             $data['org_id'] = $org->id;
-            $itemModels[] = Item::firstOrCreate(
+            $itemModels[]   = Item::firstOrCreate(
                 ['code' => $data['code']],
-                $data
+                $data,
             );
         }
 
@@ -396,15 +398,16 @@ class DatabaseSeeder extends Seeder
             if ($index < count($itemModels) - 1) {
                 $randomLocations = collect($locationModels)
                     ->where('is_active', true)
-                    ->random(rand(1, 3));
+                    ->random(random_int(1, 3));
 
                 foreach ($randomLocations as $location) {
                     if (! $item->locations()->where('location_id', $location->id)->exists()) {
                         // For standard items, add a random quantity
-                        $quantity = $item->isStandard() ? rand(1, 10) : 1;
+                        $quantity = $item->isStandard() ? random_int(1, 10) : 1;
 
                         $item->locations()->attach($location->id, [
-                            'org_id' => $org->id,
+                            'id'       => (string) \Illuminate\Support\Str::uuid(),
+                            'org_id'   => $org->id,
                             'quantity' => $quantity,
                         ]);
                     }
@@ -416,16 +419,17 @@ class DatabaseSeeder extends Seeder
             if ($index < count($itemModels) - 1) {
                 $randomSuppliers = collect($supplierModels)
                     ->where('is_active', true)
-                    ->random(rand(1, 2));
+                    ->random(random_int(1, 2));
 
                 foreach ($randomSuppliers as $supplier) {
                     if (! $item->suppliers()->where('supplier_id', $supplier->id)->exists()) {
                         $item->suppliers()->attach($supplier->id, [
-                            'org_id' => $org->id,
-                            'supplier_part_number' => 'SP' . rand(1000, 9999),
-                            'price' => $item->price * (rand(80, 95) / 100),
-                            'lead_time_days' => rand(1, 30),
-                            'is_preferred' => rand(0, 1),
+                            'id'                   => (string) \Illuminate\Support\Str::uuid(),
+                            'org_id'               => $org->id,
+                            'supplier_part_number' => 'SP' . random_int(1000, 9999),
+                            'price'                => $item->price * (random_int(80, 95) / 100),
+                            'lead_time_days'       => random_int(1, 30),
+                            'is_preferred'         => random_int(0, 1),
                         ]);
                     }
                 }
@@ -442,55 +446,55 @@ class DatabaseSeeder extends Seeder
 
         $maintenanceCategoryModels = [];
         foreach ($maintenanceCategoryData as $data) {
-            $data['org_id'] = $org->id;
+            $data['org_id']              = $org->id;
             $maintenanceCategoryModels[] = MaintenanceCategory::create($data);
         }
 
         $maintenanceConditionData = [
             [
-                'mail_on_warning' => true,
-                'mail_on_maintenance' => true,
+                'mail_on_warning'                 => true,
+                'mail_on_maintenance'             => true,
                 'maintenance_recurrence_quantity' => 90,
-                'maintenance_warning_date' => now()->addDays(80),
-                'maintenance_date' => now()->addDays(90),
-                'quantity_for_warning' => 80.00,
-                'quantity_for_maintenance' => 90.00,
-                'recurrence_unit' => 'days',
-                'price_per_unit' => 50.00,
-                'is_active' => true,
-                'maintenance_category_id' => $maintenanceCategoryModels[0]->id,
+                'maintenance_warning_date'        => now()->addDays(80),
+                'maintenance_date'                => now()->addDays(90),
+                'quantity_for_warning'            => 80.00,
+                'quantity_for_maintenance'        => 90.00,
+                'recurrence_unit'                 => 'days',
+                'price_per_unit'                  => 50.00,
+                'is_active'                       => true,
+                'maintenance_category_id'         => $maintenanceCategoryModels[0]->id,
             ],
             [
-                'mail_on_warning' => true,
-                'mail_on_maintenance' => true,
+                'mail_on_warning'                 => true,
+                'mail_on_maintenance'             => true,
                 'maintenance_recurrence_quantity' => 180,
-                'maintenance_warning_date' => now()->addDays(170),
-                'maintenance_date' => now()->addDays(180),
-                'quantity_for_warning' => 170.00,
-                'quantity_for_maintenance' => 180.00,
-                'recurrence_unit' => 'days',
-                'price_per_unit' => 75.00,
-                'is_active' => true,
-                'maintenance_category_id' => $maintenanceCategoryModels[1]->id,
+                'maintenance_warning_date'        => now()->addDays(170),
+                'maintenance_date'                => now()->addDays(180),
+                'quantity_for_warning'            => 170.00,
+                'quantity_for_maintenance'        => 180.00,
+                'recurrence_unit'                 => 'days',
+                'price_per_unit'                  => 75.00,
+                'is_active'                       => true,
+                'maintenance_category_id'         => $maintenanceCategoryModels[1]->id,
             ],
             [
-                'mail_on_warning' => true,
-                'mail_on_maintenance' => true,
+                'mail_on_warning'                 => true,
+                'mail_on_maintenance'             => true,
                 'maintenance_recurrence_quantity' => 30,
-                'maintenance_warning_date' => now()->addDays(25),
-                'maintenance_date' => now()->addDays(30),
-                'quantity_for_warning' => 25.00,
-                'quantity_for_maintenance' => 30.00,
-                'recurrence_unit' => 'days',
-                'price_per_unit' => 30.00,
-                'is_active' => true,
-                'maintenance_category_id' => $maintenanceCategoryModels[2]->id,
+                'maintenance_warning_date'        => now()->addDays(25),
+                'maintenance_date'                => now()->addDays(30),
+                'quantity_for_warning'            => 25.00,
+                'quantity_for_maintenance'        => 30.00,
+                'recurrence_unit'                 => 'days',
+                'price_per_unit'                  => 30.00,
+                'is_active'                       => true,
+                'maintenance_category_id'         => $maintenanceCategoryModels[2]->id,
             ],
         ];
 
         $maintenanceConditionModels = [];
         foreach ($maintenanceConditionData as $data) {
-            $data['org_id'] = $org->id;
+            $data['org_id']               = $org->id;
             $maintenanceConditionModels[] = MaintenanceCondition::create($data);
         }
 
@@ -505,38 +509,38 @@ class DatabaseSeeder extends Seeder
 
         foreach ([0, 1, 2, 7, 8, 9] as $itemIndex) {
             if (isset($itemModels[$itemIndex])) {
-                $item = $itemModels[$itemIndex];
-                $batch = $batchModels[array_rand($batchModels)];
+                $item     = $itemModels[$itemIndex];
+                $batch    = $batchModels[array_rand($batchModels)];
                 $supplier = $supplierModels[array_rand($supplierModels)];
                 $employee = $allUsers->random();
                 // Create 1-2 maintenance records per item
-                $recordCount = rand(1, 2);
-                for ($i = 0; $i < $recordCount; $i++) {
-                    $maintenanceDate = $dates[array_rand($dates)];
-                    $expectedBackDate = $maintenanceDate->copy()->addDays(rand(3, 14));
-                    $actualBackDate = rand(0, 1) ? $expectedBackDate->copy()->addDays(rand(-2, 5)) : null;
-                    $isRepair = rand(0, 1);
+                $recordCount = random_int(1, 2);
+                for ($i = 0; $i < $recordCount; ++$i) {
+                    $maintenanceDate   = $dates[array_rand($dates)];
+                    $expectedBackDate  = $maintenanceDate->copy()->addDays(random_int(3, 14));
+                    $actualBackDate    = random_int(0, 1) ? $expectedBackDate->copy()->addDays(random_int(-2, 5)) : null;
+                    $isRepair          = random_int(0, 1);
                     $maintenanceRecord = Maintenance::create([
-                        'org_id' => $org->id,
-                        'is_repair' => $isRepair,
-                        'remarks' => $isRepair ? 'Repair needed for ' . $item->name : 'Routine maintenance for ' . $item->name,
-                        'cost' => rand(50, 500),
+                        'org_id'                              => $org->id,
+                        'is_repair'                           => $isRepair,
+                        'remarks'                             => $isRepair ? 'Repair needed for ' . $item->name : 'Routine maintenance for ' . $item->name,
+                        'cost'                                => random_int(50, 500),
                         'date_expected_back_from_maintenance' => $expectedBackDate,
-                        'date_back_from_maintenance' => $actualBackDate,
-                        'date_in_maintenance' => $maintenanceDate,
-                        'supplier_id' => $supplier->id,
-                        'maintainable_id' => $item->id,
-                        'maintainable_type' => Item::class,
-                        'user_id' => $employee->id,
-                        'status_out_id' => $statusModels[2]->id, // Maintenance
-                        'status_in_id' => $actualBackDate ? $statusModels[0]->id : null, // Available if returned
+                        'date_back_from_maintenance'          => $actualBackDate,
+                        'date_in_maintenance'                 => $maintenanceDate,
+                        'supplier_id'                         => $supplier->id,
+                        'maintainable_id'                     => $item->id,
+                        'maintainable_type'                   => Item::class,
+                        'user_id'                             => $employee->id,
+                        'status_out_id'                       => $statusModels[2]->id, // Maintenance
+                        'status_in_id'                        => $actualBackDate ? $statusModels[0]->id : null, // Available if returned
                     ]);
                     // Add maintenance details
                     MaintenanceDetail::create([
-                        'org_id' => $org->id,
-                        'value' => rand(1, 5) * 10.0,
+                        'org_id'                   => $org->id,
+                        'value'                    => random_int(1, 5) * 10.0,
                         'maintenance_condition_id' => $maintenanceConditionModels[array_rand($maintenanceConditionModels)]->id,
-                        'maintenance_id' => $maintenanceRecord->id,
+                        'maintenance_id'           => $maintenanceRecord->id,
                     ]);
                 }
             }
@@ -548,27 +552,27 @@ class DatabaseSeeder extends Seeder
             // Ensure at least one employee user in org 2
             $org2User = User::factory()->create([
                 'first_name' => 'Org2',
-                'last_name' => 'Employee',
-                'email' => 'employee.org2@example.com',
-                'password' => Hash::make('password'),
-                'org_id' => $org2->id,
-                'org_role' => 'employee',
-                'role_id' => $employeeRole->id,
+                'last_name'  => 'Employee',
+                'email'      => 'employee.org2@example.com',
+                'password'   => Hash::make('password'),
+                'org_id'     => $org2->id,
+                'org_role'   => 'employee',
+                'role_id'    => $employeeRole->id,
             ]);
 
             // Ensure minimal units for org 2
             $org2Each = UnitOfMeasure::firstOrCreate([
-                'name' => 'Each',
+                'name'   => 'Each',
                 'org_id' => $org2->id,
             ], [
-                'code' => 'ea',
-                'symbol' => 'ea',
-                'type' => UnitOfMeasure::TYPE_QUANTITY,
+                'code'      => 'ea',
+                'symbol'    => 'ea',
+                'type'      => UnitOfMeasure::TYPE_QUANTITY,
                 'is_active' => true,
             ]);
 
             // Ensure simple categories for org 2
-            $org2Root = Category::firstOrCreate(['name' => 'Root', 'parent_id' => null, 'org_id' => $org2->id]);
+            $org2Root        = Category::firstOrCreate(['name' => 'Root', 'parent_id' => null, 'org_id' => $org2->id]);
             $org2Electronics = Category::firstOrCreate(['name' => 'Electronics', 'parent_id' => $org2Root->id, 'org_id' => $org2->id]);
 
             // Ensure a default location for org 2
@@ -576,47 +580,47 @@ class DatabaseSeeder extends Seeder
 
             // Ensure a supplier for org 2
             $org2Supplier = Supplier::firstOrCreate([
-                'name' => 'Org2 Supplier',
+                'name'   => 'Org2 Supplier',
                 'org_id' => $org2->id,
             ], [
-                'code' => 'ORG2SUP',
-                'email' => 'supplier.org2@example.com',
-                'phone' => '555-999-8888',
+                'code'      => 'ORG2SUP',
+                'email'     => 'supplier.org2@example.com',
+                'phone'     => '555-999-8888',
                 'is_active' => true,
             ]);
 
             // Seed a couple of items for org 2
             $org2ItemsData = [
                 [
-                    'name' => 'Org2 Laptop',
-                    'code' => 'O2-COMP-001',
-                    'description' => 'Laptop for Org2',
-                    'price' => 1100.00,
-                    'unit_id' => $org2Each->id,
-                    'category_id' => $org2Electronics->id,
-                    'user_id' => $org2User->id,
+                    'name'          => 'Org2 Laptop',
+                    'code'          => 'O2-COMP-001',
+                    'description'   => 'Laptop for Org2',
+                    'price'         => 1100.00,
+                    'unit_id'       => $org2Each->id,
+                    'category_id'   => $org2Electronics->id,
+                    'user_id'       => $org2User->id,
                     'tracking_mode' => 'serialized',
-                    'is_active' => true,
+                    'is_active'     => true,
                 ],
                 [
-                    'name' => 'Org2 Mouse',
-                    'code' => 'O2-ACC-001',
-                    'description' => 'Accessory for Org2',
-                    'price' => 20.00,
-                    'unit_id' => $org2Each->id,
-                    'category_id' => $org2Electronics->id,
-                    'user_id' => $org2User->id,
+                    'name'          => 'Org2 Mouse',
+                    'code'          => 'O2-ACC-001',
+                    'description'   => 'Accessory for Org2',
+                    'price'         => 20.00,
+                    'unit_id'       => $org2Each->id,
+                    'category_id'   => $org2Electronics->id,
+                    'user_id'       => $org2User->id,
                     'tracking_mode' => 'standard',
-                    'is_active' => true,
+                    'is_active'     => true,
                 ],
             ];
 
             $org2ItemModels = [];
             foreach ($org2ItemsData as $data) {
-                $data['org_id'] = $org2->id;
+                $data['org_id']   = $org2->id;
                 $org2ItemModels[] = Item::firstOrCreate(
                     ['code' => $data['code']],
-                    $data
+                    $data,
                 );
             }
 
@@ -624,17 +628,19 @@ class DatabaseSeeder extends Seeder
             foreach ($org2ItemModels as $item) {
                 if (! $item->locations()->where('location_id', $org2Location->id)->exists()) {
                     $item->locations()->attach($org2Location->id, [
-                        'org_id' => $org2->id,
+                        'id'       => (string) \Illuminate\Support\Str::uuid(),
+                        'org_id'   => $org2->id,
                         'quantity' => $item->isStandard() ? 5 : 1,
                     ]);
                 }
                 if (! $item->suppliers()->where('supplier_id', $org2Supplier->id)->exists()) {
                     $item->suppliers()->attach($org2Supplier->id, [
-                        'org_id' => $org2->id,
-                        'supplier_part_number' => 'O2SP' . rand(1000, 9999),
-                        'price' => $item->price * 0.9,
-                        'lead_time_days' => 7,
-                        'is_preferred' => true,
+                        'id'                   => (string) \Illuminate\Support\Str::uuid(),
+                        'org_id'               => $org2->id,
+                        'supplier_part_number' => 'O2SP' . random_int(1000, 9999),
+                        'price'                => $item->price * 0.9,
+                        'lead_time_days'       => 7,
+                        'is_preferred'         => true,
                     ]);
                 }
             }

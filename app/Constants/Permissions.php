@@ -1,10 +1,11 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Constants;
 
-final class Permissions {
+final class Permissions
+{
     /**
      * All available permissions that managers can grant or forbid to users.
      */
@@ -25,10 +26,6 @@ final class Permissions {
         'suppliers.create'             => 'Create suppliers',
         'suppliers.update'             => 'Update suppliers',
         'suppliers.delete'             => 'Delete suppliers',
-        'stocks.view'                  => 'View stocks',
-        'stocks.create'                => 'Create stocks',
-        'stocks.update'                => 'Update stocks',
-        'stocks.delete'                => 'Delete stocks',
         'maintenances.view'            => 'View maintenances',
         'maintenances.create'          => 'Create maintenances',
         'maintenances.update'          => 'Update maintenances',
@@ -47,9 +44,6 @@ final class Permissions {
         'checkinouts.delete'           => 'Delete check-ins/outs',
         'users.view'                   => 'View users in organization',
         'users.update.self'            => 'Update own profile',
-        'reports.view'                 => 'View reports',
-        'reports.generate'             => 'Generate reports',
-        'analytics.view'               => 'View analytics',
         'licenses.view'                => 'View organization licenses',
     ];
 
@@ -100,51 +94,61 @@ final class Permissions {
     /**
      * Get just the permission keys (without descriptions).
      */
-    public static function getAvailablePermissionKeys(): array {
+    public static function getAvailablePermissionKeys(): array
+    {
         return array_keys(self::AVAILABLE_PERMISSIONS);
     }
 
     /**
      * Get all permissions that managers can choose from when creating custom roles.
      */
-    public static function getAvailablePermissionsForManagers(): array {
+    public static function getAvailablePermissionsForManagers(): array
+    {
         return self::AVAILABLE_PERMISSIONS;
     }
 
     /**
      * Get forbidden permissions for employee role.
      */
-    public static function getEmployeeForbiddenPermissions(): array {
+    // UNUSED METHOD - COMMENTED OUT
+    public static function getEmployeeForbiddenPermissions(): array
+    {
         return array_keys(self::EMPLOYEE_FORBIDDEN_PERMISSIONS);
     }
 
     /**
      * Get forbidden permissions for manager role.
      */
-    public static function getManagerForbiddenPermissions(): array {
+    // UNUSED METHOD - COMMENTED OUT
+    public static function getManagerForbiddenPermissions(): array
+    {
         return array_keys(self::MANAGER_FORBIDDEN_PERMISSIONS);
     }
 
     /**
      * Get just the forbidden permission keys (without descriptions).
      */
-    public static function getRequiredForbiddenKeys(): array {
+    public static function getRequiredForbiddenKeys(): array
+    {
         return array_keys(self::MANAGER_FORBIDDEN_PERMISSIONS);
     }
 
     /**
      * Get permissions that must always be forbidden in manager-created roles.
      */
-    public static function getRequiredForbiddenPermissions(): array {
+    public static function getRequiredForbiddenPermissions(): array
+    {
         return self::MANAGER_FORBIDDEN_PERMISSIONS;
     }
 
     /**
      * Get forbidden permissions for a specific system role.
      */
-    public static function getSystemRoleForbiddenPermissions(string $roleSlug): array {
+    public static function getSystemRoleForbiddenPermissions(string $roleSlug): array
+    {
         return match ($roleSlug) {
             'super_admin' => [],
+            'admin'       => [], // Admin has same permissions as super_admin within organization scope
             'manager'     => array_keys(self::MANAGER_FORBIDDEN_PERMISSIONS),
             'employee'    => array_keys(self::EMPLOYEE_FORBIDDEN_PERMISSIONS),
             default       => [],

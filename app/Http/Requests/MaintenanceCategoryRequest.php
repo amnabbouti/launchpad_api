@@ -31,7 +31,7 @@ class MaintenanceCategoryRequest extends BaseRequest {
             'name'      => 'required|string|max:255',
             'remarks'   => 'nullable|string|max:1000',
             'is_active' => 'nullable|boolean',
-            'org_id'    => 'required|exists:organizations,id',
+            'org_id'    => 'nullable|exists:organizations,id',
         ];
     }
 }

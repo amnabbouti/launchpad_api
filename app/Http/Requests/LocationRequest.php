@@ -40,7 +40,7 @@ class LocationRequest extends BaseRequest {
             'path'        => 'nullable|string|max:' . AppConstants::ADDRESS_MAX_LENGTH,
             'description' => 'nullable|string',
             'is_active'   => 'nullable|boolean',
-            'org_id'      => 'required|exists:organizations,id',
+            'org_id'      => 'nullable|exists:organizations,id',
         ];
     }
 }

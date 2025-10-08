@@ -337,7 +337,7 @@ class CheckInOutService extends BaseService {
         }
 
         if (! isset($data['checkin_user_id'])) {
-            $data['checkin_user_id'] = AuthorizationEngine::getCurrentUser()?->id;
+            $data['checkin_user_id'] = \App\Services\AuthorizationHelper::getCurrentUser()?->id;
         }
 
         return $data;
@@ -352,7 +352,7 @@ class CheckInOutService extends BaseService {
         }
 
         if (! isset($data['user_id'])) {
-            $data['user_id'] = AuthorizationEngine::getCurrentUser()?->id;
+            $data['user_id'] = \App\Services\AuthorizationHelper::getCurrentUser()?->id;
         }
 
         return $data;

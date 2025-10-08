@@ -9,7 +9,8 @@ use Illuminate\Validation\Rule;
 
 class StoreRoleRequest extends BaseRequest {
     public function authorize(): bool {
-        return $this->user()->hasPermission('roles.create');
+        // Authorization is handled by PermissionMiddleware
+        return true;
     }
 
     public function messages(): array {

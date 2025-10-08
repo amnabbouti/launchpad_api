@@ -1,18 +1,18 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
 use App\Http\Middleware\ApiResponseMiddleware;
 use App\Http\Requests\OrganizationRequest;
 use App\Http\Resources\OrganizationResource;
-use App\Services\AuthorizationEngine;
 use App\Services\OrganizationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class OrganizationController extends BaseController {
+class OrganizationController extends BaseController
+{
     /**
      * Create a new controller instance.
      */
@@ -23,20 +23,17 @@ class OrganizationController extends BaseController {
     /**
      * Delete a specific Organization
      */
-    public function destroy(string $id): JsonResponse {
-        // Enforce authorization: only super admins or allowed roles may delete organizations
-        $organization = $this->organizationService->findById($id);
-        AuthorizationEngine::authorize('delete', 'organizations', $organization);
-
+    public function destroy(string $id): JsonResponse
+    {
         $this->organizationService->delete($id);
-
         return ApiResponseMiddleware::deleteResponse('organization');
     }
 
     /**
      * Get active organizations
      */
-    public function getActive(): JsonResponse {
+    public function getActive(): JsonResponse
+    {
         $organizations = $this->organizationService->getActive();
         $totalCount    = $organizations->count();
 
@@ -50,7 +47,8 @@ class OrganizationController extends BaseController {
     /**
      * Display Organizations
      */
-    public function index(Request $request): JsonResponse {
+    public function index(Request $request): JsonResponse
+    {
         $filters            = $this->organizationService->processRequestParams($request->query());
         $organizationsQuery = $this->organizationService->getFiltered($filters);
         $totalCount         = $organizationsQuery->count();
@@ -67,7 +65,8 @@ class OrganizationController extends BaseController {
     /**
      * Display a specific Organization
      */
-    public function show(string $id): JsonResponse {
+    public function show(string $id): JsonResponse
+    {
         $relations    = $this->organizationService->parseRelationships(request('with'));
         $organization = $this->organizationService->findById($id, ['*'], $relations);
 
@@ -81,7 +80,8 @@ class OrganizationController extends BaseController {
     /**
      * Add a new Organization
      */
-    public function store(OrganizationRequest $request): JsonResponse {
+    public function store(OrganizationRequest $request): JsonResponse
+    {
         $organization = $this->organizationService->createOrganization($request->validated());
 
         return ApiResponseMiddleware::createResponse(
@@ -94,7 +94,8 @@ class OrganizationController extends BaseController {
     /**
      * Update a specific Organization
      */
-    public function update(OrganizationRequest $request, string $id): JsonResponse {
+    public function update(OrganizationRequest $request, string $id): JsonResponse
+    {
         $updatedOrganization = $this->organizationService->updateOrganization($id, $request->validated());
 
         return ApiResponseMiddleware::updateResponse(

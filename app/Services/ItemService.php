@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Services;
 
@@ -12,12 +12,15 @@ use InvalidArgumentException;
 
 use function is_array;
 
-class ItemService extends BaseService {
-    public function __construct(Item $item) {
+class ItemService extends BaseService
+{
+    public function __construct(Item $item)
+    {
         parent::__construct($item);
     }
 
-    public function create(array $data): Item {
+    public function create(array $data): Item
+    {
         $data = $this->applyBusinessRules($data);
         $this->validateBusinessRules($data);
 
@@ -33,7 +36,8 @@ class ItemService extends BaseService {
         return $item->load(['locations']);
     }
 
-    public function findById($id, array $columns = ['*'], array $relations = [], array $appends = []): Item {
+    public function findById($id, array $columns = ['*'], array $relations = [], array $appends = []): Item
+    {
         $relations = array_unique(array_merge($relations, ['maintenances', 'locations', 'category', 'status', 'unitOfMeasure', 'suppliers', 'organization']));
 
         $item = Item::with($relations)->findOrFail($id, $columns);
@@ -45,7 +49,8 @@ class ItemService extends BaseService {
         return $item;
     }
 
-    public function getFiltered(array $filters = []): Builder {
+    public function getFiltered(array $filters = []): Builder
+    {
         $query = $this->all(['*'], ['maintenances', 'locations', 'category', 'status', 'unitOfMeasure', 'suppliers', 'organization']);
 
         $query->when($filters['tracking_mode'] ?? null, static function ($q, $mode) {
@@ -56,20 +61,21 @@ class ItemService extends BaseService {
                 default                   => $q,
             };
         })
-            ->when($filters['location_id'] ?? null, static fn ($q, $value) => $q->byLocation($value))
-            ->when($filters['q'] ?? null, static fn ($q, $value) => $q->search($value))
-            ->when(isset($filters['is_active']) && $filters['is_active'], static fn ($q) => $q->active())
-            ->when($filters['category_id'] ?? null, static fn ($q, $value) => $q->where('category_id', $value))
-            ->when($filters['user_id'] ?? null, static fn ($q, $value) => $q->where('user_id', $value))
-            ->when($filters['name'] ?? null, static fn ($q, $value) => $q->where('name', 'like', "%{$value}%"))
-            ->when($filters['code'] ?? null, static fn ($q, $value) => $q->where('code', 'like', "%{$value}%"))
-            ->when($filters['barcode'] ?? null, static fn ($q, $value) => $q->where('barcode', $value))
-            ->when($filters['with'] ?? null, static fn ($q, $relations) => $q->with($relations));
+            ->when($filters['location_id'] ?? null, static fn($q, $value) => $q->byLocation($value))
+            ->when($filters['q'] ?? null, static fn($q, $value) => $q->search($value))
+            ->when(isset($filters['is_active']) && $filters['is_active'], static fn($q) => $q->active())
+            ->when($filters['category_id'] ?? null, static fn($q, $value) => $q->where('category_id', $value))
+            ->when($filters['user_id'] ?? null, static fn($q, $value) => $q->where('user_id', $value))
+            ->when($filters['name'] ?? null, static fn($q, $value) => $q->where('name', 'like', "%{$value}%"))
+            ->when($filters['code'] ?? null, static fn($q, $value) => $q->where('code', 'like', "%{$value}%"))
+            ->when($filters['barcode'] ?? null, static fn($q, $value) => $q->where('barcode', $value))
+            ->when($filters['with'] ?? null, static fn($q, $relations) => $q->with($relations));
 
         return $query;
     }
 
-    public function processRequestParams(array $params): array {
+    public function processRequestParams(array $params): array
+    {
         $this->validateParams($params);
 
         return [
@@ -86,7 +92,8 @@ class ItemService extends BaseService {
         ];
     }
 
-    public function update($id, array $data): Item {
+    public function update($id, array $data): Item
+    {
         $data = $this->applyBusinessRules($data);
         $this->validateBusinessRules($data, $id);
 
@@ -103,7 +110,8 @@ class ItemService extends BaseService {
         return $item->load(['locations']);
     }
 
-    protected function getAllowedParams(): array {
+    protected function getAllowedParams(): array
+    {
         return array_merge(parent::getAllowedParams(), [
             'category_id',
             'user_id',
@@ -117,7 +125,8 @@ class ItemService extends BaseService {
         ]);
     }
 
-    protected function getValidRelations(): array {
+    protected function getValidRelations(): array
+    {
         return [
             'category',
             'user',
@@ -134,7 +143,8 @@ class ItemService extends BaseService {
         ];
     }
 
-    private function applyBusinessRules(array $data): array {
+    private function applyBusinessRules(array $data): array
+    {
         if (isset($data['tracking_mode'])) {
             switch ($data['tracking_mode']) {
                 case 'abstract':
@@ -155,7 +165,8 @@ class ItemService extends BaseService {
         return $data;
     }
 
-    private function createItemLocations(Item $item, array $locations): void {
+    private function createItemLocations(Item $item, array $locations): void
+    {
         foreach ($locations as $locationData) {
             if (isset($locationData['id'], $locationData['quantity'])) {
                 $locationId = (int) $locationData['id'];
@@ -170,7 +181,8 @@ class ItemService extends BaseService {
         }
     }
 
-    private function updateItemLocations(Item $item, array $locations): void {
+    private function updateItemLocations(Item $item, array $locations): void
+    {
         foreach ($locations as $locationData) {
             if (isset($locationData['id'], $locationData['quantity'])) {
                 $locationId = (int) $locationData['id'];
@@ -183,7 +195,8 @@ class ItemService extends BaseService {
         }
     }
 
-    private function validateBusinessRules(array $data, $itemId = null): void {
+    private function validateBusinessRules(array $data, $itemId = null): void
+    {
         if (isset($data['tracking_mode']) && $data['tracking_mode'] === 'serialized') {
             if (empty($data['serial_number'])) {
                 throw new InvalidArgumentException(__(ErrorMessages::ITEM_SERIAL_REQUIRED));

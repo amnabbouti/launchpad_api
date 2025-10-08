@@ -8,7 +8,7 @@ use App\Models\Item;
 use App\Models\Organization;
 use App\Models\Role;
 use App\Models\User;
-use App\Services\AuthorizationEngine;
+
 use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Builder;
@@ -37,7 +37,7 @@ final class TestOrganizationScoping extends Command {
             $originalUserSql = $userQuery->toSql();
 
             // Apply organization scope to users (should not change query)
-            $scopedUserQuery = AuthorizationEngine::applyOrganizationScope($userQuery, 'users');
+            $scopedUserQuery = \App\Services\AuthorizationHelper::applyOrganizationScope($userQuery, 'users');
             $scopedUserSql   = $scopedUserQuery->toSql();
 
             if ($originalUserSql === $scopedUserSql) {
@@ -50,7 +50,7 @@ final class TestOrganizationScoping extends Command {
             $roleQuery       = Role::query();
             $originalRoleSql = $roleQuery->toSql();
 
-            $scopedRoleQuery = AuthorizationEngine::applyOrganizationScope($roleQuery, 'roles');
+            $scopedRoleQuery = \App\Services\AuthorizationHelper::applyOrganizationScope($roleQuery, 'roles');
             $scopedRoleSql   = $scopedRoleQuery->toSql();
 
             if ($originalRoleSql === $scopedRoleSql) {
@@ -71,7 +71,7 @@ final class TestOrganizationScoping extends Command {
                 $mockUser->role   = new Role(['slug' => 'manager']);
 
                 // Temporarily set current user
-                $originalUser = AuthorizationEngine::getCurrentUser();
+                $originalUser = \App\Services\AuthorizationHelper::getCurrentUser();
 
                 // We can't easily mock the current user in this context,
                 // so let's just test the logic directly

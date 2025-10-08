@@ -28,7 +28,7 @@ class MaintenanceDetailRequest extends BaseRequest {
         $detailId = $this->route('maintenance_detail')?->id ?? null;
 
         return [
-            'org_id'                   => 'required|exists:organizations,id',
+            'org_id'                   => 'nullable|exists:organizations,id',
             'maintenance_condition_id' => 'required|exists:maintenance_conditions,id',
             'maintenance_id'           => 'required|exists:maintenances,id',
             'value'                    => 'required|numeric',

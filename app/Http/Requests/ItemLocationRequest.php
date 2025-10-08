@@ -31,7 +31,7 @@ class ItemLocationRequest extends BaseRequest {
      */
     protected function getValidationRules(): array {
         return [
-            'org_id'      => 'required|exists:organizations,id',
+            'org_id'      => 'nullable|exists:organizations,id',
             'item_id'     => 'required|exists:items,id',
             'location_id' => 'required|exists:locations,id',
             'quantity'    => 'required|numeric|min:0|max:' . AppConstants::ITEM_MAX_QUANTITY,

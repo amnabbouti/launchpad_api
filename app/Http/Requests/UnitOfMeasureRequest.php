@@ -40,7 +40,7 @@ class UnitOfMeasureRequest extends BaseRequest {
                 UnitOfMeasure::TYPE_VOLUME,
             ]),
             'is_active' => 'nullable|boolean',
-            'org_id'    => 'required|exists:organizations,id',
+            'org_id'    => 'nullable|exists:organizations,id',
         ];
     }
 }

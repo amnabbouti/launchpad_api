@@ -145,9 +145,9 @@ class OrganizationService extends BaseService {
      */
     protected function getQuery(): Builder {
         $query = $this->model->newQuery();
-        $user  = AuthorizationEngine::getCurrentUser();
+        $user  = \App\Services\AuthorizationHelper::getCurrentUser();
 
-        if ($user && AuthorizationEngine::inSystemScope($user)) {
+        if ($user && \App\Services\AuthorizationHelper::inSystemScope($user)) {
             return $query;
         }
 
@@ -185,7 +185,7 @@ class OrganizationService extends BaseService {
      */
     private function applyOrganizationBusinessRules(array $data, $organizationId = null): array {
         if (! $organizationId && ! isset($data['created_by'])) {
-            $data['created_by'] = AuthorizationEngine::getCurrentUser()?->id;
+            $data['created_by'] = \App\Services\AuthorizationHelper::getCurrentUser()?->id;
         }
 
         if (! isset($data['status'])) {
