@@ -1,61 +1,146 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# vohrad-api
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Laravel API backend for an inventory management system.
 
-## About Laravel
+## Overview
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Framework: Laravel ^12.0 (PHP ^8.2)
+- Auth: Laravel Sanctum (token-based auth on most routes)
+- Primary resources: organizations, users, roles, locations, items, batches, item locations, movements, maintenance, statuses, categories, suppliers, attachments, printers, print jobs, labels, licenses, API keys, translations, events, check-in/out
+- Webhooks: Stripe invoice webhook handler
+- Docs UI: Vite-built static site served by Laravel
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## API
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- Base path: `/api/v1`
 
-## Learning Laravel
+### Auth
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+- `POST /api/v1/login`
+- `POST /api/v1/admin/login`
+- `POST /api/v1/logout`
+- `GET  /api/v1/user`
+- `POST /api/v1/admin/logout`
+- `GET  /api/v1/admin/user`
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### Organization + user management
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- `/api/v1/organizations` (CRUD + `/active`)
+- `/api/v1/users` (CRUD)
+- `/api/v1/roles` (CRUD + `/all`, `/organization`)
 
-## Laravel Sponsors
+### Items, locations, and movements
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+- `/api/v1/items`, `/api/v1/locations`, `/api/v1/batches`, `/api/v1/item-locations`
+- `/api/v1/movements` (move, initial placement, adjust quantity, history, integrity validation)
+- `/api/v1/checks` (check in/out, history, availability)
+- `/api/v1/events` (system + per-item event streams)
 
-### Premium Partners
+### Maintenance
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development/)**
-- **[Active Logic](https://activelogic.com)**
+- `/api/v1/maintenances` (CRUD + `/complete`, `/item`, `/condition`)
+- `/api/v1/maintenances/categories`, `/conditions`, `/details`
 
-## Contributing
+### Reference data
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+- `/api/v1/statuses`, `/api/v1/categories`, `/api/v1/suppliers`, `/api/v1/uom`
 
-## Code of Conduct
+### Media and printing
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+- `/api/v1/attachments` (CRUD + `/type-options`, `/{id}/stats`)
+- `/api/v1/printers`, `/api/v1/printjobs`
+- `/api/v1/labels/generate`
 
-## Security Vulnerabilities
+### Admin
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+- `/api/v1/admin/api-keys` (CRUD + revoke/regenerate/usage/overview)
+- `/api/v1/admin/security/threats`
 
-## License
+### Licensing
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- `/api/v1/licenses` (CRUD + `/{id}/invoice`)
+
+### Translations
+
+- `/api/v1/translations/{locale?}`
+- `/api/v1/translations/{locale}/{key}`
+
+### Utility
+
+- `GET /test` (health check)
+- `GET /get-env-key` (returns `OPENROUTER_API_KEY` if set)
+
+### Webhooks
+
+- `POST /webhooks/stripe`
+
+## Documentation
+
+- UI: `GET /` and `GET /docs` serve the built docs UI (`public/dist/docs.html`)
+- OpenAPI JSON: `GET /swagger/openapi.json`
+
+OpenAPI build pipeline:
+
+- Template: `public/swagger/openapi-template.json`
+- Path fragments: `public/swagger/paths/*.json`
+- Schema fragments: `public/swagger/schemas/*.json`
+- Build script: `public/swagger/build-openapi.js`
+
+## Authentication and authorization
+
+- Sanctum (`auth:sanctum`) for API authentication
+- Route-level permission checks via `PermissionMiddleware`
+- System roles (`App\Services\AuthorizationHelper`): `super_admin`, `admin`, `manager`, `employee`
+- Permission keys: `App\Constants\Permissions`
+- More detail: `scripts/permissions.md`
+
+## Multi-tenancy and RLS
+
+- Tenant context: `TenancyContextMiddleware` + `TenancyPolicyService` (sets `app.org_id` in PostgreSQL)
+- RLS policy tables: `config/tenancy.php`
+- Production RLS guidance: `scripts/PRODUCTION_RLS_SETUP.md`
+
+## Configuration
+
+Notable environment keys:
+
+- Database: `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`
+- Stripe: `STRIPE_KEY`, `STRIPE_SECRET`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_CURRENCY`, `STRIPE_DAYS_UNTIL_DUE`
+- Docs assistant: `OPENROUTER_API_KEY` (exposed via `/get-env-key`)
+
+## Development
+
+Install dependencies:
+
+```bash
+composer install
+npm install
+```
+
+Run local dev stack (API server, queue listener, log tail, Vite):
+
+```bash
+composer run dev
+```
+
+Build docs UI + OpenAPI spec:
+
+```bash
+npm run build
+npm run build:openapi
+```
+
+## Testing
+
+Run tests:
+
+```bash
+composer run test
+```
+
+`phpunit.xml` test DB defaults to MySQL (`DB_HOST=db`, `DB_DATABASE=db`, `DB_USERNAME=root`, `DB_PASSWORD=root`).
+
+## Docker
+
+- Root `Dockerfile`: builds `php:8.2-apache`, exposes `8080`, serves the Laravel app
+- `docker/8.2/`: Ubuntu-based PHP 8.2 image with Node tooling and Supervisor config
